@@ -8,26 +8,25 @@ module MediaTypes
     module MigrationsSupport
       extend ActiveSupport::Concern
 
+      included do
+        mattr_accessor :migrations
+      end
+
       class_methods do
         def migrator(serializer)
-          return nil unless migrations_
-          migrations_.call(serializer)
+          return nil unless migrations
+          migrations.call(serializer)
         end
 
         protected
 
         def backward_migrations(&block)
-          self.migrations_ = lambda do |serializer|
-            migrations = MigrationsCommand.new(serializer)
-            migrations.instance_exec(&block)
-
-            return migrations
+          self.migrations = lambda do |serializer|
+            MigrationsCommand.new(serializer).tap do |callable|
+              callable.instance_exec(&block)
+            end
           end
         end
-
-        private
-
-        attr_accessor :migrations_
       end
 
       def migrate(result = nil, media_type = current_media_type, view = current_view)

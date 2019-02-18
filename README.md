@@ -73,8 +73,20 @@ end
 ```
 By default, The passed in `MediaType` gets converted into a constructable (via `to_constructable`) and invoked with the
 current `view` (e.g. `create`, `index`, `collection` or ` `). This means that by default it will be able to serialize 
-the latest version you `MediaType` is reporting.
+the latest version you `MediaType` is reporting. The best way to supply your media type is via the [`media_types`](https://github.com/SleeplessByte/media-types-ruby) gem.
 
+#### Multiple suffixes, one serializer
+By default, the media renderer will automatically detect and inject the following:
+- suffix `+json` if you define `to_json`
+- suffix `+xml` if you define `to_xml`
+- type `text/html` if you define `to_html`
+
+The only limitation is that these methods need to be defined on the serializer class directly, and not in a super class.
+
+If you do _not_ define these methods, only the `default` suffix / type will be used, `accepts_html` for the `text/html` 
+content-type.
+
+#### Migrations (versions)
 If the serializer can serialize multiple _versions_, you can supply them through `additional_versions: [2, 3]`. A way to
 handle this is via backward migrations, meaning you'll migrate from the current version back to an older version.
 
@@ -101,7 +113,8 @@ class Book < ApplicationRecord
     # but inline migrations work fine if you don't have a lot of them. 
     backward_migrations do
     
-      # This is called if the version is 1 _or_ lower. This means you can compose your migrations
+      # This is called if the version requested is 1 _or_ lower. This means you can compose your migrations. The 
+      # migrations with a _lower_ version than the requested version are NOT executed.
       version 1 do |result|
         result.tap do |r|
           if r.key?(:views)
@@ -121,25 +134,10 @@ uses the serialization, you need to explicitely `accept` it if you want to use t
 
 ```ruby
 require 'media_types/serialization'
+require 'media_types/serialization/renderer/register'
 
 class ApiController < ActionController::API
   include MediaTypes::Serialization
-  
-  def render_json_media(media, status: :ok)
-    # Because this is JSON, we expect a hash. If this were html, you might generate
-    # xml / xpath with to_xml, or a string using to_s.
-    # 
-    render json: serialize_media(media).to_hash,
-           status: status,
-           content_type: request.format.to_s
-  end
-  
-  def render_html_media(media, status: :ok)
-    render serializer(media).to_html,
-           status: status,
-           content_type: request.format.to_s
-  end
- 
 end
 
 class BookController < ApiController
@@ -149,7 +147,7 @@ class BookController < ApiController
   freeze_accepted_media!
       
   def show 
-    request.format.to_s == 'text/html' ? render_html_media(@book) : render_json_media(@book)
+    render media: serialize_media(@book)
   end
 end
 ```
@@ -163,7 +161,7 @@ the same preconditions in `before_action` (because how else would it know which 
 Use the `render` method to generate your HTML:
 ```ruby
 class Book::CoverHtmlSerializer < MediaTypes::Serialization::Base
-  # Tell the serializer that this accepts HTML
+  # Tell the serializer that this accepts HTML, but this is also signaled by `to_html`
   serializes_html
   
   def to_html
@@ -183,8 +181,13 @@ class Book::CoverHtmlSerializer < MediaTypes::Serialization::Base
 end
 ```
 
-By default, this method only outputs to `stderr` when something is wrong; see configuration below if you want to assign
-your own behaviour, such as adding a `Warn` header, or raising a server error.
+### Wrapping output
+
+By convention, `index` views are wrapped in `_index: [items]`, `collection` views are wrapped in `_embedded: [items]`
+and `create` / no views are wrapped in `[ROOT_KEY]: item`. This is currently only enabled for `to_json` serialization
+but planned for `xml` as well.
+
+This behaviour can not be turned of as of writing.
 
 ### Related
 

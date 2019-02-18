@@ -33,7 +33,7 @@ module MediaTypes
             opts = { media_type: media_type, media_view: media_view }
 
             res[MEDIA_TYPE_HTML] = wrap_html(serializer, **opts) if accept_html && !res[MEDIA_TYPE_HTML]
-            res[String(media_type)] = wrap_media(serializer, **opts)
+            res[String(media_type)] = wrap_media(serializer, **opts) if media_type != MEDIA_TYPE_HTML
           end
         end
       end
@@ -72,12 +72,21 @@ module MediaTypes
       #
       def freeze_accepted_media!
         before_action do
-          self.class.respond_to(*Hash(serializers).keys.map { |type| Mime::Type.lookup(type) })
+          # If the responders gem is available, this freezes what a controller can respond to
+          if self.class.respond_to?(:respond_to)
+            self.class.respond_to(*Hash(serializers).keys.map { |type| Mime::Type.lookup(type) })
+          end
           serializers.freeze
         end
       end
     end
     # rubocop:enable Metrics/BlockLength
+
+    included do
+      protected
+
+      attr_accessor :serializers
+    end
 
     protected
 
@@ -123,8 +132,6 @@ module MediaTypes
 
     private
 
-    attr_accessor :serializers
-
     def extract_synonym_version(synonym)
       synonym.rpartition('.').last[1..-1]
     end
@@ -140,6 +147,8 @@ module MediaTypes
       # Ruby negotiation
       request.accepts.each do |mime_type|
         next unless serializers.key?(mime_type.to_s)
+        # Override Rails selected format
+        request.set_header("action_dispatch.request.formats", [mime_type])
         return serializers[mime_type.to_s]
       end
 
@@ -158,8 +167,8 @@ module MediaTypes
     def wrap_media(serializer, media_view:, media_type:)
       lambda do |*args, **opts|
         Wrapper::MediaWrapper.new(
-            serializer.new(*args, media_type: media_type, view: media_view, **opts),
-            view: media_view
+          serializer.new(*args, media_type: media_type, view: media_view, **opts),
+          view: media_view
         )
       end
     end

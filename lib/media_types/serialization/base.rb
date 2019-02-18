@@ -25,9 +25,37 @@ module MediaTypes
         {}
       end
 
+      def to_html
+        raise NotImplementedError, format(
+          'In %<class>s, to_html is not implemented.',
+          class: self.class.name
+        )
+      end
+
+      def to_xml
+        raise NotImplementedError, format(
+          'In %<class>s, to_xml is not implemented.',
+          class: self.class.name
+        )
+      end
+
       def to_hash
         raise NotImplementedError, format(
           'In %<class>s, to_hash is not implemented.',
+          class: self.class.name
+        )
+      end
+
+      def to_text
+        raise NotImplementedError, format(
+          'In %<class>s, to_text is not implemented/',
+          class: self.class.name
+        )
+      end
+
+      def to_json
+        raise NotImplementedError, format(
+          'In %<class>s, to_json is not implemented/',
           class: self.class.name
         )
       end
@@ -39,14 +67,28 @@ module MediaTypes
         )
       end
 
+      def to_body
+        raise NotImplementedError, format(
+          'In %<class>s, to_body is not implemented. This is a general purpose catch all renderer',
+          class: self.class.name
+        )
+      end
+
+      def respond_to?(sym, include_all = false)
+        return false if [:to_h, :to_hash, :to_json, :to_text, :to_xml, :to_html, :to_body, :extract_self].include?(sym)
+        return true if sym == :to_link_header
+
+        super
+      end
+
       protected
 
       attr_accessor :context, :current_media_type, :current_view
 
       def extract_self
         raise NotImplementedError, format(
-          'In %<class>s, extract_self is not implemented, thus a self link for %<model>s can not be generated. Implement ' \
-          'extract_self on %<class>s or deny the MediaType[s] %<media_types>s for this request.',
+          'In %<class>s, extract_self is not implemented, thus a self link for %<model>s can not be generated. ' \
+          'Implement extract_self on %<class>s or deny the MediaType[s] %<media_types>s for this request.',
           class: self.class.name,
           model: serializable.class.name,
           media_types: self.class.media_types(view: '[view]').to_s
@@ -83,7 +125,7 @@ module MediaTypes
         return url if !url || URI(url).absolute?
 
         format(
-          'http://%<host>s:%<port>s%<path>s',
+          'https://%<host>s:%<port>s%<path>s',
           host: context.default_url_options[:host],
           port: context.default_url_options[:port],
           path: url
