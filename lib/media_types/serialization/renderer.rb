@@ -12,11 +12,11 @@ module MediaTypes
       self.content_type ||= content_type
 
       if content_type.ends_with?('+json') || Mime::Type.lookup(content_type) == Mime[:json]
-        obj.class.instance_methods(false).include?(:to_json) ? obj.to_json(options) : obj.to_hash.to_json(options)
+        obj.respond_to?(:to_json) ? obj.to_json(options) : obj.to_hash.to_json(options)
       elsif content_type.ends_with?('+xml') || Mime::Type.lookup(content_type) == Mime[:xml]
-        obj.class.instance_methods(false).include?(:to_xml) ? obj.to_xml(options) : obj.to_hash.to_xml(options)
+        obj.respond_to?(:to_xml) ? obj.to_xml(options) : obj.to_hash.to_xml(options)
       elsif Mime::Type.lookup(content_type) == Mime[:html]
-        obj.class.instance_methods(false).include?(:to_html) ? obj.to_html : obj.to_s
+        obj.respond_to?(:to_html) ? obj.to_html : obj.to_s
       else
         obj.to_body(content_type: options.delete(:content_type) || content_type, **options)
       end

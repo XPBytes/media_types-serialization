@@ -5,6 +5,9 @@ require 'uri'
 require 'media_types/serialization/mime_type_support'
 require 'media_types/serialization/migrations_support'
 
+require 'http_headers/link'
+require 'http_headers/utils/list'
+
 module MediaTypes
   module Serialization
     class Base
@@ -22,7 +25,14 @@ module MediaTypes
       end
 
       def to_link_header
-        {}
+        entries = header_links.each_with_index.map do |(rel, opts), index|
+          href = opts.is_a?(String) ? opts : opts.delete(:href)
+          parameters =  { rel: rel }.merge(opts.is_a?(String) ? {} : opts)
+          HttpHeaders::Link::Entry.new("<#{href}>", index: index, parameters: parameters)
+        end
+        return nil unless entries.present?
+
+        HttpHeaders::Utils::List.to_header(entries)
       end
 
       COMMON_DERIVED_CALLERS = [:to_h, :to_hash, :to_json, :to_text, :to_xml, :to_html, :to_body, :extract_self].freeze

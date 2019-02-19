@@ -81,10 +81,11 @@ By default, the media renderer will automatically detect and inject the followin
 - suffix `+xml` if you define `to_xml`
 - type `text/html` if you define `to_html`
 
-The only limitation is that these methods need to be defined on the serializer class directly, and not in a super class.
-
 If you do _not_ define these methods, only the `default` suffix / type will be used, `accepts_html` for the `text/html` 
 content-type.
+
+If you don't define `to_html`, but try to make a serializer output `html`, it will be rendered in the layout at: 
+`serializers/wrapper/html_wrapper.html.erb` (or any other templating extension).
 
 #### Migrations (versions)
 If the serializer can serialize multiple _versions_, you can supply them through `additional_versions: [2, 3]`. A way to
@@ -204,6 +205,17 @@ and `create` / no views are wrapped in `[ROOT_KEY]: item`. This is currently onl
 but planned for `xml` as well.
 
 This behaviour can not be turned of as of writing.
+
+### Link header
+
+You can use `to_link_header` to generate a header value for the `Link` header.
+
+```ruby
+entries = @last_media_serializer.to_link_header
+if entries.present?
+  response.header[HEADER_LINK] = entries
+end
+```
 
 ### Related
 

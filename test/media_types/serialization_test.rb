@@ -64,6 +64,10 @@ class MediaTypes::SerializationTest < Minitest::Test
     def to_json(options = {})
       to_hash.merge(source: 'to_json').to_json(options)
     end
+
+    def extract_links
+      { google: { href: 'https://google.com', foo: 'bar' } }
+    end
   end
 
   class BaseController < ActionController::Metal
@@ -84,7 +88,14 @@ class MediaTypes::SerializationTest < Minitest::Test
 
     def action
       input = request.body
-      render media: serialize_media(input), content_type: request.format.to_s
+      serializer = serialize_media(input)
+
+      entries = serializer.to_link_header
+      if entries.present?
+        response.header['Link'] = entries
+      end
+
+      render media: serializer, content_type: request.format.to_s
     end
   end
 
@@ -133,8 +144,8 @@ class MediaTypes::SerializationTest < Minitest::Test
   def test_it_only_serializes_what_it_knows
     content_type = 'text/html'
     request = ActionDispatch::Request.new({
-        Rack::RACK_INPUT => { title: 'test serialization', count: 1, data: {} },
-        'HTTP_ACCEPT' => "application/vnd.mydomain.nope, text/html; q=0.1"
+      Rack::RACK_INPUT => { title: 'test serialization', count: 1, data: {} },
+      'HTTP_ACCEPT' => "application/vnd.mydomain.nope, text/html; q=0.1"
     })
 
     MyResourceSerializer.define_method :to_html do |options = {}|
@@ -149,13 +160,26 @@ class MediaTypes::SerializationTest < Minitest::Test
 
   def test_it_uses_the_html_wrapper
     request = ActionDispatch::Request.new({
-        Rack::RACK_INPUT => { title: 'test serialization', count: 1, data: {} },
-        'HTTP_ACCEPT' => "application/vnd.mydomain.nope, text/html; q=0.1"
+      Rack::RACK_INPUT => { title: 'test serialization', count: 1, data: {} },
+      'HTTP_ACCEPT' => "application/vnd.mydomain.nope, text/html; q=0.1"
     })
 
     assert_raises ActionView::MissingTemplate do
       @controller.dispatch(:action, request, @response)
     end
+  end
+
+  def test_it_extracts_links
+    content_type = MyResourceMediaType.to_constructable.version(1).to_s
+    Mime::Type.register(content_type, :my_special_symbol)
+
+    request = ActionDispatch::Request.new({
+      Rack::RACK_INPUT => { title: 'test serialization', count: 1, data: {} },
+      'HTTP_ACCEPT' => "#{content_type}, text/html; q=0.1"
+    })
+
+    @controller.dispatch(:action, request, @response)
+    assert_equal "<https://google.com>; rel=google; foo=bar", @response['Link']
   end
 end
 
