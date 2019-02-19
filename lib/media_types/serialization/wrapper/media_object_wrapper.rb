@@ -25,9 +25,9 @@ module MediaTypes
         end
         alias to_h to_hash
 
-        def collect_links
-          return {} unless serializable
-          __getobj__.send(:header_links)
+        def header_links(view: current_view)
+          return __getobj__.send(:header_links, view: view) if serializable
+          {}
         end
 
         private

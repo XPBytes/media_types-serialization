@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.2
+
+- Rename `collect_links` to `header_links` to actually expose the links
+
 ## 0.3.1
 
 - Fix classes sharing `media_type_constructable`, `serializes_html_flag` and `media_type_versions`
