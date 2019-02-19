@@ -16,7 +16,7 @@ require 'media_types/serialization/wrapper/media_wrapper'
 module MediaTypes
   module Serialization
 
-    mattr_accessor :common_suffix
+    mattr_accessor :common_suffix, :collect_links_for_collection, :collect_links_for_index
 
     extend ActiveSupport::Concern
 

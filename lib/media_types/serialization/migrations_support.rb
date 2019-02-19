@@ -9,7 +9,16 @@ module MediaTypes
       extend ActiveSupport::Concern
 
       included do
-        mattr_accessor :migrations
+        # This is the same as doing matrr_accessor but have it isolated to the class. Subclass changes to change these
+        # values, but this allows for definition as a concern.
+
+        class << self
+          attr_accessor :migrations
+        end
+
+        delegate :migrations,
+                 :migrations=,
+                 to: :class
       end
 
       class_methods do

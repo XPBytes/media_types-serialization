@@ -28,7 +28,11 @@ module MediaTypes
         alias to_h to_hash
 
         def collect_links
-          {}
+          if serializable && ::MediaTypes::Serialization.collect_links_for_index
+            __getobj__.send(:header_links)
+          else
+            {}
+          end
         end
 
         private

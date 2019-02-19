@@ -25,7 +25,7 @@ module MediaTypes
       end
 
       def to_link_header
-        entries = header_links.each_with_index.map do |(rel, opts), index|
+        entries = header_links(view: current_view).each_with_index.map do |(rel, opts), index|
           href = opts.is_a?(String) ? opts : opts.delete(:href)
           parameters =  { rel: rel }.merge(opts.is_a?(String) ? {} : opts)
           HttpHeaders::Link::Entry.new("<#{href}>", index: index, parameters: parameters)
@@ -68,7 +68,8 @@ module MediaTypes
         {}
       end
 
-      def header_links
+      # noinspection RubyUnusedLocalVariable
+      def header_links(view: current_view)
         extract_links
       end
 

@@ -5,7 +5,6 @@ require 'delegate'
 require 'active_support/core_ext/string/inflections'
 
 require 'media_types/serialization/base'
-require 'media_types/serialization/wrapper/media_wrapper'
 require 'media_types/serialization/wrapper/root_key'
 
 module MediaTypes

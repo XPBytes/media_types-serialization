@@ -8,7 +8,16 @@ module MediaTypes
       extend ActiveSupport::Concern
 
       included do
-        mattr_accessor :media_type_constructable, :serializes_html_flag, :media_type_versions
+        # This is the same as doing matrr_accessor but have it isolated to the class. Subclass changes to change these
+        # values, but this allows for definition as a concern.
+
+        class << self
+          attr_accessor :media_type_constructable, :serializes_html_flag, :media_type_versions
+        end
+
+        delegate :media_type_constructable, :serializes_html_flag, :media_type_versions,
+                 :media_type_constructable=, :serializes_html_flag=, :media_type_versions=,
+                 to: :class
       end
 
       class_methods do
@@ -20,20 +29,20 @@ module MediaTypes
           media_type_view = current_mime_type(view: view)
 
           suffixes = [].tap do |result|
-            result << :json if self.instance_methods(false).include?(:to_json)
-            result << :xml if self.instance_methods(false).include?(:to_xml)
+            result << :json if instance_methods.include?(:to_json)
+            result << :xml if instance_methods.include?(:to_xml)
           end
 
           additionals = [].tap do |result|
-            result << 'text/html' if serializes_html_flag || self.instance_methods(false).include?(:to_html)
+            result << 'text/html' if serializes_html_flag || instance_methods.include?(:to_html)
           end
 
           [media_type_view].concat(
-            media_type_versions.map { |version| media_type_view&.version(version) },
-            media_type_versions.flat_map do |version|
-              (suffixes).map { |suffix| media_type_view&.suffix(suffix)&.version(version) }
-            end,
-            additionals
+              media_type_versions.map { |version| media_type_view&.version(version) },
+              media_type_versions.flat_map do |version|
+                (suffixes).map { |suffix| media_type_view&.suffix(suffix)&.version(version) }
+              end,
+              additionals
           ).compact.uniq
         end
 
