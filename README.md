@@ -60,9 +60,7 @@ class Book < ApplicationRecord
       { href: context.api_book_url(serializable) }
     end
 
-    private
-
-    def extract_links
+    def extract_links(view:)
       { 
         'self': extract_self,
         'signatures': { href: context.api_book_signatures_url(serializable) }
@@ -216,6 +214,9 @@ if entries.present?
   response.header[HEADER_LINK] = entries
 end
 ```
+
+If you want the link header to be different from the `_links`, you can implement `header_links(view:)` next to 
+`extract_links(view:)`. This will be called by the `to_link_header` function.
 
 ### Related
 

@@ -60,17 +60,16 @@ module MediaTypes
         super
       end
 
+      def header_links(view: current_view)
+        extract_links(view: view)
+      end
+
       protected
 
       attr_accessor :context, :current_media_type, :current_view
 
-      def extract_links
+      def extract_links(view: current_view)
         {}
-      end
-
-      # noinspection RubyUnusedLocalVariable
-      def header_links(view: current_view)
-        extract_links
       end
 
       def set(serializable)

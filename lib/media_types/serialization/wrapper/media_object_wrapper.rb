@@ -30,6 +30,13 @@ module MediaTypes
           {}
         end
 
+        protected
+
+        def extract_links(view: current_view)
+          return __getobj__.send(:extract_links, view: view) if serializable
+          {}
+        end
+
         private
 
         AUTO_UNWRAP_KLAZZES = [Array, defined?(ActiveRecord) ? ActiveRecord::Relation : nil].compact.freeze

@@ -22,13 +22,20 @@ module MediaTypes
         def to_hash
           { Wrapper::RootKey.new(__getobj__.class).pluralize => {
             '_embedded': auto_wrap_serializable.map(&method(:item_hash)),
-            '_links': {}
+            '_links': extract_links
           } }
         end
         alias to_h to_hash
 
         def header_links(view: current_view)
           return __getobj__.send(:header_links, view: view) if serializable && ::MediaTypes::Serialization.collect_links_for_collection
+          {}
+        end
+
+        protected
+
+        def extract_links(view: current_view)
+          return __getobj__.send(:extract_links, view: view) if serializable && ::MediaTypes::Serialization.collect_links_for_collection
           {}
         end
 

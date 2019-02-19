@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.0
+
+- Change `extract_links` to `extract_links(view:)` and mimic `header_links(view:)`
+- Use `extract_links` in `index` and `collection` wrapper output
+
 ## 0.3.2
 
 - Rename `collect_links` to `header_links` to actually expose the links
