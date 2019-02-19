@@ -64,10 +64,6 @@ class MediaTypes::SerializationTest < Minitest::Test
     def to_json(options = {})
       to_hash.merge(source: 'to_json').to_json(options)
     end
-
-    def to_html(options = {})
-      "<code>#{to_hash.merge(source: 'to_html').to_json(options)}"
-    end
   end
 
   class BaseController < ActionController::Metal
@@ -88,7 +84,7 @@ class MediaTypes::SerializationTest < Minitest::Test
 
     def action
       input = request.body
-      render media: serialize_media(input)
+      render media: serialize_media(input), content_type: request.format.to_s
     end
   end
 
@@ -99,6 +95,7 @@ class MediaTypes::SerializationTest < Minitest::Test
 
   def teardown
     Mime::Type.unregister(:my_special_symbol)
+    MyResourceSerializer.undef_method :to_html if MyResourceSerializer.method_defined? :to_html
   end
 
   def test_it_serializes_via_serializer
@@ -129,7 +126,6 @@ class MediaTypes::SerializationTest < Minitest::Test
     @controller.dispatch(:action, request, @response)
     assert_equal content_type, @response.content_type
 
-    puts @response.body
     result = Hash.from_xml(@response.body)["hash"]
     assert_equal( { "name" => "test serialization", "number" => 1, "items" => [], "source" => "to_xml" }, result )
   end
@@ -141,8 +137,25 @@ class MediaTypes::SerializationTest < Minitest::Test
         'HTTP_ACCEPT' => "application/vnd.mydomain.nope, text/html; q=0.1"
     })
 
+    MyResourceSerializer.define_method :to_html do |options = {}|
+      "<code>#{to_hash.merge(source: 'to_html').to_json(options)}</code>"
+    end
+
     @controller.dispatch(:action, request, @response)
+
     assert_equal content_type, @response.content_type
-    assert_equal '<code>{"name":"test serialization","number":1,"items":[],"source":"to_html"}', @response.body
+    assert_equal '<code>{"name":"test serialization","number":1,"items":[],"source":"to_html"}</code>', @response.body
+  end
+
+  def test_it_uses_the_html_wrapper
+    request = ActionDispatch::Request.new({
+        Rack::RACK_INPUT => { title: 'test serialization', count: 1, data: {} },
+        'HTTP_ACCEPT' => "application/vnd.mydomain.nope, text/html; q=0.1"
+    })
+
+    assert_raises ActionView::MissingTemplate do
+      @controller.dispatch(:action, request, @response)
+    end
   end
 end
+

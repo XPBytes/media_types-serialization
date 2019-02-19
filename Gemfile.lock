@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    media_types-serialization (0.1.0)
+    media_types-serialization (0.2.0)
       actionpack (>= 4.0.0)
       activesupport (>= 4.0.0)
       http_headers-accept (< 1.0.0)
@@ -34,11 +34,11 @@ GEM
     concurrent-ruby (1.1.4)
     crass (1.0.4)
     erubi (1.8.0)
-    http_headers-accept (0.1.0)
-      http_headers-utils (< 1.0.0)
-    http_headers-link (0.1.0)
-      http_headers-utils (< 1.0.0)
-    http_headers-utils (0.1.1)
+    http_headers-accept (0.2.1)
+      http_headers-utils (>= 0.2.0, < 1.0.0)
+    http_headers-link (0.2.1)
+      http_headers-utils (>= 0.2.0, < 1.0.0)
+    http_headers-utils (0.2.0)
     i18n (1.5.3)
       concurrent-ruby (~> 1.0)
     loofah (2.2.3)

@@ -25,58 +25,27 @@ module MediaTypes
         {}
       end
 
-      def to_html
-        raise NotImplementedError, format(
-          'In %<class>s, to_html is not implemented.',
-          class: self.class.name
-        )
+      COMMON_DERIVED_CALLERS = [:to_h, :to_hash, :to_json, :to_text, :to_xml, :to_html, :to_body, :extract_self].freeze
+
+      def method_missing(symbol, *args, &block)
+        if COMMON_DERIVED_CALLERS.include?(symbol)
+          raise NotImplementedError, format(
+            'In %<class>s, %<symbol>s is not implemented. ' \
+            'Implement it or deny the MediaType[s] %<media_types>s for %<model>s',
+            symbol: symbol,
+            class: self.class.name,
+            model: serializable.class.name,
+            media_types: self.class.media_types(view: '[view]').to_s
+          )
+        end
+
+        super
       end
 
-      def to_xml
-        raise NotImplementedError, format(
-          'In %<class>s, to_xml is not implemented.',
-          class: self.class.name
-        )
-      end
-
-      def to_hash
-        raise NotImplementedError, format(
-          'In %<class>s, to_hash is not implemented.',
-          class: self.class.name
-        )
-      end
-
-      def to_text
-        raise NotImplementedError, format(
-          'In %<class>s, to_text is not implemented/',
-          class: self.class.name
-        )
-      end
-
-      def to_json
-        raise NotImplementedError, format(
-          'In %<class>s, to_json is not implemented/',
-          class: self.class.name
-        )
-      end
-
-      def to_h
-        raise NotImplementedError, format(
-          'In %<class>s, to_h is not implemented. Missing alias to_h to_hash.',
-          class: self.class.name
-        )
-      end
-
-      def to_body
-        raise NotImplementedError, format(
-          'In %<class>s, to_body is not implemented. This is a general purpose catch all renderer',
-          class: self.class.name
-        )
-      end
-
-      def respond_to?(sym, include_all = false)
-        return false if [:to_h, :to_hash, :to_json, :to_text, :to_xml, :to_html, :to_body, :extract_self].include?(sym)
-        return true if sym == :to_link_header
+      def respond_to_missing?(method_name, include_private = false)
+        if COMMON_DERIVED_CALLERS.include?(method_name)
+          return false
+        end
 
         super
       end
@@ -84,16 +53,6 @@ module MediaTypes
       protected
 
       attr_accessor :context, :current_media_type, :current_view
-
-      def extract_self
-        raise NotImplementedError, format(
-          'In %<class>s, extract_self is not implemented, thus a self link for %<model>s can not be generated. ' \
-          'Implement extract_self on %<class>s or deny the MediaType[s] %<media_types>s for this request.',
-          class: self.class.name,
-          model: serializable.class.name,
-          media_types: self.class.media_types(view: '[view]').to_s
-        )
-      end
 
       def extract_links
         {}

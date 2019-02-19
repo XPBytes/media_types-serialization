@@ -147,10 +147,26 @@ class BookController < ApiController
   freeze_accepted_media!
       
   def show 
-    render media: serialize_media(@book)
+    # If you do NOT pass in the content_type, it will re-use the current content_type of the response if set or
+    # use the default content type of the serializer. This is fine if you only output one Content-Type in the
+    # action, but not if you are relying on content-negotiation. 
+    
+    render media: serialize_media(@book), content_type: request.format.to_s
   end
 end
 ```
+
+If you have normalized your resources (e.g. into `@resource`), you may render resources like so:
+
+```ruby
+class ApiController < ActionController::API
+  def render_media(**opts)
+    render media: serialize_media(@resource), content_type: request.format.to_s, **opts
+  end
+end
+```
+
+And then call `render_media` whenever you're ready to render
 
 ### HTML output
 
