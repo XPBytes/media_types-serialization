@@ -218,6 +218,25 @@ end
 If you want the link header to be different from the `_links`, you can implement `header_links(view:)` next to 
 `extract_links(view:)`. This will be called by the `to_link_header` function.
 
+### Validation
+If you only have `json`/`xml`/structured data responses and you want to use [`media_types-validation`](https://github.com/XPBytes/media_types-validation) in conjunction with this gem, you can create a concern or add the following two functions to your base controller:
+
+```ruby
+def render_media(resource = @resource, **opts)
+  serializer = serialize_media(resource)
+  render media: serializer, content_type: request.format.to_s, **opts
+  validate_media(serializer)
+end
+
+def validate_media(serializer = @last_media_serializer)
+  media_type = serializer.current_media_type
+  return true unless media_type && response_body
+  validate_json_with_media_type(serializer.to_hash, media_type: media_type)
+end
+```
+
+As long as the serializer has a `to_json` or `to_hash`, this will work -- but also means that the data will always be validate _as if_ it were json. This covers most use cases.
+
 ### Related
 
 - [`MediaTypes`](https://github.com/SleeplessByte/media-types-ruby): :gem: Library to create media type definitions, schemes and validations
