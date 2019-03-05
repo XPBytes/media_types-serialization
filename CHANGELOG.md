@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.5.0
+
+- Change wrappers to extend from `SimpleDelegator`
+- Move `RootKey` to `Base.root_key` method so it can be overridden
+- Move `MediaWrapper.wrap` to `Base.wrap` method so it can be overridden
+- Move `MediaObjectWrapper::AUTO_UNWRAP_KLAZZES` to `MediaObjectWrapper.auto_unwrap_klazzes` option
+- Add `::MediaTypes::Serialization.html_wrapper_layout` option
+- Add `MediaObjectWrapper#unwrapped_serializable` which can be overridden in `Base#unwrapped_serializable`
+- Add `MediaIndexWrapper#wrapped_serializable` which can be overridden in `Base#wrapped_serializable`
+- Add `MediaCollectionWrapper#wrapped_serializable` which can be overridden in `Base#wrapped_serializable`
+- Fix empty link handler (`{ rel: nil }`)
+- Fix `NoSerializerForContentType` error message
+- Add tests for `root_key`, `wrap`, `MediaObjectWrapper`, `MediaIndexWrapper` and `MediaCollectionWrapper`
+
 ## 0.4.0
 
 - Change `extract_links` to `extract_links(view:)` and mimic `header_links(view:)`
