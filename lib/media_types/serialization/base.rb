@@ -2,17 +2,19 @@
 
 require 'uri'
 
-require 'media_types/serialization/mime_type_support'
-require 'media_types/serialization/migrations_support'
-
 require 'http_headers/link'
 require 'http_headers/utils/list'
+
+require 'media_types/serialization/mime_type_support'
+require 'media_types/serialization/migrations_support'
+require 'media_types/serialization/wrapper_support'
 
 module MediaTypes
   module Serialization
     class Base
       include MimeTypeSupport
       include MigrationsSupport
+      include WrapperSupport
 
       attr_accessor :serializable
 
@@ -26,12 +28,14 @@ module MediaTypes
 
       def to_link_header
         entries = header_links(view: current_view).each_with_index.map do |(rel, opts), index|
+          next unless opts.is_a?(String) || opts.try(:[], :href)
           href = opts.is_a?(String) ? opts : opts.delete(:href)
           parameters =  { rel: rel }.merge(opts.is_a?(String) ? {} : opts)
-          HttpHeaders::Link::Entry.new("<#{href}>", index: index, parameters: parameters)
-        end
-        return nil unless entries.present?
 
+          HttpHeaders::Link::Entry.new("<#{href}>", index: index, parameters: parameters)
+        end.compact
+
+        return nil unless entries.present?
         HttpHeaders::Utils::List.to_header(entries)
       end
 

@@ -5,45 +5,59 @@ require 'delegate'
 require 'active_support/core_ext/string/inflections'
 
 require 'media_types/serialization/base'
-require 'media_types/serialization/wrapper/root_key'
 
 module MediaTypes
   module Serialization
     module Wrapper
-      class MediaObjectWrapper < DelegateClass(Base)
+      class MediaObjectWrapper < SimpleDelegator
 
         delegate :to_json, to: :to_hash
         delegate :class, to: :__getobj__
 
+        mattr_accessor :auto_unwrap_klazzes
+
+        self.auto_unwrap_klazzes = [Array, defined?(ActiveRecord) ? ActiveRecord::Relation : nil].compact
+
         def initialize(serializer)
-          super serializer
+          __setobj__ serializer
         end
 
         def to_hash
-          unwrapped = auto_unwrap_serializable.tap { |u| set(u) }
-          { RootKey.new(__getobj__.class).singularize => unwrapped && super || nil }
+          set unwrapped_serializable
+          { root_key => serializable && super || nil }
         end
+
         alias to_h to_hash
 
         def header_links(view: current_view)
-          return __getobj__.send(:header_links, view: view) if serializable
-          {}
+          __getobj__.send(:header_links, view: view)
+        end
+
+        def inspect
+          "#{__getobj__.inspect} (wrapped by MediaObjectWrapper #{self.object_id})"
         end
 
         protected
 
-        def extract_links(view: current_view)
-          return __getobj__.send(:extract_links, view: view) if serializable
-          {}
+        def unwrapped_serializable
+          return __getobj__.unwrapped_serializable if __getobj__.respond_to?(:unwrapped_serializable)
+          auto_unwrap_klazzes.any? { |klazz| serializable.is_a?(klazz) } ? serializable.first : serializable
         end
 
-        private
+        def extract_links(view: current_view)
+          __getobj__.send(:extract_links, view: view)
+        end
 
-        AUTO_UNWRAP_KLAZZES = [Array, defined?(ActiveRecord) ? ActiveRecord::Relation : nil].compact.freeze
+        def root_key(view: current_view)
+          __getobj__.class.root_key(view: view)
+        end
 
-        def auto_unwrap_serializable
-          return serializable unless AUTO_UNWRAP_KLAZZES.any? { |klazz| serializable.is_a?(klazz) }
-          serializable.first
+        def set(new_serializable)
+          __getobj__.send(:set, new_serializable)
+        end
+
+        def current_view
+          __getobj__.send(:current_view)
         end
       end
     end

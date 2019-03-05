@@ -5,43 +5,39 @@ require 'delegate'
 require 'active_support/core_ext/string/inflections'
 
 require 'media_types/serialization/base'
-require 'media_types/serialization/wrapper/root_key'
 
 module MediaTypes
   module Serialization
     module Wrapper
-      class MediaIndexWrapper < DelegateClass(Base)
+      class MediaIndexWrapper < SimpleDelegator
 
         delegate :to_json, to: :to_hash
         delegate :class, to: :__getobj__
 
         def initialize(serializer)
-          super serializer
+          __setobj__ serializer
         end
 
         def to_hash
-          { Wrapper::RootKey.new(__getobj__.class).pluralize => {
-            '_index': auto_wrap_serializable.map(&method(:item_hash)),
-            '_links': extract_links
-          } }
+          {
+            root_key => {
+              '_index': wrapped_serializable.map(&method(:item_hash)),
+              '_links': extract_links
+            }
+          }
         end
         alias to_h to_hash
 
         def header_links(view: current_view)
-          return __getobj__.send(:header_links, view: view) if serializable && ::MediaTypes::Serialization.collect_links_for_index
+          return __getobj__.send(:header_links, view: view) if ::MediaTypes::Serialization.collect_links_for_index
           {}
         end
 
         protected
 
-        def extract_links(view: current_view)
-          return __getobj__.send(:extract_links, view: view) if serializable && ::MediaTypes::Serialization.collect_links_for_index
-          {}
-        end
-
-        private
-
-        def auto_wrap_serializable
+        def wrapped_serializable
+          return __getobj__.wrapped_serializable if __getobj__.respond_to?(:wrapped_serializable)
+          return [serializable] if serializable.is_a?(::Hash)
           Array(serializable)
         end
 
@@ -49,6 +45,19 @@ module MediaTypes
           __getobj__.instance_exec do
             set(item).send(:extract_self)
           end
+        end
+
+        def extract_links(view: current_view)
+          return __getobj__.send(:extract_links, view: view) if ::MediaTypes::Serialization.collect_links_for_index
+          {}
+        end
+
+        def root_key(view: current_view)
+          __getobj__.class.root_key(view: view)
+        end
+
+        def current_view
+          __getobj__.send(:current_view)
         end
       end
     end

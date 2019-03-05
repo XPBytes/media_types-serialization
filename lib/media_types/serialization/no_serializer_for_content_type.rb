@@ -6,7 +6,7 @@ module MediaTypes
       def initialize(given, supported)
         super format(
           'Unable to serialize to requested Content-Type: %<given>s. I can give you: %<supported>s',
-          given: given.inspect,
+          given: Array(given).map(&:to_s).inspect,
           supported: supported.map(&:to_s)
         )
       end

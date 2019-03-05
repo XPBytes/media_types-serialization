@@ -10,13 +10,13 @@ require 'http_headers/accept'
 
 require 'media_types/serialization/no_media_type_serializers'
 require 'media_types/serialization/no_serializer_for_content_type'
+require 'media_types/serialization/base'
 require 'media_types/serialization/wrapper/html_wrapper'
-require 'media_types/serialization/wrapper/media_wrapper'
 
 module MediaTypes
   module Serialization
 
-    mattr_accessor :common_suffix, :collect_links_for_collection, :collect_links_for_index
+    mattr_accessor :common_suffix, :collect_links_for_collection, :collect_links_for_index, :html_wrapper_layout
 
     extend ActiveSupport::Concern
 
@@ -166,7 +166,7 @@ module MediaTypes
 
     def wrap_media(serializer, media_view:, media_type:)
       lambda do |*args, **opts|
-        Wrapper::MediaWrapper.new(
+        serializer.wrap(
           serializer.new(*args, media_type: media_type, view: media_view, **opts),
           view: media_view
         )
