@@ -16,7 +16,7 @@ module MediaTypes
       include MigrationsSupport
       include WrapperSupport
 
-      attr_accessor :serializable
+      attr_reader :current_media_type, :current_view, :serializable
 
       def initialize(serializable, media_type:, view: nil, context:)
         self.context = context
@@ -68,17 +68,18 @@ module MediaTypes
         extract_links(view: view)
       end
 
-      protected
-
-      attr_accessor :context, :current_media_type, :current_view
-
-      def extract_links(view: current_view)
-        {}
-      end
-
       def set(serializable)
         self.serializable = serializable
         self
+      end
+
+      protected
+
+      attr_accessor :context
+      attr_writer :current_media_type, :current_view, :serializable
+
+      def extract_links(view: current_view)
+        {}
       end
 
       def extract(extractable, *keys)

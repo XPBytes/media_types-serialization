@@ -4,8 +4,6 @@ require 'delegate'
 
 require 'action_controller'
 
-require 'media_types/serialization/base'
-
 module MediaTypes
   module Serialization
     module Wrapper

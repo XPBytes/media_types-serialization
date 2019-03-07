@@ -196,13 +196,27 @@ class Book::CoverHtmlSerializer < MediaTypes::Serialization::Base
 end
 ```
 
+You can change the default `wrapper` / `to_html` implementation by setting:
+```ruby
+::MediaTypes::Serialization.html_wrapper_layout = '/path/to/wrapper/layout'
+```
+
 ### Wrapping output
 
 By convention, `index` views are wrapped in `_index: [items]`, `collection` views are wrapped in `_embedded: [items]`
 and `create` / no views are wrapped in `[ROOT_KEY]: item`. This is currently only enabled for `to_json` serialization
 but planned for `xml` as well.
 
-This behaviour can not be turned of as of writing.
+This behaviour can not be turned of as of writing. However, you may _overwrite_ this behaviour via:
+
+- `self.root_key(view:)`: to define the root key for a specific `view`
+- `self.wrap(serializer, view: nil)`: to define the wrapper for a specific `view` and/or `serializer`. For example, if
+  you never want to wrap anything, you could define:
+  ```ruby
+  def self.wrap(serializer, view: nil)
+    serializer
+  end
+  ```
 
 ### Link header
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.1
+
+- Correctly expose `current_media_type` and `current_view`
+- Fix cyclic requires
+- Add documentation for overwriting wrappers
+
 ## 0.5.0
 
 - Change wrappers to extend from `SimpleDelegator`

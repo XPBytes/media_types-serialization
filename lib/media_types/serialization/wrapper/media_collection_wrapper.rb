@@ -4,15 +4,13 @@ require 'delegate'
 
 require 'active_support/core_ext/string/inflections'
 
-require 'media_types/serialization/base'
-
 module MediaTypes
   module Serialization
     module Wrapper
       class MediaCollectionWrapper < SimpleDelegator
 
         delegate :to_json, to: :to_hash
-        delegate :class, to: :__getobj__
+        delegate :class, :set, :current_view, :current_media_type, to: :__getobj__
 
         def initialize(serializer)
           __setobj__ serializer
@@ -48,16 +46,12 @@ module MediaTypes
 
         def item_hash(item)
           __getobj__.instance_exec do
-            set(item).send(:to_hash)
+            set(item).to_hash
           end
         end
 
         def root_key(view: current_view)
           __getobj__.class.root_key(view: view)
-        end
-
-        def current_view
-          __getobj__.send(:current_view)
         end
       end
     end
