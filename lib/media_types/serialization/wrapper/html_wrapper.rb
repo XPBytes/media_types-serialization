@@ -21,9 +21,12 @@ module MediaTypes
 
         def to_html
           return super if __getobj__.respond_to?(:to_html)
+          to_api_viewer(layout: ::MediaTypes::Serialization.html_wrapper_layout)
+        end
 
+        def to_api_viewer(layout: ::MediaTypes::Serialization.api_viewer_layout)
           ActionController::Base.render(
-            ::MediaTypes::Serialization.html_wrapper_layout || 'serializers/wrapper/html_wrapper',
+            layout || 'serializers/wrapper/html_wrapper',
             assigns: {
               serializer: self,
               view: view,

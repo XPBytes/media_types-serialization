@@ -13,35 +13,62 @@ require 'media_types/serialization/no_serializer_for_content_type'
 require 'media_types/serialization/base'
 require 'media_types/serialization/wrapper/html_wrapper'
 
+require 'awesome_print'
+
 module MediaTypes
   module Serialization
 
-    mattr_accessor :common_suffix, :collect_links_for_collection, :collect_links_for_index, :html_wrapper_layout
+    mattr_accessor :common_suffix, :collect_links_for_collection, :collect_links_for_index,
+                   :html_wrapper_layout, :api_viewer_layout
 
     extend ActiveSupport::Concern
 
-    HEADER_ACCEPT = 'HTTP_ACCEPT'
-    MEDIA_TYPE_HTML = 'text/html'
+    HEADER_ACCEPT         = 'HTTP_ACCEPT'
+
+    MEDIA_TYPE_HTML       = 'text/html'
+    MEDIA_TYPE_API_VIEWER = 'application/vnd.xpbytes.api-viewer.v1'
 
     # rubocop:disable Metrics/BlockLength
     class_methods do
+
+      ##
+      # Accept serialization using the passed in +serializer+ for the given +view+
+      #
       # @see #freeze_accepted_media!
       #
-      def accept_serialization(serializer, view: [nil], accept_html: true, **filter_opts)
+      # @param serializer the serializer to use for serialization. Needs to respond to #to_body, but may respond to
+      #   #to_json if the type accepted is ...+json, or #to_xml if the type accepted is ...+xml or #to_html if the type
+      #   accepted is text/html
+      # @param [(String | NilClass|)[]] view the views it should serializer for. Use nil for no view
+      # @param [Boolean] accept_api_viewer if true, accepts this serializer as base for the api viewer
+      # @param [Boolean] accept_html if true, accepts this serializer as the html fallback
+      #
+      def accept_serialization(serializer, view: [nil], accept_api_viewer: true, accept_html: accept_api_viewer, **filter_opts)
         before_action(**filter_opts) do
-          self.serializers = resolved_media_types(serializer, view: view) do |media_type, media_view, res|
+          resolved_media_types(serializer, view: view) do |media_type, media_view, _, register|
             opts = { media_type: media_type, media_view: media_view }
+            register.call(String(media_type), wrap_media(serializer, **opts))
+          end
+        end
 
-            res[MEDIA_TYPE_HTML] = wrap_html(serializer, **opts) if accept_html && !res[MEDIA_TYPE_HTML]
-            res[String(media_type)] = wrap_media(serializer, **opts) if media_type != MEDIA_TYPE_HTML
+        accept_html(serializer, view: view, overwrite: false, **filter_opts) if accept_html
+        accept_api_viewer(serializer, view: view, overwrite: false, **filter_opts) if accept_api_viewer
+      end
+
+      def accept_html(serializer, view: [nil], overwrite: true, **filter_opts)
+        before_action(**filter_opts) do
+          resolved_media_types(serializer, view: view) do |_, media_view, registered, register|
+            break if registered.call(MEDIA_TYPE_HTML) && !overwrite
+            register.call(MEDIA_TYPE_HTML, wrap_html(serializer, media_view: media_view, media_type: MEDIA_TYPE_HTML))
           end
         end
       end
 
-      def accept_html(serializer, **filter_opts)
+      def accept_api_viewer(serializer, view: [nil], overwrite: true, **filter_opts)
         before_action(**filter_opts) do
-          self.serializers = resolved_media_types(serializer, view: nil) do |_, media_view, res|
-            res[MEDIA_TYPE_HTML] = wrap_html(serializer, media_view: media_view, media_type: MEDIA_TYPE_HTML)
+          resolved_media_types(serializer, view: view) do |_, media_view, registered, register|
+            break if registered.call(MEDIA_TYPE_API_VIEWER) && !overwrite
+            register.call(MEDIA_TYPE_API_VIEWER, wrap_html(serializer, media_view: media_view, media_type: MEDIA_TYPE_API_VIEWER))
             break
           end
         end
@@ -76,6 +103,7 @@ module MediaTypes
           if self.class.respond_to?(:respond_to)
             self.class.respond_to(*Hash(serializers).keys.map { |type| Mime::Type.lookup(type) })
           end
+
           serializers.freeze
         end
       end
@@ -156,10 +184,15 @@ module MediaTypes
     end
 
     def resolved_media_types(serializer, view:)
-      Array(view).each_with_object(Hash(serializers)) do |media_view, res|
+      self.serializers = Hash(serializers)
+
+      registered = serializers.method(:key)
+      register = serializers.method(:[]=)
+
+      Array(view).each do |media_view|
         media_view = String(media_view)
         Array(serializer.media_type(view: media_view)).each do |media_type|
-          yield media_type, media_view, res
+          yield media_type, media_view, registered, register
         end
       end
     end

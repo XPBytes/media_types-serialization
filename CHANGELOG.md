@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.0
+
+- Add `accept_api_viewer` which is on by default
+- Add `overwrite` parameter to `accept_html`
+- Add `api_viewer_layout` configuration option
+- Add generator to initialize the gem and copy the API Viewer
+
 ## 0.5.1
 
 - Correctly expose `current_media_type` and `current_view`

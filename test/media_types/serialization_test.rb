@@ -169,6 +169,22 @@ class MediaTypes::SerializationTest < Minitest::Test
     end
   end
 
+  def test_it_uses_the_html_wrapper_for_the_api_viewer
+    request = ActionDispatch::Request.new({
+      Rack::RACK_INPUT => { title: 'test serialization', count: 1, data: {} },
+      'HTTP_ACCEPT' => "application/vnd.xpbytes.api-viewer.v1"
+    })
+
+    # Define it to ensure this was not used
+    MyResourceSerializer.define_method :to_html do |options = {}|
+      "<code>#{to_hash.merge(source: 'to_html').to_json(options)}</code>"
+    end
+
+    assert_raises ActionView::MissingTemplate do
+      @controller.dispatch(:action, request, @response)
+    end
+  end
+
   def test_it_extracts_links
     content_type = MyResourceMediaType.to_constructable.version(1).to_s
     Mime::Type.register(content_type, :my_special_symbol)

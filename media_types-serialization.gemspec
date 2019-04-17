@@ -42,6 +42,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'http_headers-accept', '< 1.0.0'
   spec.add_dependency 'http_headers-link', '< 1.0.0'
 
+  spec.add_development_dependency 'awesome_print'
   spec.add_development_dependency 'bundler', '~> 2.0'
   spec.add_development_dependency 'rails', '~> 5.2'
   spec.add_development_dependency 'rake', '~> 10.0'

@@ -21,6 +21,19 @@ And then execute:
 Or install it yourself as:
 
     $ gem install media_types-serialization
+    
+If you have not done this before, and you're using `rails`, install the necessary parts using:
+
+```bash
+rails g media_types:serialization:api_viewer
+```
+
+This will:
+
+- Add the default `html_wrapper` layout which is an API Viewer used as fallback or the `.api_viewer` format
+- Add the default `template_controller` which allows the API Viewer to post templated links
+- Add the `route` for these templated link forms
+- Add an initializer that registers the `media` renderer and `api_viewer` media type
 
 ## Usage
 
@@ -28,7 +41,7 @@ In order to use media type serialization you only need to do 2 things:
 
 ### Serializer
 
-Add a serializer that can serialize a certain media type. The `to_hash` function will be called _explicitely_ in your
+Add a serializer that can serialize a certain media type. The `to_hash` function will be called _explicitly_ in your
 controller, so you can always use your own, favourite serializer here to do the hefty work. This gem does provide some
 easy tools, usually enough to do most serialization.
   
@@ -74,6 +87,7 @@ current `view` (e.g. `create`, `index`, `collection` or ` `). This means that by
 the latest version you `MediaType` is reporting. The best way to supply your media type is via the [`media_types`](https://github.com/SleeplessByte/media-types-ruby) gem.
 
 #### Multiple suffixes, one serializer
+
 By default, the media renderer will automatically detect and inject the following:
 - suffix `+json` if you define `to_json`
 - suffix `+xml` if you define `to_xml`
@@ -86,6 +100,7 @@ If you don't define `to_html`, but try to make a serializer output `html`, it wi
 `serializers/wrapper/html_wrapper.html.erb` (or any other templating extension).
 
 #### Migrations (versions)
+
 If the serializer can serialize multiple _versions_, you can supply them through `additional_versions: [2, 3]`. A way to
 handle this is via backward migrations, meaning you'll migrate from the current version back to an older version.
 
@@ -129,7 +144,7 @@ end
 ### Controller
 
 In your base controller, or wherever you'd like, include the `MediaTypes::Serialization` concern. In the controller that
-uses the serialization, you need to explicitely `accept` it if you want to use the built-in lookups.
+uses the serialization, you need to explicitly `accept` it if you want to use the built-in lookups.
 
 ```ruby
 require 'media_types/serialization'
@@ -155,7 +170,8 @@ class BookController < ApiController
 end
 ```
 
-If you have normalized your resources (e.g. into `@resource`), you may render resources like so:
+If you have normalized your resources (e.g. into `@resource`), you can add a `render_media` method to your
+`BaseController` and render resources like so:
 
 ```ruby
 class ApiController < ActionController::API
@@ -165,13 +181,13 @@ class ApiController < ActionController::API
 end
 ```
 
-And then call `render_media` whenever you're ready to render
+And then call `render_media` whenever you're ready to render.
 
 ### HTML output
 
 You can define HTML outputs for example by creating a serializer that accepts `text/html`. At this moment, there may
-only be one (1) active HTML serializer for each action; a single controller can have multiple registered, but never for
-the same preconditions in `before_action` (because how else would it know which one to pick?).
+only be one (1) active `text/html` serializer for each action; a single controller can have multiple registered, but 
+never for the same preconditions in `before_action` (because how else would it know which one to pick?).
 
 Use the `render` method to generate your HTML:
 ```ruby
@@ -197,8 +213,26 @@ end
 ```
 
 You can change the default `wrapper` / `to_html` implementation by setting:
+
 ```ruby
 ::MediaTypes::Serialization.html_wrapper_layout = '/path/to/wrapper/layout'
+```
+
+### API viewer
+
+There is a special media type exposed by this gem at `::MediaTypes::Serialization::MEDIA_TYPE_API_VIEWER`. If you're
+using `rails` you'll want to register it. You can do so manually, or by `require`ing:
+
+```ruby
+require 'media_types/serialization/media_type/register'
+```
+
+If you do so, the `.api_viewer` format becomes available for all actions that call into `render media:`.
+
+You can change the default `wrapper` implementation by setting:
+
+```ruby
+::MediaTypes::Serialization.api_viewer_layout = '/path/to/wrapper/layout'
 ```
 
 ### Wrapping output

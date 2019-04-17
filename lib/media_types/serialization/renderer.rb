@@ -2,11 +2,17 @@ require 'media_types/serialization/no_content_type_given'
 require 'active_support/core_ext/object/blank'
 require 'active_support/core_ext/hash/conversions'
 
+require 'media_types/serialization'
+
 module MediaTypes
   module Serialization
     # noinspection RubyConstantNamingConvention
     Renderer = lambda do |obj, options|
-      content_type = options[:content_type] || options[:mime_type]&.to_s || self.content_type&.to_s || obj.current_media_type.to_s
+      content_type = options[:content_type] ||
+        options[:mime_type]&.to_s ||
+        self.content_type&.to_s ||
+        obj.current_media_type.to_s
+
       raise NoContentTypeGiven if content_type.blank?
 
       self.content_type ||= content_type
@@ -15,8 +21,11 @@ module MediaTypes
         obj.respond_to?(:to_json) ? obj.to_json(options) : obj.to_hash.to_json(options)
       elsif content_type.ends_with?('+xml') || Mime::Type.lookup(content_type) == Mime[:xml]
         obj.respond_to?(:to_xml) ? obj.to_xml(options) : obj.to_hash.to_xml(options)
-      elsif Mime::Type.lookup(content_type) == Mime[:html]
-        obj.respond_to?(:to_html) ? obj.to_html : obj.to_s
+      elsif Mime::Type.lookup(content_type) == Mime[:html] && obj.respond_to?(:to_html)
+        obj.to_html
+      elsif content_type === MEDIA_TYPE_API_VIEWER && obj.respond_to?(:to_api_viewer)
+        self.content_type = 'text/html'
+        obj.to_api_viewer
       else
         obj.to_body(content_type: options.delete(:content_type) || content_type, **options)
       end

@@ -38,11 +38,11 @@ module MediaTypes
           end
 
           [media_type_view].concat(
-              media_type_versions.map { |version| media_type_view&.version(version) },
-              media_type_versions.flat_map do |version|
-                (suffixes).map { |suffix| media_type_view&.suffix(suffix)&.version(version) }
-              end,
-              additionals
+            media_type_versions.map { |version| media_type_view&.version(version) },
+            media_type_versions.flat_map do |version|
+              (suffixes).map { |suffix| media_type_view&.suffix(suffix)&.version(version) }
+            end,
+            additionals
           ).compact.uniq
         end
 

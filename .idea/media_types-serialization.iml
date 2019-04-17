@@ -36,6 +36,7 @@
     <orderEntry type="library" scope="PROVIDED" name="activestorage (v5.2.2, ruby-2.5.3-p105) [gem]" level="application" />
     <orderEntry type="library" scope="PROVIDED" name="activesupport (v5.2.2.1, ruby-2.5.3-p105) [gem]" level="application" />
     <orderEntry type="library" scope="PROVIDED" name="arel (v9.0.0, ruby-2.5.3-p105) [gem]" level="application" />
+    <orderEntry type="library" scope="PROVIDED" name="awesome_print (v1.8.0, ruby-2.5.3-p105) [gem]" level="application" />
     <orderEntry type="library" scope="PROVIDED" name="builder (v3.2.3, ruby-2.5.3-p105) [gem]" level="application" />
     <orderEntry type="library" scope="PROVIDED" name="bundler (v2.0.1, ruby-2.5.3-p105) [gem]" level="application" />
     <orderEntry type="library" scope="PROVIDED" name="concurrent-ruby (v1.1.4, ruby-2.5.3-p105) [gem]" level="application" />
