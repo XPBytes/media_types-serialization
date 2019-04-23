@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.1
+
+- 🚨 Update nokogiri: 1.10.1 → 1.10.3
+
 ## 0.6.0
 
 - Add `accept_api_viewer` which is on by default
