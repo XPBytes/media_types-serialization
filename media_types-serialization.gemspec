@@ -39,7 +39,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'activesupport', '>= 4.0.0'
   spec.add_dependency 'media_types', '>= 0.6.0'
   spec.add_dependency 'oj', '>= 3.5.0'
-  spec.add_dependency 'http_headers-accept', '< 1.0.0'
+  spec.add_dependency 'http_headers-accept', '>= 0.2.2', '< 1.0.0'
   spec.add_dependency 'http_headers-link', '< 1.0.0'
 
   spec.add_development_dependency 'awesome_print'

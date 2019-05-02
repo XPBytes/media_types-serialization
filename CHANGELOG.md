@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.2
+
+- 🐛 Update `http_headers-accept`: 0.2.1 → 0.2.2
+
 ## 0.6.1
 
 - 🚨 Update nokogiri: 1.10.1 → 1.10.3

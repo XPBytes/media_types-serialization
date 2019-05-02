@@ -1,10 +1,10 @@
 PATH
   remote: .
   specs:
-    media_types-serialization (0.6.1)
+    media_types-serialization (0.6.2)
       actionpack (>= 4.0.0)
       activesupport (>= 4.0.0)
-      http_headers-accept (< 1.0.0)
+      http_headers-accept (>= 0.2.2, < 1.0.0)
       http_headers-link (< 1.0.0)
       media_types (>= 0.6.0)
       oj (>= 3.5.0)
@@ -61,7 +61,7 @@ GEM
     erubi (1.8.0)
     globalid (0.4.2)
       activesupport (>= 4.2.0)
-    http_headers-accept (0.2.1)
+    http_headers-accept (0.2.2)
       http_headers-utils (>= 0.2.0, < 1.0.0)
     http_headers-link (0.2.1)
       http_headers-utils (>= 0.2.0, < 1.0.0)
