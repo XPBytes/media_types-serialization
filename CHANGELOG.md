@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.7.0.beta1
+
+- 🐛 Fix non-serializer media types replacing known serializers
+- 🐛 Fix passed in media type for HTML as fallback (actual type instead of html)
+- 🐛 Fix passed in media type for API Viewer (actual type instead of API Viewer)
+- 🐛 Fix migrations failing on versioning text/html
+- 🐛 Fix HTML non-overwrite logic (first one wins, unless there is an override)
+- ✨ Add `api_viewer_media_type` param for api viewers to set the serialization type
+- ✨ Add api viewer links in the api viewer:
+  - For representations: use `.api_viewer` unless it's `.html`
+  - For body links: use .api_viewer unless it already has a `.format`
+  - For HTTP links: leave them alone
+  
 ## 0.6.2
 
 - 🐛 Update `http_headers-accept`: 0.2.1 → 0.2.2

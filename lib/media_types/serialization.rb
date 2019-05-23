@@ -5,6 +5,7 @@ require 'action_controller/metal/mime_responds'
 require 'action_dispatch/http/mime_type'
 require 'active_support/concern'
 require 'active_support/core_ext/module/attribute_accessors'
+require 'active_support/core_ext/object/blank'
 
 require 'http_headers/accept'
 
@@ -14,6 +15,22 @@ require 'media_types/serialization/base'
 require 'media_types/serialization/wrapper/html_wrapper'
 
 require 'awesome_print'
+
+require 'delegate'
+
+class MediaTypeApiViewer < SimpleDelegator
+  def initialize(inner_media)
+    super inner_media
+  end
+
+  def to_s
+    'application/vnd.xpbytes.api-viewer.v1'
+  end
+
+  def serialize_as
+    __getobj__
+  end
+end
 
 module MediaTypes
   module Serialization
@@ -33,6 +50,9 @@ module MediaTypes
 
       ##
       # Accept serialization using the passed in +serializer+ for the given +view+
+      #
+      # By default will also accept the first call to this as HTML
+      # By default will also accept the first call to this as Api Viewer
       #
       # @see #freeze_accepted_media!
       #
@@ -55,21 +75,34 @@ module MediaTypes
         accept_api_viewer(serializer, view: view, overwrite: false, **filter_opts) if accept_api_viewer
       end
 
+      ##
+      # Accept serialization using the passed in +serializer+ for the given +view+ as text/html
+      #
+      # Always overwrites the current acceptor of text/html. The last call to this, for the giben +filter_opts+ will win
+      # the serialization.
+      #
       def accept_html(serializer, view: [nil], overwrite: true, **filter_opts)
         before_action(**filter_opts) do
-          resolved_media_types(serializer, view: view) do |_, media_view, registered, register|
+          resolved_media_types(serializer, view: view) do |media_type, media_view, registered, register|
             break if registered.call(MEDIA_TYPE_HTML) && !overwrite
-            register.call(MEDIA_TYPE_HTML, wrap_html(serializer, media_view: media_view, media_type: MEDIA_TYPE_HTML))
+            register.call(MEDIA_TYPE_HTML, wrap_html(serializer, media_view: media_view, media_type: media_type))
           end
         end
       end
 
+      ##
+      # Same as +accept_html+ but then for Api Viewer
+      #
       def accept_api_viewer(serializer, view: [nil], overwrite: true, **filter_opts)
         before_action(**filter_opts) do
-          resolved_media_types(serializer, view: view) do |_, media_view, registered, register|
+          fixate_content_type = (params[:api_viewer_media_type] || '').gsub(' ', '+')
+          resolved_media_types(serializer, view: view) do |media_type, media_view, registered, register|
             break if registered.call(MEDIA_TYPE_API_VIEWER) && !overwrite
-            register.call(MEDIA_TYPE_API_VIEWER, wrap_html(serializer, media_view: media_view, media_type: MEDIA_TYPE_API_VIEWER))
-            break
+            if fixate_content_type == '' || fixate_content_type == media_type.to_s
+              wrapped_media_type = MediaTypeApiViewer.new(fixate_content_type.presence || media_type)
+              register.call(MEDIA_TYPE_API_VIEWER, wrap_html(serializer, media_view: media_view, media_type: wrapped_media_type))
+              break
+            end
           end
         end
       end
@@ -88,8 +121,10 @@ module MediaTypes
       #
       def accept_without_serialization(*mimes, **filter_opts)
         before_action(**filter_opts) do
-          self.serializers = Array(mimes).each_with_object(Hash(serializers)) do |mime, res|
-            res[(Mime::Type.lookup_by_extension(mime) || mime).to_s] = nil
+          self.serializers = Hash(serializers)
+          mimes.each do |mime|
+            media_type = Mime::Type.lookup_by_extension(mime) || mime
+            serializers[String(media_type)] = nil
           end
         end
       end
@@ -143,12 +178,20 @@ module MediaTypes
     def respond_to_accept(&block)
       respond_to do |format|
         serializers.each_key do |mime|
-          format.custom(mime, &block)
+          result = yield mime: mime, format: format
+          next unless result
+          format.custom(mime) do
+            result.call
+          end
         end
 
         format.any { raise_no_accept_serializer }
       end
     end
+
+    # def respond_to_viewer(&block)
+    #  TODO: special collector that matches on api_viewer_content_type matches too
+    # end
 
     def request_accept
       @request_accept ||= HttpHeaders::Accept.new(request.get_header(HEADER_ACCEPT) || '')
@@ -168,11 +211,21 @@ module MediaTypes
       raise NoMediaTypeSerializers unless serializers
 
       # Rails negotiation
+      #
+      # The problem with rails negotiation is that it has its own logic for some of the handling that is not
+      # spec compliant. If there is an exact match, that's fine and we leave it like this;
+      #
       if serializers[request.format.to_s]
         return serializers[request.format.to_s]
       end
 
       # Ruby negotiation
+      #
+      # This is similar to the respond_to logic. It sorts the accept values and tries to match against each option.
+      # Currently does not allow for */* or type/*.
+      #
+      # respond_to_accept do ... end
+      #
       request.accepts.each do |mime_type|
         next unless serializers.key?(mime_type.to_s)
         # Override Rails selected format
@@ -186,7 +239,7 @@ module MediaTypes
     def resolved_media_types(serializer, view:)
       self.serializers = Hash(serializers)
 
-      registered = serializers.method(:key)
+      registered = serializers.method(:key?)
       register = serializers.method(:[]=)
 
       Array(view).each do |media_view|
@@ -208,16 +261,22 @@ module MediaTypes
 
     def wrap_html(serializer, media_view:, media_type:)
       lambda do |*args, **opts|
+        inner_media_type = media_type.try(:serialize_as) || media_type
+
         media_serializer = wrap_media(
           serializer,
           media_view: media_view,
-          media_type: media_type
+          media_type: inner_media_type
         ).call(*args, **opts)
+
+        override_mime_type = media_type.respond_to?(:serialize_as) ?
+          "#{media_type.to_s} (#{media_type.serialize_as})" :
+          media_type.to_s
 
         Wrapper::HtmlWrapper.new(
           media_serializer,
           view: media_view,
-          mime_type: media_type.to_s,
+          mime_type: override_mime_type,
           representations: serializers.keys,
           url_context: request.original_fullpath.chomp(".#{request.format.symbol}")
         )

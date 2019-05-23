@@ -9,7 +9,14 @@
     <%= stylesheet_pack_tag 'application', media: 'all', 'data-turbolinks-track': 'reload' %>
     <%= javascript_pack_tag 'application', 'data-turbolinks-track': 'reload' %>
   </head>
-
+<%
+def replace_link(full_match)
+  href = full_match[9...-1]
+  '"href": "%s"' % link_to(href.gsub('%7B', '{').gsub('%7D', '}'), href).html_safe
+rescue
+  full_match
+end
+%>
   <body class="container h-100" style="overflow: auto; justify-content: start">
 
     <%# Remove the # below to show a logo %>
@@ -65,10 +72,7 @@
                 .gsub('<', '&lt;')
                 .gsub('>', '&gt;')
                 .gsub('\n', "<br>")%>
-<%= code.gsub(/"href": "(http(?:s?:\/\/.*?))"/) { |full_match|
-  href = full_match[9...-1]
-  '"href": "' + link_to(href.gsub('%7B', '{').gsub('%7D', '}'), href).html_safe + '"' rescue full_match
-}.html_safe %></code></pre>
+<%= code.gsub(/"href": "(http(?:s?:\/\/.*?))"/, &method(:replace_link)).html_safe %></code></pre>
         </div>
       </article>
 

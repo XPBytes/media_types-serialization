@@ -24,8 +24,9 @@ module MediaTypes
       elsif Mime::Type.lookup(content_type) == Mime[:html] && obj.respond_to?(:to_html)
         obj.to_html
       elsif content_type === MEDIA_TYPE_API_VIEWER && obj.respond_to?(:to_api_viewer)
-        self.content_type = 'text/html'
-        obj.to_api_viewer
+        obj.to_api_viewer(content_type: options[:api_viewer_content_type]).tap do
+          self.content_type = 'text/html' # because the api viewer will not be seen as
+        end
       else
         obj.to_body(content_type: options.delete(:content_type) || content_type, **options)
       end
