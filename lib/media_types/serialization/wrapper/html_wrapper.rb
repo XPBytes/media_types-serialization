@@ -24,12 +24,13 @@ module MediaTypes
           to_api_viewer(layout: ::MediaTypes::Serialization.html_wrapper_layout)
         end
 
-        def to_api_viewer(layout: ::MediaTypes::Serialization.api_viewer_layout)
+        def to_api_viewer(content_type: nil, layout: ::MediaTypes::Serialization.api_viewer_layout)
           ActionController::Base.render(
             layout || 'serializers/wrapper/html_wrapper',
             assigns: {
               serializer: self,
               view: view,
+              content_type: content_type,
               **render_options
             }
           )

@@ -9,7 +9,7 @@ module MediaTypes
       end
 
       def call(result, mime_type, view)
-        return result if matches_current_mime_type?(view: view, mime_type: mime_type)
+        return result if mime_type.is_a?(String) || matches_current_mime_type?(view: view, mime_type: mime_type)
 
         migrations.reduce(result) do |migrated, (version, migration)|
           migrated = migration.call(migrated)
