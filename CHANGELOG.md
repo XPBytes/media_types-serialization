@@ -16,7 +16,7 @@
   - For representations: use `.api_viewer` unless it's `.html`
   - For body links: use .api_viewer unless it already has a `.format`
   - For HTTP links: leave them alone
-  
+
 ## 0.6.2
 
 - 🐛 Update `http_headers-accept`: 0.2.1 → 0.2.2
@@ -77,7 +77,7 @@
 ## 0.2.0
 
 - Change `method_missing` and base methods for `Base`
-- Add test for `HtmlWrapper` 
+- Add test for `HtmlWrapper`
 
 ## 0.1.0
 

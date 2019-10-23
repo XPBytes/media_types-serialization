@@ -113,7 +113,7 @@ class MediaTypes::ObjectWrapperTest < Minitest::Test
 
   def do_request_chain(content_type, request: create_request(content_type))
     @controller.dispatch(:action, request, @response)
-    assert_equal content_type, @response.content_type
+    assert_equal content_type, @response.content_type.split(';').first
   end
 
   def test_it_serializes_one

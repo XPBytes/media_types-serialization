@@ -127,7 +127,7 @@ class MediaTypes::RootKeyTest < Minitest::Test
     })
 
     @controller.dispatch(:action, request, @response)
-    assert_equal content_type, @response.content_type
+    assert_equal content_type, @response.content_type.split(';').first
 
     result = Oj.load(@response.body)
     assert_equal( ['my_resource'], result.keys )
@@ -143,7 +143,7 @@ class MediaTypes::RootKeyTest < Minitest::Test
     })
 
     @controller.dispatch(:action, request, @response)
-    assert_equal content_type, @response.content_type
+    assert_equal content_type, @response.content_type.split(';').first
 
     result = Oj.load(@response.body)
     assert_equal( ['my_resources'], result.keys )
@@ -159,7 +159,7 @@ class MediaTypes::RootKeyTest < Minitest::Test
     })
 
     @controller.dispatch(:action, request, @response)
-    assert_equal content_type, @response.content_type
+    assert_equal content_type, @response.content_type.split(';').first
 
     result = Oj.load(@response.body)
     assert_equal( ['my_resources'], result.keys )
@@ -175,7 +175,7 @@ class MediaTypes::RootKeyTest < Minitest::Test
     })
 
     @controller.dispatch(:action, request, @response)
-    assert_equal content_type, @response.content_type
+    assert_equal content_type, @response.content_type.split(';').first
 
     result = Oj.load(@response.body)
     assert_equal( ['very_special'], result.keys )

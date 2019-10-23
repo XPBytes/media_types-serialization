@@ -119,7 +119,7 @@ class MediaTypes::SerializationTest < Minitest::Test
     })
 
     @controller.dispatch(:action, request, @response)
-    assert_equal content_type, @response.content_type
+    assert_equal content_type, @response.content_type.split(';').first
 
     result = Oj.load(@response.body)
     assert_equal( { "my_resource" => { "name" => "test serialization", "number" => 1, "items" => [] } }, result )
@@ -135,7 +135,7 @@ class MediaTypes::SerializationTest < Minitest::Test
     })
 
     @controller.dispatch(:action, request, @response)
-    assert_equal content_type, @response.content_type
+    assert_equal content_type, @response.content_type.split(';').first
 
     result = Hash.from_xml(@response.body)["hash"]
     assert_equal( { "name" => "test serialization", "number" => 1, "items" => [], "source" => "to_xml" }, result )
@@ -154,7 +154,7 @@ class MediaTypes::SerializationTest < Minitest::Test
 
     @controller.dispatch(:action, request, @response)
 
-    assert_equal content_type, @response.content_type
+    assert_equal content_type, @response.content_type.split(';').first
     assert_equal '<code>{"name":"test serialization","number":1,"items":[],"source":"to_html"}</code>', @response.body
   end
 
