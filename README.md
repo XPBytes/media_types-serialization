@@ -73,7 +73,7 @@ class Book < ApplicationRecord
       { href: context.api_book_url(serializable) }
     end
 
-    def extract_links(view:)
+    def extract_links
       { 
         'self': extract_self,
         'signatures': { href: context.api_book_signatures_url(serializable) }

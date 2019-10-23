@@ -58,7 +58,7 @@ class MediaTypes::ObjectWrapperTest < Minitest::Test
       { href: '/item' }
     end
 
-    def extract_links(*)
+    def extract_view_links(*)
       {
         self: extract_self,
         google: { href: 'https://google.com', foo: 'bar' }

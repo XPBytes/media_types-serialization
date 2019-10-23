@@ -34,7 +34,7 @@ module MediaTypes
         protected
 
         def extract_links(view: current_view)
-          return __getobj__.send(:extract_links, view: view) if ::MediaTypes::Serialization.collect_links_for_collection
+          return __getobj__.send(:extract_set_links, view: view) if ::MediaTypes::Serialization.collect_links_for_collection
           {}
         end
 

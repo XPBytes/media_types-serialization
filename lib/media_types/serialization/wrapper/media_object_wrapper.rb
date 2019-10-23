@@ -43,7 +43,7 @@ module MediaTypes
         end
 
         def extract_links(view: current_view)
-          __getobj__.send(:extract_links, view: view)
+          __getobj__.send(:extract_set_links, view: view)
         end
 
         def root_key(view: current_view)
