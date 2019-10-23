@@ -59,7 +59,7 @@ class MediaTypes::RootKeyTest < Minitest::Test
       { href: '/item' }
     end
 
-    def extract_links(view: current_view)
+    def extract_view_links(view: current_view)
       {
         self: extract_self(view: view),
         google: { href: 'https://google.com', foo: 'bar' }

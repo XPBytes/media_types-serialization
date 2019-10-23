@@ -59,9 +59,11 @@ class MediaTypes::IndexWrapperTest < Minitest::Test
       { href: '/item' }
     end
 
-    def extract_links(view: current_view)
-      return { href: '/path/to/index' } if view == ::MediaTypes::INDEX_VIEW
+    def extract_set_links(view: current_view)
+      { href: '/path/to/index' }
+    end
 
+    def extract_links
       {
         self: extract_self(view: view),
         google: { href: 'https://google.com', foo: 'bar' }

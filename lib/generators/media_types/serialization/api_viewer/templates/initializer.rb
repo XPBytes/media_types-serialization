@@ -14,8 +14,8 @@ require 'media_types/serialization/media_type/register'
 # to define +_links+ for the root level from your serializer.
 #
 #
-# MediaTypes::Serialization.collect_links_for_collection = true
-# MediaTypes::Serialization.collect_links_for_index = true
+MediaTypes::Serialization.collect_links_for_collection = true
+MediaTypes::Serialization.collect_links_for_index = true
 
 ##
 # The API Viewer template is provided if you used the generator. You can change

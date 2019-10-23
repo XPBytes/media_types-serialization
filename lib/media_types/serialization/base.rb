@@ -65,7 +65,7 @@ module MediaTypes
       end
 
       def header_links(view: current_view)
-        extract_links(view: view)
+        extract_view_links(view: view)
       end
 
       def set(serializable)
@@ -78,8 +78,19 @@ module MediaTypes
       attr_accessor :context
       attr_writer :current_media_type, :current_view, :serializable
 
-      def extract_links(view: current_view)
+      def extract_links
         {}
+      end
+
+      def extract_set_links(view: current_view)
+        {}
+      end
+
+      def extract_view_links(view: current_view)
+        return extract_set_links(view: view) if view == ::MediaTypes::INDEX_VIEW
+        return extract_set_links(view: view) if view == ::MediaTypes::COLLECTION_VIEW
+
+        extract_links
       end
 
       def extract(extractable, *keys)

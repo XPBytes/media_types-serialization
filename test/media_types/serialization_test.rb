@@ -65,7 +65,7 @@ class MediaTypes::SerializationTest < Minitest::Test
       to_hash.merge(source: 'to_json').to_json(options)
     end
 
-    def extract_links(*)
+    def extract_view_links(*)
       { google: { href: 'https://google.com', foo: 'bar' } }
     end
   end

@@ -59,9 +59,11 @@ class MediaTypes::CollectionWrapperTest < Minitest::Test
       { href: '/item' }
     end
 
-    def extract_links(view: current_view)
-      return { href: '/path/to/collection' } if view == ::MediaTypes::COLLECTION_VIEW
+    def extract_set_links(view: current_view)
+      { href: '/path/to/collection' }
+    end
 
+    def extract_links
       {
         self: extract_self(view: view),
         google: { href: 'https://google.com', foo: 'bar' }
