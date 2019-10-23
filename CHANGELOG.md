@@ -1,6 +1,7 @@
 # Changelog
 
 ## 0.7.0
+
 - ✨ Add `extract_set_links` to serializer for collection links
 
 ## 0.7.0.beta1
