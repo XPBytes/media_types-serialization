@@ -29,7 +29,7 @@ module MediaTypes
       def to_link_header
         entries = header_links(view: current_view).each_with_index.map do |(rel, links), index|
           links = [links] unless links.is_a?(Array)
-          
+
           links.map do |opts|
             next unless opts.is_a?(String) || opts.try(:[], :href)
             href = opts.is_a?(String) ? opts : opts.delete(:href)
