@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.7.1
+## 0.8.0
 
 - ✨ Add support for having multiple link headers with the same `rel`
 
