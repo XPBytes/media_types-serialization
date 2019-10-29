@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.0
+
+- ✨ Add support for having multiple link headers with the same `rel`
+
 ## 0.7.0
 
 - ✨ Add `extract_set_links` to serializer for collection links
