@@ -11,8 +11,10 @@ module MediaTypes
 
         delegate :to_json, to: :to_hash
         delegate :class, :set, :current_view, :current_media_type, to: :__getobj__
+        attr_accessor :inner_serializer
 
         def initialize(serializer)
+          self.inner_serializer = serializer.dup
           __setobj__ serializer
         end
 
@@ -40,7 +42,7 @@ module MediaTypes
         end
 
         def item_hash(item)
-          __getobj__.instance_exec do
+          inner_serializer.instance_exec do
             set(item).send(:extract_self)
           end
         end
