@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.1
+
+- 🐛 Fix collection wrappers sometimes sending the wrong data to serializers
+
 ## 0.8.0
 
 - ✨ Add support for having multiple link headers with the same `rel`
