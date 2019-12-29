@@ -49,7 +49,7 @@ module MediaTypes
     class_methods do
 
       ##
-      # Accept serialization using the passed in +serializer+ for the given +view+
+      # Allow input serialization using the passed in +serializer+ for the given +view+
       #
       # By default will also accept the first call to this as HTML
       # By default will also accept the first call to this as Api Viewer
@@ -63,7 +63,7 @@ module MediaTypes
       # @param [Boolean] accept_api_viewer if true, accepts this serializer as base for the api viewer
       # @param [Boolean] accept_html if true, accepts this serializer as the html fallback
       #
-      def accept_serialization(serializer, view: [nil], accept_api_viewer: true, accept_html: accept_api_viewer, **filter_opts)
+      def allow_output_serializer(serializer, view: [nil], accept_api_viewer: true, accept_html: accept_api_viewer, **filter_opts)
         before_action(**filter_opts) do
           resolved_media_types(serializer, view: view) do |media_type, media_view, _, register|
             opts = { media_type: media_type, media_view: media_view }
@@ -73,6 +73,11 @@ module MediaTypes
 
         accept_html(serializer, view: view, overwrite: false, **filter_opts) if accept_html
         accept_api_viewer(serializer, view: view, overwrite: false, **filter_opts) if accept_api_viewer
+      end
+      
+      def accept_serialization(serializer, view: [nil], accept_api_viewer: true, accept_html: accept_api_viewer, **filter_opts)
+        STDERR.puts "accept_serialization is deprecated, please use `allow_output_serializer`. Called from #{caller[0]}." if ENV['RAILS_ENV'] == 'test'
+        allow_output_serializer(serializer, view: view, accept_api_viewer: accept_api_viewer, accept_html: accept_html, **filter_opts)
       end
 
       ##
@@ -132,15 +137,23 @@ module MediaTypes
       ##
       # Freezes additions to the serializes and notifies the controller what it will be able to respond to.
       #
-      def freeze_accepted_media!
+      def freeze_io!
         before_action do
           # If the responders gem is available, this freezes what a controller can respond to
           if self.class.respond_to?(:respond_to)
             self.class.respond_to(*Hash(serializers).keys.map { |type| Mime::Type.lookup(type) })
           end
 
+          deserializers |= []
+
           serializers.freeze
+          deserializers.freeze
         end
+      end
+      
+      def freeze_accepted_media!
+        STDERR.puts "freeze_accepted_media! is deprecated, please use `freeze_io!`. Called from #{caller[0]}." if ENV['RAILS_ENV'] == 'test'
+        freeze_io!
       end
     end
     # rubocop:enable Metrics/BlockLength
@@ -148,7 +161,7 @@ module MediaTypes
     included do
       protected
 
-      attr_accessor :serializers
+      attr_accessor :serializers, :deserializers
     end
 
     protected

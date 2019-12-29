@@ -84,8 +84,8 @@ class MediaTypes::IndexWrapperTest < Minitest::Test
   end
 
   class FakeController < BaseController
-    accept_serialization(MyResourceSerializer, view: [:index])
-    freeze_accepted_media!
+    allow_output_serializer(MyResourceSerializer, view: [:index])
+    freeze_io!
 
     def action
       input = request.body

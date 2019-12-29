@@ -84,8 +84,8 @@ class MediaTypes::CollectionWrapperTest < Minitest::Test
   end
 
   class FakeController < BaseController
-    accept_serialization(MyResourceSerializer, view: [:collection])
-    freeze_accepted_media!
+    allow_output_serializer(MyResourceSerializer, view: [:collection])
+    freeze_io!
 
     def action
       input = request.body

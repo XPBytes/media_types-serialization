@@ -89,9 +89,9 @@ class MediaTypes::RootKeyTest < Minitest::Test
   end
 
   class FakeController < BaseController
-    accept_serialization(MyResourceSerializer, view: [nil, :index, :collection])
-    accept_serialization(MySpecialSerializer, view: [:special])
-    freeze_accepted_media!
+    allow_output_serializer(MyResourceSerializer, view: [nil, :index, :collection])
+    allow_output_serializer(MySpecialSerializer, view: [:special])
+    freeze_io!
 
     def action
       input = request.body
