@@ -84,6 +84,7 @@ class MediaTypes::SerializationTest < Minitest::Test
 
   class FakeController < BaseController
     allow_output_serializer(MyResourceSerializer)
+    allow_all_input
     freeze_io!
 
     def action

@@ -39,6 +39,7 @@ module MediaTypes
                    :html_wrapper_layout, :api_viewer_layout
 
     extend ActiveSupport::Concern
+    include ActiveSupport::Rescuable
 
     HEADER_ACCEPT         = 'HTTP_ACCEPT'
 
@@ -49,12 +50,12 @@ module MediaTypes
     class_methods do
 
       ##
-      # Allow input serialization using the passed in +serializer+ for the given +view+
+      # Allow output serialization using the passed in +serializer+ for the given +view+
       #
       # By default will also accept the first call to this as HTML
       # By default will also accept the first call to this as Api Viewer
       #
-      # @see #freeze_accepted_media!
+      # @see #freeze_io!
       #
       # @param serializer the serializer to use for serialization. Needs to respond to #to_body, but may respond to
       #   #to_json if the type accepted is ...+json, or #to_xml if the type accepted is ...+xml or #to_html if the type
@@ -78,6 +79,26 @@ module MediaTypes
       def accept_serialization(serializer, view: [nil], accept_api_viewer: true, accept_html: accept_api_viewer, **filter_opts)
         STDERR.puts "accept_serialization is deprecated, please use `allow_output_serializer`. Called from #{caller[0]}." if ENV['RAILS_ENV'] == 'test'
         allow_output_serializer(serializer, view: view, accept_api_viewer: accept_api_viewer, accept_html: accept_html, **filter_opts)
+      end
+
+      ##
+      # Allow input serialization using the passed in +serializer+ for the given +view+
+      #
+      # @see #freeze_io!
+      #
+      # @param serializer the serializer to use for deserialization
+      # @param [(String | NilClass|)[]] view the views it should serializer for. Use nil for no view
+      #
+      def allow_input_serializer(serializer, view: [nil], **filter_opts)
+        before_action(**filter_opts) do
+
+        end
+      end
+
+      def allow_all_input(**filter_opts)
+        before_action(**filter_opts) do
+          self.input_serializer = true
+        end
       end
 
       ##
@@ -148,20 +169,26 @@ module MediaTypes
 
           serializers.freeze
           deserializers.freeze
+
+          throw NoInputSerializerError, "This endpoint does not accept #{request.content_type}. Acceptable values are: [#{deserializers}]" if request.body and not self.input_serializer
         end
       end
       
       def freeze_accepted_media!
         STDERR.puts "freeze_accepted_media! is deprecated, please use `freeze_io!`. Called from #{caller[0]}." if ENV['RAILS_ENV'] == 'test'
+        input_serializer = true # backwards compatibility.
         freeze_io!
       end
     end
     # rubocop:enable Metrics/BlockLength
 
     included do
+      rescue_from NoInputSerializerError, with: :unsupported_media_type
+
       protected
 
-      attr_accessor :serializers, :deserializers
+      attr_accessor :serializers, :deserializers, :input_serializer
+
     end
 
     protected
