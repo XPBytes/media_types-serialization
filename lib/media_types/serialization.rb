@@ -92,9 +92,11 @@ module MediaTypes
       def allow_input_serializer(serializer, view: [nil], **filter_opts)
         before_action(**filter_opts) do
           self.deserializers ||= []
-          types = serializer.media_type.map(&:to_s)
-          self.deserializers = self.deserializers.concat(types)
-          self.input_serializer = serializer if types.include? request.content_type
+          view.each do |v|
+            types = serializer.media_types(view: v)
+            self.deserializers = self.deserializers.concat(types)
+            self.input_serializer = serializer if types.include? request.content_type
+          end
         end
       end
 

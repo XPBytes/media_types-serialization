@@ -27,6 +27,10 @@ class MediaTypes::DeserializationTest < Minitest::Test
     media_type 'my_resource', defaults: { version: 1, suffix: :json }
 
     validations do
+      view 'raw' do
+        version 2 do
+        end
+      end
       version 2 do
       end
       version 1 do
@@ -35,7 +39,7 @@ class MediaTypes::DeserializationTest < Minitest::Test
   end
 
   class MyResourceSerializer < ::MediaTypes::Serialization::Base
-    serializes_media_type MyResourceMediaType, additional_versions: [1]
+    serializes_media_type MyResourceMediaType, additional_versions: [1, 2]
 
     def to_hash
       {
