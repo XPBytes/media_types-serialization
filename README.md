@@ -156,9 +156,9 @@ end
 
 class BookController < ApiController
 
-  accept_serialization(Book::BasicSerializer, accept_html: false, only: %i[show])
-  accept_html(Book::CoverHtmlSerializer, only: %i[show])
-  freeze_accepted_media!
+  allow_output_serialization(Book::BasicSerializer, accept_html: false, only: %i[show])
+  allow_output_html(Book::CoverHtmlSerializer, only: %i[show])
+  freeze_io!
       
   def show 
     # If you do NOT pass in the content_type, it will re-use the current content_type of the response if set or
