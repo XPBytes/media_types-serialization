@@ -75,7 +75,7 @@ module MediaTypes
         allow_output_html(serializer, view: view, overwrite: false, **filter_opts) if accept_html
         allow_output_api_viewer(serializer, view: view, overwrite: false, **filter_opts) if accept_api_viewer
       end
-      
+
       def accept_serialization(serializer, view: [nil], accept_api_viewer: true, accept_html: accept_api_viewer, **filter_opts)
         STDERR.puts "accept_serialization is deprecated, please use `allow_output_serializer`. Called from #{caller[0]}." if ENV['RAILS_ENV'] == 'test'
         allow_output_serializer(serializer, view: view, accept_api_viewer: accept_api_viewer, accept_html: accept_html, **filter_opts)
@@ -118,7 +118,7 @@ module MediaTypes
           end
         end
       end
-      
+
       def accept_html(serializer, view: [nil], overwrite: true, **filter_opts)
         STDERR.puts "accept_html is deprecated, please use `allow_output_html`. Called from #{caller[0]}." if ENV['RAILS_ENV'] == 'test'
         allow_output_html(serializer, view: view, overwrite: overwrite, **filter_opts)
@@ -140,7 +140,7 @@ module MediaTypes
           end
         end
       end
-      
+
       def accept_api_viewer(serializer, view: [nil], overwrite: true, **filter_opts)
         STDERR.puts "accept_api_viewer is deprecated, please use `allow_output_api_viewer`. Called from #{caller[0]}." if ENV['RAILS_ENV'] == 'test'
         allow_output_api_viewer(serializer, view: view, overwrite: overwrite, **filter_opts)
@@ -184,17 +184,17 @@ module MediaTypes
 
           serializers.freeze
           self.deserializers.freeze
-          
+
           if request.body and not self.input_serializer
             if self.deserializers.length > 0
-              raise NoInputSerializerError, "This endpoint does not accept #{request.content_type} with this http method. Acceptable values for the Content-Type header are: #{self.deserializers}" 
+              raise NoInputSerializerError, "This endpoint does not accept #{request.content_type} with this http method. Acceptable values for the Content-Type header are: #{self.deserializers}"
             else
-              raise NoInputSerializerError, "This endpoint does not accept any input with this http method. Please call without a request body." 
+              raise NoInputSerializerError, "This endpoint does not accept any input with this http method. Please call without a request body."
             end
           end
         end
       end
-      
+
       def freeze_accepted_media!
         STDERR.puts "freeze_accepted_media! is deprecated, please use `freeze_io!`. Called from #{caller[0]}." if ENV['RAILS_ENV'] == 'test'
         self.input_serializer = true # backwards compatibility.
