@@ -72,8 +72,8 @@ module MediaTypes
           end
         end
 
-        accept_html(serializer, view: view, overwrite: false, **filter_opts) if accept_html
-        accept_api_viewer(serializer, view: view, overwrite: false, **filter_opts) if accept_api_viewer
+        allow_output_html(serializer, view: view, overwrite: false, **filter_opts) if accept_html
+        allow_output_api_viewer(serializer, view: view, overwrite: false, **filter_opts) if accept_api_viewer
       end
       
       def accept_serialization(serializer, view: [nil], accept_api_viewer: true, accept_html: accept_api_viewer, **filter_opts)
@@ -105,12 +105,12 @@ module MediaTypes
       end
 
       ##
-      # Accept serialization using the passed in +serializer+ for the given +view+ as text/html
+      # Allows serialization using the passed in +serializer+ for the given +view+ as text/html
       #
       # Always overwrites the current acceptor of text/html. The last call to this, for the giben +filter_opts+ will win
       # the serialization.
       #
-      def accept_html(serializer, view: [nil], overwrite: true, **filter_opts)
+      def allow_output_html(serializer, view: [nil], overwrite: true, **filter_opts)
         before_action(**filter_opts) do
           resolved_media_types(serializer, view: view) do |media_type, media_view, registered, register|
             break if registered.call(MEDIA_TYPE_HTML) && !overwrite
@@ -118,11 +118,16 @@ module MediaTypes
           end
         end
       end
+      
+      def accept_html(serializer, view: [nil], overwrite: true, **filter_opts)
+        STDERR.puts "accept_html is deprecated, please use `allow_output_html`. Called from #{caller[0]}." if ENV['RAILS_ENV'] == 'test'
+        allow_output_html(serializer, view: view, overwrite: overwrite, **filter_opts)
+      end
 
       ##
-      # Same as +accept_html+ but then for Api Viewer
+      # Same as +allow_output_html+ but then for Api Viewer
       #
-      def accept_api_viewer(serializer, view: [nil], overwrite: true, **filter_opts)
+      def allow_output_api_viewer(serializer, view: [nil], overwrite: true, **filter_opts)
         before_action(**filter_opts) do
           fixate_content_type = (params[:api_viewer_media_type] || '').gsub(' ', '+')
           resolved_media_types(serializer, view: view) do |media_type, media_view, registered, register|
@@ -134,6 +139,11 @@ module MediaTypes
             end
           end
         end
+      end
+      
+      def accept_api_viewer(serializer, view: [nil], overwrite: true, **filter_opts)
+        STDERR.puts "accept_api_viewer is deprecated, please use `allow_output_api_viewer`. Called from #{caller[0]}." if ENV['RAILS_ENV'] == 'test'
+        allow_output_api_viewer(serializer, view: view, overwrite: overwrite, **filter_opts)
       end
 
       ##
@@ -187,7 +197,7 @@ module MediaTypes
       
       def freeze_accepted_media!
         STDERR.puts "freeze_accepted_media! is deprecated, please use `freeze_io!`. Called from #{caller[0]}." if ENV['RAILS_ENV'] == 'test'
-        input_serializer = true # backwards compatibility.
+        self.input_serializer = true # backwards compatibility.
         freeze_io!
       end
     end
