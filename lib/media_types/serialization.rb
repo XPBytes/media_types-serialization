@@ -91,7 +91,10 @@ module MediaTypes
       #
       def allow_input_serializer(serializer, view: [nil], **filter_opts)
         before_action(**filter_opts) do
-
+          self.deserializers ||= []
+          types = serializer.media_type.map(&:to_s)
+          self.deserializers = self.deserializers.concat(types)
+          self.input_serializer = serializer if types.include? request.content_type
         end
       end
 
@@ -159,18 +162,26 @@ module MediaTypes
       # Freezes additions to the serializes and notifies the controller what it will be able to respond to.
       #
       def freeze_io!
+        rescue_from NoInputSerializerError, with: :unsupported_media_type
+
         before_action do
           # If the responders gem is available, this freezes what a controller can respond to
           if self.class.respond_to?(:respond_to)
             self.class.respond_to(*Hash(serializers).keys.map { |type| Mime::Type.lookup(type) })
           end
 
-          deserializers |= []
+          self.deserializers ||= []
 
           serializers.freeze
-          deserializers.freeze
-
-          throw NoInputSerializerError, "This endpoint does not accept #{request.content_type}. Acceptable values are: [#{deserializers}]" if request.body and not self.input_serializer
+          self.deserializers.freeze
+          
+          if request.body and not self.input_serializer
+            if self.deserializers.length > 0
+              raise NoInputSerializerError, "This endpoint does not accept #{request.content_type} with this http method. Acceptable values for the Content-Type header are: #{self.deserializers}" 
+            else
+              raise NoInputSerializerError, "This endpoint does not accept any input with this http method. Please call without a request body." 
+            end
+          end
         end
       end
       
@@ -183,8 +194,6 @@ module MediaTypes
     # rubocop:enable Metrics/BlockLength
 
     included do
-      rescue_from NoInputSerializerError, with: :unsupported_media_type
-
       protected
 
       attr_accessor :serializers, :deserializers, :input_serializer
