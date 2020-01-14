@@ -184,6 +184,7 @@ end
 And then call `render_media` whenever you're ready to render.
 
 #### Input
+
 If you want clients to be able to send data to the server in their POST or PUT requests, you can whitelist media types.
 
 ```ruby
