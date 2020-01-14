@@ -183,6 +183,19 @@ end
 
 And then call `render_media` whenever you're ready to render.
 
+#### Input
+If you want clients to be able to send data to the server in their POST or PUT requests, you can whitelist media types.
+
+```ruby
+class BookController < ApiController
+
+  allow_output_serialization(Book::BasicSerializer, accept_html: true, only: %i[show])
+  allow_input_serialization(Book::BasicSerializer, only: %i[create])
+  freeze_io!
+```
+
+If you do not want to perform input whitelisting you can use `allow_all_input` instead of `allow_input_serialization`.
+
 ### HTML output
 
 You can define HTML outputs for example by creating a serializer that accepts `text/html`. At this moment, there may
