@@ -77,7 +77,7 @@ module MediaTypes
       end
 
       def accept_serialization(serializer, view: [nil], accept_api_viewer: true, accept_html: accept_api_viewer, **filter_opts)
-        STDERR.puts "accept_serialization is deprecated, please use `allow_output_serializer`. Called from #{caller(1..1).first}." if ENV['RAILS_ENV'] == 'test'
+        ActiveSupport::Deprecation.deprecation_warning("`accept_serialization` is deprecated", 'use `allow_output_serializer` instead', caller)
         allow_output_serializer(serializer, view: view, accept_api_viewer: accept_api_viewer, accept_html: accept_html, **filter_opts)
       end
 
@@ -122,7 +122,7 @@ module MediaTypes
       end
 
       def accept_html(serializer, view: [nil], overwrite: true, **filter_opts)
-        STDERR.puts "accept_html is deprecated, please use `allow_output_html`. Called from #{caller(1..1).first}." if ENV['RAILS_ENV'] == 'test'
+        ActiveSupport::Deprecation.deprecation_warning("`accept_html` is deprecated", 'use `allow_output_html` instead', caller)
         allow_output_html(serializer, view: view, overwrite: overwrite, **filter_opts)
       end
 
@@ -144,7 +144,7 @@ module MediaTypes
       end
 
       def accept_api_viewer(serializer, view: [nil], overwrite: true, **filter_opts)
-        STDERR.puts "accept_api_viewer is deprecated, please use `allow_output_api_viewer`. Called from #{caller(1..1).first}." if ENV['RAILS_ENV'] == 'test'
+        ActiveSupport::Deprecation.deprecation_warning("`accept_api_viewer` is deprecated", 'use `allow_output_api_viewer` instead', caller)
         allow_output_api_viewer(serializer, view: view, overwrite: overwrite, **filter_opts)
       end
 
@@ -195,7 +195,7 @@ module MediaTypes
       end
 
       def freeze_accepted_media!
-        STDERR.puts "freeze_accepted_media! is deprecated, please use `freeze_io!`. Called from #{caller(1..1).first}." if ENV['RAILS_ENV'] == 'test'
+        ActiveSupport::Deprecation.deprecation_warning("`freeze_accepted_media!` is deprecated", 'use `freeze_io!` instead', caller)
         self.input_serializer = true # backwards compatibility.
         freeze_io!
       end
@@ -302,8 +302,8 @@ module MediaTypes
 
       Array(view).each do |media_view|
         media_view = String(media_view)
-        Array(serializer.media_type(view: media_view)).each do |media_type|
-          yield media_type, media_view, registered, register
+        serializer.media_type_constructable.available_validations.each do |validator|
+          yield validator, media_view, registered, register
         end
       end
     end

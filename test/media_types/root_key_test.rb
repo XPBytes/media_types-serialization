@@ -21,11 +21,11 @@ class MediaTypes::RootKeyTest < Minitest::Test
   class MyResourceMediaType
     include ::MediaTypes::Dsl
 
-    def self.base_format
-      'application/vnd.mydomain.%<type>s.v%<version>s.%<view>s+%<suffix>s'
+    def self.organisation
+      'mydomain1'
     end
 
-    media_type 'my_resource', defaults: { version: 1, suffix: :json }
+    use_name 'my_resource', defaults: { suffix: :json }
 
     validations do
       version 1 do
@@ -37,6 +37,18 @@ class MediaTypes::RootKeyTest < Minitest::Test
         end
 
         attribute :source, optional: true
+
+        view :collection do
+          empty
+        end
+
+        view :special do
+          empty
+        end
+
+        view :index do
+          empty
+        end
       end
     end
   end
@@ -67,9 +79,26 @@ class MediaTypes::RootKeyTest < Minitest::Test
     end
   end
 
+  class MySpecialResourceValidator
+    include MediaTypes::Dsl
+
+    def self.organisation
+      'acme'
+    end
+
+    use_name 'my_resource'
+
+    validations do
+      view :special do
+        version 1 do
+          empty
+        end
+      end
+    end
+  end
 
   class MySpecialSerializer < MyResourceSerializer
-    serializes_media_type MyResourceMediaType, additional_versions: [1]
+    serializes_media_type MySpecialResourceValidator
 
     def self.root_key(*)
       :very_special
@@ -119,23 +148,24 @@ class MediaTypes::RootKeyTest < Minitest::Test
   end
 
   def test_it_serializes_with_as_singular_root_key
-    content_type = MyResourceMediaType.to_constructable.version(1).to_s
+    content_type = MyResourceMediaType.version(1).identifier
     Mime::Type.register(content_type, :my)
 
     request = ActionDispatch::Request.new({
       Rack::RACK_INPUT => { title: 'test serialization', count: 1, data: {} },
-      'HTTP_ACCEPT' => content_type.to_s
+      'HTTP_ACCEPT' => content_type
     })
 
     @controller.dispatch(:action, request, @response)
     assert_equal content_type, @response.content_type.split(';').first
+    puts [content_type, @response.body].to_s
 
     result = Oj.load(@response.body)
     assert_equal( ['my_resource'], result.keys )
   end
 
   def test_it_pluralizes_index_view
-    content_type = MyResourceMediaType.to_constructable.view(:index).version(1).to_s
+    content_type = MyResourceMediaType.view(:index).version(1).identifier
     Mime::Type.register(content_type, :my_index)
 
     request = ActionDispatch::Request.new({
@@ -151,7 +181,7 @@ class MediaTypes::RootKeyTest < Minitest::Test
   end
 
   def test_it_pluralizes_collection_view
-    content_type = MyResourceMediaType.to_constructable.view(:collection).version(1).to_s
+    content_type = MyResourceMediaType.view(:collection).version(1).identifier
     Mime::Type.register(content_type, :my_collection)
 
     request = ActionDispatch::Request.new({
@@ -167,7 +197,7 @@ class MediaTypes::RootKeyTest < Minitest::Test
   end
 
   def test_it_can_override_root_key
-    content_type = MyResourceMediaType.to_constructable.version(1).view(:special).to_s
+    content_type = MySpecialResourceValidator.version(1).view(:special).identifier
     Mime::Type.register(content_type, :my)
 
     request = ActionDispatch::Request.new({

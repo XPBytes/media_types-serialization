@@ -24,11 +24,11 @@ class MediaTypes::SerializationTest < Minitest::Test
   class MyResourceMediaType
     include ::MediaTypes::Dsl
 
-    def self.base_format
-      'application/vnd.mydomain.%<type>s.v%<version>s.%<view>s+%<suffix>s'
+    def self.organisation
+      'mydomain'
     end
 
-    media_type 'my_resource', defaults: { version: 1, suffix: :json }
+    use_name 'my_resource', defaults: { suffix: :json }
 
     validations do
       version 1 do
@@ -124,22 +124,6 @@ class MediaTypes::SerializationTest < Minitest::Test
 
     result = Oj.load(@response.body)
     assert_equal( { "my_resource" => { "name" => "test serialization", "number" => 1, "items" => [] } }, result )
-  end
-
-  def test_it_serializes_via_dedicated_method
-    content_type = MyResourceMediaType.to_constructable.version(1).suffix(:xml).to_s
-    Mime::Type.register(content_type, :my_special_symbol)
-
-    request = ActionDispatch::Request.new({
-      Rack::RACK_INPUT => { title: 'test serialization', count: 1, data: {} },
-      'HTTP_ACCEPT' => "#{content_type}, text/html; q=0.1"
-    })
-
-    @controller.dispatch(:action, request, @response)
-    assert_equal content_type, @response.content_type.split(';').first
-
-    result = Hash.from_xml(@response.body)["hash"]
-    assert_equal( { "name" => "test serialization", "number" => 1, "items" => [], "source" => "to_xml" }, result )
   end
 
   def test_it_only_serializes_what_it_knows

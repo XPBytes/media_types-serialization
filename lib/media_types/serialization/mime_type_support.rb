@@ -51,7 +51,7 @@ module MediaTypes
         protected
 
         def serializes_media_type(media_type, additional_versions: [])
-          self.media_type_constructable = media_type&.to_constructable
+          self.media_type_constructable = media_type
           self.media_type_versions = additional_versions
         end
 

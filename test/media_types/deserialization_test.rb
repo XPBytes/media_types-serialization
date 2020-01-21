@@ -20,11 +20,11 @@ class MediaTypes::DeserializationTest < Minitest::Test
   class MyResourceMediaType
     include ::MediaTypes::Dsl
 
-    def self.base_format
-      'application/vnd.mydomain.%<type>s.v%<version>s.%<view>s+%<suffix>s'
+    def self.organisation
+      'mydomain'
     end
 
-    media_type 'my_resource', defaults: { version: 1, suffix: :json }
+    use_name 'my_resource', defaults: { suffix: :json }
 
     validations do
       view 'raw' do
