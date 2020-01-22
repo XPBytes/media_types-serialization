@@ -86,7 +86,7 @@ class MediaTypes::RootKeyTest < Minitest::Test
       'acme'
     end
 
-    use_name 'my_resource'
+    use_name 'my_resource', defaults: { suffix: :json }
 
     validations do
       view :special do
@@ -198,6 +198,7 @@ class MediaTypes::RootKeyTest < Minitest::Test
 
   def test_it_can_override_root_key
     content_type = MySpecialResourceValidator.version(1).view(:special).identifier
+    puts content_type
     Mime::Type.register(content_type, :my)
 
     request = ActionDispatch::Request.new({
