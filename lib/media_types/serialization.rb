@@ -174,7 +174,7 @@ module MediaTypes
       # Freezes additions to the serializes and notifies the controller what it will be able to respond to.
       #
       def freeze_io!
-        rescue_from NoInputSerializerError, with: :unsupported_media_type
+        rescue_from NoInputSerializerError, with: :unsupported_media_type if defined? rescue_from
 
         before_action do
           # If the responders gem is available, this freezes what a controller can respond to
