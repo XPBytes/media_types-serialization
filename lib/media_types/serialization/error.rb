@@ -4,7 +4,7 @@ module MediaTypes
     class Error < StandardError
     end
 
-    class NoInputSerializerError < StandardError
+    class NoInputSerializerError < Error
     end
   end
 end
