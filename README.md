@@ -41,11 +41,9 @@ Serializers help you in converting a ruby object to a representation matching a 
 
 ### Creating a serializer
 
-Make sure you have defined a validator using the [media-types](https://github.com/SleeplessByte/media-types-ruby) gem. You can then craete a serializer for it as follows:
-
 ```ruby
 class BookSerializer < MediaTypes::Serialization::Base
-  validator BookValidator # BookValidator is a media type validator.
+  unvalidated 'application/vnd.acme.book'
 
   # outputs with a Content-Type of application/vnd.acme.book.v1+json
   output version: 1 do |obj, version, context|
@@ -58,7 +56,7 @@ class BookSerializer < MediaTypes::Serialization::Base
 end
 ```
 
-To convert a ruby object to a validated json representation:
+To convert a ruby object to a json representation:
 
 ```ruby
 class Book
@@ -71,6 +69,47 @@ book.title = 'Everything, abridged'
 BookSerializer.serialize(book, BookValidator.version(1), nil)
 # => { "book": { "title": "Everything, abridged" } }
 ```
+
+### Validations
+
+Right now the serializer does not validate incoming or outgoing information. This can cause issues when you accidentally emit non-conforming data that people start to depend on. To make sure you don't do that you can specify a [Media Type validator](https://github.com/SleeplessByte/media-types-ruby):
+
+```ruby
+require 'media_types'
+
+class BookValidator
+  include MediaTypes::Dsl
+
+  def self.organisation
+    'acme'
+  end
+
+  use_name 'book'
+
+  validations do
+    version 1 do
+      attribute :book do
+        attribute :title, String
+      end
+    end
+  end
+end
+
+class BookSerializer < MediaTypes::Serialization::Base
+  validator BookValidator
+
+  # outputs with a Content-Type of application/vnd.acme.book.v1+json
+  output version: 1 do |obj, version, context|
+    {
+      book: {
+        title: obj.title
+      }
+    }
+  end
+end
+```
+
+For more information, see the [Media Types docs](https://github.com/SleeplessByte/media-types-ruby).
 
 ### Controller integration
 
@@ -277,44 +316,6 @@ TODO?
 
 ### Serializer
 
-  
-```ruby
-class Book < ApplicationRecord
-  class Serializer < MediaTypes::Serialization::Base
-    serializes_media_type MyNamespace::MediaTypes::Book
-    
-    def fields
-      if current_media_type.create?
-        return %i[name author]
-      end
-    
-     %i[name author updated_at views]
-    end
-
-    def to_hash
-      extract(serializable, fields).tap do |result|
-        result[:_links] = extract_links unless current_media_type.create?
-      end
-    end
-
-    alias to_h to_hash
-    
-    protected
-    
-    def extract_self
-      # A serializer gets the controller as context
-      { href: context.api_book_url(serializable) }
-    end
-
-    def extract_links
-      { 
-        'self': extract_self,
-        'signatures': { href: context.api_book_signatures_url(serializable) }
-      }
-    end
-  end
-end
-```
 By default, The passed in `MediaType` gets converted into a constructable (via `to_constructable`) and invoked with the
 current `view` (e.g. `create`, `index`, `collection` or ` `). This means that by default it will be able to serialize 
 the latest version you `MediaType` is reporting. The best way to supply your media type is via the [`media_types`](https://github.com/SleeplessByte/media-types-ruby) gem.
@@ -332,67 +333,7 @@ content-type.
 If you don't define `to_html`, but try to make a serializer output `html`, it will be rendered in the layout at: 
 `serializers/wrapper/html_wrapper.html.erb` (or any other templating extension).
 
-#### Migrations (versions)
-
-If the serializer can serialize multiple _versions_, you can supply them through `additional_versions: [2, 3]`. A way to
-handle this is via backward migrations, meaning you'll migrate from the current version back to an older version.
-
 ```ruby
-class Book < ApplicationRecord
-  class BasicSerializer < MediaTypes::Serialization::Base
-  
-    # Maybe it's currently at version 2, so tell the base that this also serializes version 1
-    # You can also use a range to_a: (1...4).to_a
-    # 
-    serializes_media_type MyNamespace::MediaTypes::Book, additional_versions: [1]
-    
-    def to_hash
-      # This enables migrations right when it's being serialized
-      # 
-      migrate do
-        extract(serializable, fields).tap do |result|
-          result[:_links] = extract_links unless current_media_type.create?
-        end
-      end
-    end
-  
-    # This defines migrations. You can use classes, commands or anything else to execute this code
-    # but inline migrations work fine if you don't have a lot of them. 
-    backward_migrations do
-    
-      # This is called if the version requested is 1 _or_ lower. This means you can compose your migrations. The 
-      # migrations with a _lower_ version than the requested version are NOT executed.
-      version 1 do |result|
-        result.tap do |r|
-          if r.key?(:views)
-            r[:views_count] = r.delete(:views)
-          end
-        end
-      end
-    end
-  end
-end
-```
-
-### Controller
-
-In your base controller, or wherever you'd like, include the `MediaTypes::Serialization` concern. In the controller that
-uses the serialization, you need to explicitly `accept` it if you want to use the built-in lookups.
-
-```ruby
-require 'media_types/serialization'
-require 'media_types/serialization/renderer/register'
-
-class ApiController < ActionController::API
-  include MediaTypes::Serialization
-end
-
-class BookController < ApiController
-
-  allow_output_serialization(Book::BasicSerializer, accept_html: false, only: %i[show])
-  allow_output_html(Book::CoverHtmlSerializer, only: %i[show])
-  freeze_io!
-      
   def show 
     # If you do NOT pass in the content_type, it will re-use the current content_type of the response if set or
     # use the default content type of the serializer. This is fine if you only output one Content-Type in the
@@ -402,19 +343,6 @@ class BookController < ApiController
   end
 end
 ```
-
-If you have normalized your resources (e.g. into `@resource`), you can add a `render_media` method to your
-`BaseController` and render resources like so:
-
-```ruby
-class ApiController < ActionController::API
-  def render_media(**opts)
-    render media: serialize_media(@resource), content_type: request.format.to_s, **opts
-  end
-end
-```
-
-And then call `render_media` whenever you're ready to render.
 
 #### Input
 
