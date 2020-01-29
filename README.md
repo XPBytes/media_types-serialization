@@ -121,6 +121,46 @@ BookSerializer.serialize(book, BookValidator.version(2), nil)
 # => { "book": { "title": "Everything, abridged", "description": "Mu" } }
 ```
 
+### Links
+
+When making [HATEOAS](https://en.wikipedia.org/wiki/HATEOAS) compliant applications it's very useful to include `Link` headers in your response so clients can use a `HEAD` request instead of having to fetch the entire resource. Serializers have convenience methods to help with this:
+
+```ruby
+class BookSerializer < MediaTypes::Serialization::Base
+  validator BookValidator # BookValidator is a media type validator.
+
+  # outputs with a content-type of application/vnd.acme.book.v1+json
+  output versions: [1, 2, 3], do |obj, version, context|
+    attribute :book do
+      link rel: :author, href: obj.author_url if version >= 3
+
+      attribute :title, obj.title
+      attribute :description, obj.description if version >= 2
+    end
+  end
+end
+```
+
+This returns the following response:
+
+```ruby
+BookSerializer.serialize(book, BookValidator.version(2), nil)
+# header = Link: <https://example.org>; rel="author"
+# => {
+#      "book": {
+#        "_links": [
+#          { "href": "https://example.org", "rel": "author" }
+#        ],
+#        "title": "Everything, abridged",
+#        "description": "Mu"
+#      }
+#    }
+```
+
+### Raw output
+
+TODO?
+
 --- old
 
 ### Serializer
