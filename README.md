@@ -95,6 +95,32 @@ class BookController < ActionController::API
 end
 ```
 
+### Versioning
+
+To help with supporting older versions, serializers have a [DSL](https://en.wikipedia.org/wiki/Domain-specific_language) to construct json objects:
+
+```ruby
+class BookSerializer < MediaTypes::Serialization::Base
+  validator BookValidator # BookValidator is a media type validator.
+
+  # outputs with a content-type of application/vnd.acme.book.v1+json
+  output versions: [1, 2], do |obj, version, context|
+    attribute :book do
+      attribute :title, obj.title
+      attribute :description, obj.description if version >= 2
+    end
+  end
+end
+```
+
+```ruby
+BookSerializer.serialize(book, BookValidator.version(1), nil)
+# => { "book": { "title": "Everything, abridged" } }
+
+BookSerializer.serialize(book, BookValidator.version(2), nil)
+# => { "book": { "title": "Everything, abridged", "description": "Mu" } }
+```
+
 --- old
 
 ### Serializer
