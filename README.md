@@ -4,7 +4,7 @@
 [![Gem Version](https://badge.fury.io/rb/media_types-serialization.svg)](https://badge.fury.io/rb/media_types-serialization)
 [![MIT license](http://img.shields.io/badge/license-MIT-brightgreen.svg)](http://opensource.org/licenses/MIT)
 
-Add media types supported serialization using your favourite serializer
+Add versioned serialization and deserialization to your rails projects.
 
 ## Installation
 
@@ -37,7 +37,38 @@ This will:
 
 ## Usage
 
-In order to use media type serialization you only need to do 2 things:
+Serializers help you in converting a ruby object to a representation matching a specified [Media Type validator](https://github.com/SleeplessByte/media-types-ruby) and the other way around.
+
+### Creating a serializer
+
+Make sure you have defined a validator using the [media-types](https://github.com/SleeplessByte/media-types-ruby) gem. You can then craete a serializer for it as follows:
+
+```ruby
+class BookSerializer << MediaTypes::Serialization::Base
+  validator BookValidator # BookValidator is a media type validator.
+
+  # outputs with a content-type of application/vnd.acme.book.v1+json
+  output version: 1, do |obj, version, context|
+    {
+      book: {
+        title: obj.title
+      }
+    }
+  end
+end
+```
+
+To convert a ruby object to a validated json representation:
+
+```ruby
+
+book_struct = Struct.new(:title)
+book = book_struct.new('Everything, abridged')
+# => #<struct title="Everything, abridged">
+
+BookSerializer.serialize(book, BookValidator.version(1))
+# => { "book": { "title": "Everything, abridged" } }
+```
 
 ### Serializer
 
