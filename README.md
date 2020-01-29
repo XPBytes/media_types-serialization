@@ -47,8 +47,8 @@ Make sure you have defined a validator using the [media-types](https://github.co
 class BookSerializer < MediaTypes::Serialization::Base
   validator BookValidator # BookValidator is a media type validator.
 
-  # outputs with a content-type of application/vnd.acme.book.v1+json
-  output version: 1, do |obj, version, context|
+  # outputs with a Content-Type of application/vnd.acme.book.v1+json
+  output version: 1 do |obj, version, context|
     {
       book: {
         title: obj.title
@@ -95,16 +95,19 @@ class BookController < ActionController::API
 end
 ```
 
+While using the controller integration the context will always be set to the current controller. This allows you to construct urls.
+
+Example?
+
 ### Versioning
 
 To help with supporting older versions, serializers have a [DSL](https://en.wikipedia.org/wiki/Domain-specific_language) to construct json objects:
 
 ```ruby
 class BookSerializer < MediaTypes::Serialization::Base
-  validator BookValidator # BookValidator is a media type validator.
+  validator BookValidator
 
-  # outputs with a content-type of application/vnd.acme.book.v1+json
-  output versions: [1, 2], do |obj, version, context|
+  output versions: [1, 2] do |obj, version, context|
     attribute :book do
       attribute :title, obj.title
       attribute :description, obj.description if version >= 2
@@ -127,12 +130,11 @@ When making [HATEOAS](https://en.wikipedia.org/wiki/HATEOAS) compliant applicati
 
 ```ruby
 class BookSerializer < MediaTypes::Serialization::Base
-  validator BookValidator # BookValidator is a media type validator.
+  validator BookValidator
 
-  # outputs with a content-type of application/vnd.acme.book.v1+json
-  output versions: [1, 2, 3], do |obj, version, context|
+  output versions: [1, 2, 3] do |obj, version, context|
     attribute :book do
-      link rel: :author, href: obj.author_url if version >= 3
+      link rel: :self, href: context.book_url(obj) if version >= 3
 
       attribute :title, obj.title
       attribute :description, obj.description if version >= 2
@@ -144,12 +146,12 @@ end
 This returns the following response:
 
 ```ruby
-BookSerializer.serialize(book, BookValidator.version(2), nil)
-# header = Link: <https://example.org>; rel="author"
+BookSerializer.serialize(book, BookValidator.version(3), nil)
+# header = Link: <https://example.org/>; rel="self"
 # => {
 #      "book": {
 #        "_links": [
-#          { "href": "https://example.org", "rel": "author" }
+#          { "href": "https://example.org", "rel": "self" }
 #        ],
 #        "title": "Everything, abridged",
 #        "description": "Mu"
@@ -157,7 +159,115 @@ BookSerializer.serialize(book, BookValidator.version(2), nil)
 #    }
 ```
 
+### Collections
+
+There are convenience methods for serializing arrays of objects based on a template.
+
+#### Indexes
+
+An index is a collection of urls that point to members of the array. The index method automatically generates it based on the self links defined in the default view of the same version.
+
+```ruby
+class BookSerializer < MediaTypes::Serialization::Base
+  validator BookValidator
+
+  output versions: [1, 2, 3] do |obj, version, context|
+    attribute :book do
+      link rel: :self, href: context.book_url(obj) if version >= 3
+
+      attribute :title, obj.title
+      attribute :description, obj.description if version >= 2
+    end
+  end
+
+  output view: :index, version: 3 do |arr, version, context|
+    attribute :books do
+      link rel: :self, href: context.book_index_url
+      
+      index arr 
+    end
+  end
+end
+
+```ruby
+BookSerializer.serialize([book], BookValidator.view(:index).version(3), nil)
+# header = Link: <https://example.org/index>; rel="self"
+# => {
+#      "books": {
+#        "_links": [
+#          { "href": "https://example.org/index", "rel": "self" }
+#        ],
+#        "_index": [
+#          { "href": "https://example.org" }
+#        ]
+#      }
+#    }
+```
+
+#### Collections
+
+A collection inlines the member objects. The collection method automatically generates it based on the default view of the same version.
+
+```ruby
+class BookSerializer < MediaTypes::Serialization::Base
+  validator BookValidator
+
+  output versions: [1, 2, 3] do |obj, version, context|
+    attribute :book do
+      link rel: :self, href: context.book_url(obj) if version >= 3
+
+      attribute :title, obj.title
+      attribute :description, obj.description if version >= 2
+    end
+  end
+
+  output view: :index, version: 3 do |arr, version, context|
+    attribute :books do
+      link rel: :self, href: context.book_index_url
+      
+      index arr 
+    end
+  end
+  
+  output view: :collection, version: 3 do |arr, version, context|
+    attribute :books do
+      link rel: :self, href: context.book_collection_url
+      
+      collection arr 
+    end
+  end
+end
+
+```ruby
+BookSerializer.serialize([book], BookValidator.view(:collection).version(3), nil)
+# header = Link: <https://example.org/collection>; rel="self"
+# => {
+#      "books": {
+#        "_links": [
+#          { "href": "https://example.org/collection", "rel": "self" }
+#        ],
+#        "_embedded": [
+#          {
+#            "_links": [
+#              { "href": "https://example.org", "rel": "self" }
+#            ],
+#            "title": "Everything, abridged",
+#            "description": "Mu"
+#          }
+#        ]
+#      }
+#    }
+```
+
+### Input deserialization
+
+TODO?
+
 ### Raw output
+
+TODO?
+
+### Raw input
 
 TODO?
 
@@ -165,9 +275,6 @@ TODO?
 
 ### Serializer
 
-Add a serializer that can serialize a certain media type. The `to_hash` function will be called _explicitly_ in your
-controller, so you can always use your own, favourite serializer here to do the hefty work. This gem does provide some
-easy tools, usually enough to do most serialization.
   
 ```ruby
 class Book < ApplicationRecord
