@@ -44,7 +44,7 @@ Serializers help you in converting a ruby object to a representation matching a 
 Make sure you have defined a validator using the [media-types](https://github.com/SleeplessByte/media-types-ruby) gem. You can then craete a serializer for it as follows:
 
 ```ruby
-class BookSerializer << MediaTypes::Serialization::Base
+class BookSerializer < MediaTypes::Serialization::Base
   validator BookValidator # BookValidator is a media type validator.
 
   # outputs with a content-type of application/vnd.acme.book.v1+json
@@ -61,14 +61,41 @@ end
 To convert a ruby object to a validated json representation:
 
 ```ruby
+class Book
+  attr_accessor :title
+end
 
-book_struct = Struct.new(:title)
-book = book_struct.new('Everything, abridged')
-# => #<struct title="Everything, abridged">
+book = Book.new
+book.title = 'Everything, abridged'
 
-BookSerializer.serialize(book, BookValidator.version(1))
+BookSerializer.serialize(book, BookValidator.version(1), nil)
 # => { "book": { "title": "Everything, abridged" } }
 ```
+
+### Controller integration
+
+You can integrate the serialization system in rails, giving you automatic [Content-Type negotiation](https://en.wikipedia.org/wiki/Content_negotiation) using the `Accept` header:
+
+```ruby
+require 'media_types/serialization'
+require 'media_types/serialization/renderer/register'
+
+class BookController < ActionController::API
+  include MediaTypes::Serialization
+
+  allow_output_serialization(BookSerializer, only: %i[show])
+  freeze_io!
+      
+  def show 
+    book = Book.new
+    book.title = 'Everything, abridged'
+
+    render media: serialize_media(book), content_type: request.format.to_s
+  end
+end
+```
+
+--- old
 
 ### Serializer
 
