@@ -188,6 +188,7 @@ class BookSerializer < MediaTypes::Serialization::Base
     end
   end
 end
+```
 
 ```ruby
 BookSerializer.serialize([book], BookValidator.view(:index).version(3), nil)
