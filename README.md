@@ -4,7 +4,7 @@
 [![Gem Version](https://badge.fury.io/rb/media_types-serialization.svg)](https://badge.fury.io/rb/media_types-serialization)
 [![MIT license](http://img.shields.io/badge/license-MIT-brightgreen.svg)](http://opensource.org/licenses/MIT)
 
-Add versioned serialization and deserialization to your rails projects.
+`respond_to` on steroids. Add versioned serialization and deserialization to your rails projects.
 
 ## Installation
 
@@ -137,6 +137,13 @@ end
 While using the controller integration the context will always be set to the current controller. This allows you to construct urls.
 
 Example?
+
+#### media type aliasing
+application/json -> something
+text/html -> something
+
+#### redirect to api viewer?
+example
 
 ### Versioning
 
@@ -307,6 +314,8 @@ TODO?
 ### Raw output
 
 TODO?
+
+example with links!
 
 ### Raw input
 
