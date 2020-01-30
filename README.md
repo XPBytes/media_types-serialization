@@ -66,7 +66,7 @@ end
 book = Book.new
 book.title = 'Everything, abridged'
 
-BookSerializer.serialize(book, BookValidator.version(1), nil)
+BookSerializer.serialize(book, BookValidator.version(1), context: nil)
 # => { "book": { "title": "Everything, abridged" } }
 ```
 
@@ -163,10 +163,10 @@ end
 ```
 
 ```ruby
-BookSerializer.serialize(book, BookValidator.version(1), nil)
+BookSerializer.serialize(book, BookValidator.version(1), context: nil)
 # => { "book": { "title": "Everything, abridged" } }
 
-BookSerializer.serialize(book, BookValidator.version(2), nil)
+BookSerializer.serialize(book, BookValidator.version(2), context: nil)
 # => { "book": { "title": "Everything, abridged", "description": "Mu" } }
 ```
 
@@ -192,7 +192,7 @@ end
 This returns the following response:
 
 ```ruby
-BookSerializer.serialize(book, BookValidator.version(3), nil)
+BookSerializer.serialize(book, BookValidator.version(3), context: controller)
 # header = Link: <https://example.org/>; rel="self"
 # => {
 #      "book": {
@@ -237,7 +237,7 @@ end
 ```
 
 ```ruby
-BookSerializer.serialize([book], BookValidator.view(:index).version(3), nil)
+BookSerializer.serialize([book], BookValidator.view(:index).version(3), context: controller)
 # header = Link: <https://example.org/index>; rel="self"
 # => {
 #      "books": {
@@ -287,7 +287,7 @@ end
 ```
 
 ```ruby
-BookSerializer.serialize([book], BookValidator.view(:collection).version(3), nil)
+BookSerializer.serialize([book], BookValidator.view(:collection).version(3), context: controller)
 # header = Link: <https://example.org/collection>; rel="self"
 # => {
 #      "books": {
