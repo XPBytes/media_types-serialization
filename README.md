@@ -205,6 +205,8 @@ BookSerializer.serialize(book, BookValidator.version(3), context: controller)
 #    }
 ```
 
+TODO: hidden do?
+
 ### Collections
 
 There are convenience methods for serializing arrays of objects based on a template.
