@@ -358,7 +358,7 @@ class BookSerializer < MediaTypes::Serialization::Base
     book.description = 'Not available'
     book.description = json['book']['description'] if version >= 2
 
-    # Make sure not to save here but only save in the controller
+    # Best practise is to only save in the controller.
     book
   end
 end
@@ -512,7 +512,26 @@ end
 - [`MediaTypes::Validation`](https://github.com/XPBytes/media_types-validation): :heavy_exclamation_mark: Response validations according to a media-type
 
 ## API
-TODO
+
+### Serializer definition
+
+#### `unvalidated( prefix )`
+
+Disabled validation for this serializer. Prefix is of the form `application/vnd.<organisation>.<name>`.
+
+Either unvalidated or validator must be used while defining a serializer.
+
+#### `validator( media_type_validator )`
+
+Enabled validation for this serializer using a [Media Type Validator](https://github.com/SleeplessByte/media-types-ruby).
+
+Either validator or unvalidated must be used while defining a serializer.
+
+#### `output( view:, version:, versions:) do |obj, version, context|`
+
+Defines a serialization block. Either version or versions can be set. View should be a symbol.
+
+Obj is the object to be serialized, version is the negotiated version and context is the context passed in from the serialize function. When using the controller integration, context is the current controller.
 
 ## Development
 
