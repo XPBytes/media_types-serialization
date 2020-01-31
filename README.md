@@ -136,15 +136,6 @@ end
 
 While using the controller integration the context will always be set to the current controller. This allows you to construct urls.
 
-Example?
-
-#### media type aliasing
-application/json -> something
-text/html -> something
-
-#### redirect to api viewer?
-example
-
 ### Versioning
 
 To help with supporting older versions, serializers have a [DSL](https://en.wikipedia.org/wiki/Domain-specific_language) to construct json objects:
@@ -196,9 +187,9 @@ BookSerializer.serialize(book, BookValidator.version(3), context: controller)
 # header = Link: <https://example.org/>; rel="self"
 # => {
 #      "book": {
-#        "_links": [
-#          { "href": "https://example.org", "rel": "self" }
-#        ],
+#        "_links": {
+#          "self": { "href": "https://example.org" }
+#        },
 #        "title": "Everything, abridged",
 #        "description": "Mu"
 #      }
@@ -241,9 +232,9 @@ BookSerializer.serialize([book], BookValidator.view(:index).version(3), context:
 # header = Link: <https://example.org/index>; rel="self"
 # => {
 #      "books": {
-#        "_links": [
-#          { "href": "https://example.org/index", "rel": "self" }
-#        ],
+#        "_links": {
+#          "self": { "href": "https://example.org" }
+#        },
 #        "_index": [
 #          { "href": "https://example.org" }
 #        ]
@@ -291,14 +282,14 @@ BookSerializer.serialize([book], BookValidator.view(:collection).version(3), con
 # header = Link: <https://example.org/collection>; rel="self"
 # => {
 #      "books": {
-#        "_links": [
-#          { "href": "https://example.org/collection", "rel": "self" }
-#        ],
+#        "_links": {
+#          "self": { "href": "https://example.org" }
+#        },
 #        "_embedded": [
 #          {
-#            "_links": [
-#              { "href": "https://example.org", "rel": "self" }
-#            ],
+#            "_links": {
+#              "self": { "href": "https://example.org" }
+#            },
 #            "title": "Everything, abridged",
 #            "description": "Mu"
 #          }
@@ -395,6 +386,8 @@ class BookController < ActionController::API
 end
 ```
 
+If you don't want to apply any input validation or deserialization you can use the `allow_all_input` method instead of `allow_input_serialization`.
+
 ### Raw output
 
 Sometimes you need to output raw data. This cannot be validated. You do this as follows:
@@ -463,159 +456,63 @@ class BookSerializer < MediaTypes::Serialization::Base
 
 Validation will be done using the remapped validator. It is not possible to map media type identifiers to versions higher than version 1.
 
---- old
+### HTML
 
-### Serializer
+This library has a built in API viewer. The viewer can be accessed by sending an `Accept: application/vnd.xpbytes.api-viewer.v1` header or by appending an `.api_viewer` extension to the URL.
 
-By default, The passed in `MediaType` gets converted into a constructable (via `to_constructable`) and invoked with the
-current `view` (e.g. `create`, `index`, `collection` or ` `). This means that by default it will be able to serialize 
-the latest version you `MediaType` is reporting. The best way to supply your media type is via the [`media_types`](https://github.com/SleeplessByte/media-types-ruby) gem.
-
-#### Multiple suffixes, one serializer
-
-By default, the media renderer will automatically detect and inject the following:
-- suffix `+json` if you define `to_json`
-- suffix `+xml` if you define `to_xml`
-- type `text/html` if you define `to_html`
-
-If you do _not_ define these methods, only the `default` suffix / type will be used, `accepts_html` for the `text/html` 
-content-type.
-
-If you don't define `to_html`, but try to make a serializer output `html`, it will be rendered in the layout at: 
-`serializers/wrapper/html_wrapper.html.erb` (or any other templating extension).
+You can optionally configure the serializer to output the api viwer when the client requests the `text/html` media type:
 
 ```ruby
-  def show 
-    # If you do NOT pass in the content_type, it will re-use the current content_type of the response if set or
-    # use the default content type of the serializer. This is fine if you only output one Content-Type in the
-    # action, but not if you are relying on content-negotiation. 
-    
-    render media: serialize_media(@book), content_type: request.format.to_s
-  end
-end
-```
+class BookSerializer < MediaTypes::Serialization::Base
+  validator BookValidator
 
-#### Input
+  output versions: [1, 2, 3] do |obj, version, context|
+    attribute :book do
+      link rel: :self, href: context.book_url(obj) if version >= 3
 
-If you want clients to be able to send data to the server in their POST or PUT requests, you can whitelist media types.
-
-```ruby
-class BookController < ApiController
-
-  allow_output_serialization(Book::BasicSerializer, accept_html: true, only: %i[show])
-  allow_input_serialization(Book::BasicSerializer, only: %i[create])
-  freeze_io!
-```
-
-If you do not want to perform input whitelisting you can use `allow_all_input` instead of `allow_input_serialization`.
-
-### HTML output
-
-You can define HTML outputs for example by creating a serializer that accepts `text/html`. At this moment, there may
-only be one (1) active `text/html` serializer for each action; a single controller can have multiple registered, but 
-never for the same preconditions in `before_action` (because how else would it know which one to pick?).
-
-Use the `render` method to generate your HTML:
-```ruby
-class Book::CoverHtmlSerializer < MediaTypes::Serialization::Base
-  # Tell the serializer that this accepts HTML, but this is also signaled by `to_html`
-  serializes_html
-  
-  def to_html
-    ApplicationController.render(
-      'serializers/book/cover',
-      assigns: {
-        title: extract_title,
-        image: resolve_file_url(covers.first&.version_url('small')),
-        description: extract_description,
-        language_links: language_links,
-      },
-      layout: false
-    )
+      attribute :title, obj.title
+      attribute :description, obj.description if version >= 2
+    end
   end
   
-  # Naturally you have to define extract_title, etc etc 
+  output_html
 end
 ```
-
-You can change the default `wrapper` / `to_html` implementation by setting:
-
-```ruby
-::MediaTypes::Serialization.html_wrapper_layout = '/path/to/wrapper/layout'
-```
-
-### API viewer
-
-There is a special media type exposed by this gem at `::MediaTypes::Serialization::MEDIA_TYPE_API_VIEWER`. If you're
-using `rails` you'll want to register it. You can do so manually, or by `require`ing:
-
-```ruby
-require 'media_types/serialization/media_type/register'
-```
-
-If you do so, the `.api_viewer` format becomes available for all actions that call into `render media:`.
-
-You can change the default `wrapper` implementation by setting:
+You can change the default `api_viewer` template by setting:
 
 ```ruby
 ::MediaTypes::Serialization.api_viewer_layout = '/path/to/wrapper/layout'
 ```
 
-### Wrapping output
+You can also output custom HTML:
 
-By convention, `index` views are wrapped in `_index: [items]`, `collection` views are wrapped in `_embedded: [items]`
-and `create` / no views are wrapped in `[ROOT_KEY]: item`. This is currently only enabled for `to_json` serialization
-but planned for `xml` as well.
+```ruby
+class BookSerializer < MediaTypes::Serialization::Base
+  validator BookValidator
 
-This behaviour can not be turned of as of writing. However, you may _overwrite_ this behaviour via:
+  output versions: [1, 2, 3] do |obj, version, context|
+    attribute :book do
+      link rel: :self, href: context.book_url(obj) if version >= 3
 
-- `self.root_key(view:)`: to define the root key for a specific `view`
-- `self.wrap(serializer, view: nil)`: to define the wrapper for a specific `view` and/or `serializer`. For example, if
-  you never want to wrap anything, you could define:
-  ```ruby
-  def self.wrap(serializer, view: nil)
-    serializer
+      attribute :title, obj.title
+      attribute :description, obj.description if version >= 2
+    end
   end
-  ```
-
-### Link header
-
-You can use `to_link_header` to generate a header value for the `Link` header.
-
-```ruby
-entries = @last_media_serializer.to_link_header
-if entries.present?
-  response.header[HEADER_LINK] = entries
+  
+  output_html do |obj, context|
+    '<html><head><title>Hello World</title></head><body>hi</body></html>'   
+  end
 end
 ```
-
-If you want the link header to be different from the `_links`, you can implement `header_links(view:)` next to 
-`extract_links(view:)`. This will be called by the `to_link_header` function.
-
-### Validation
-If you only have `json`/`xml`/structured data responses and you want to use [`media_types-validation`](https://github.com/XPBytes/media_types-validation) in conjunction with this gem, you can create a concern or add the following two functions to your base controller:
-
-```ruby
-def render_media(resource = @resource, **opts)
-  serializer = serialize_media(resource)
-  render media: serializer, content_type: request.format.to_s, **opts
-  validate_media(serializer)
-end
-
-def validate_media(serializer = @last_media_serializer)
-  media_type = serializer.current_media_type
-  return true unless media_type && response_body
-  validate_json_with_media_type(serializer.to_hash, media_type: media_type)
-end
-```
-
-As long as the serializer has a `to_json` or `to_hash`, this will work -- but also means that the data will always be validate _as if_ it were json. This covers most use cases.
 
 ### Related
 
 - [`MediaTypes`](https://github.com/SleeplessByte/media-types-ruby): :gem: Library to create media type definitions, schemes and validations
 - [`MediaTypes::Deserialization`](https://github.com/XPBytes/media_types-deserialization): :cyclone: Add media types supported deserialization using your favourite parser, and media type validation.
 - [`MediaTypes::Validation`](https://github.com/XPBytes/media_types-validation): :heavy_exclamation_mark: Response validations according to a media-type
+
+## API
+TODO
 
 ## Development
 
