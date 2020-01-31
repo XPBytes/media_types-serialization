@@ -205,8 +205,6 @@ BookSerializer.serialize(book, BookValidator.version(3), context: controller)
 #    }
 ```
 
-TODO: hidden do?
-
 ### Collections
 
 There are convenience methods for serializing arrays of objects based on a template.
@@ -311,17 +309,159 @@ BookSerializer.serialize([book], BookValidator.view(:collection).version(3), con
 
 ### Input deserialization
 
-TODO?
+You can mark a media type as something that's allowed to be sent along with a PUT request as follows:
+
+```ruby
+class BookSerializer < MediaTypes::Serialization::Base
+  validator BookValidator
+
+  output versions: [1, 2, 3] do |obj, version, context|
+    attribute :book do
+      link rel: :self, href: context.book_url(obj) if version >= 3
+
+      attribute :title, obj.title
+      attribute :description, obj.description if version >= 2
+    end
+
+  input version: 3
+end
+
+class BookController < ActionController::API
+  include MediaTypes::Serialization
+
+  allow_output_serialization(BookSerializer, only: %i[show])
+  allow_input_serialization(BookSerializer, only: %i[create])
+  freeze_io!
+      
+  def show 
+    book = Book.new
+    book.title = 'Everything, abridged'
+
+    render media: serialize_media(book), content_type: request.format.to_s
+  end
+
+  def create
+    json = deserialize(request, context: self) # does validation for us
+    puts json
+  end
+end
+```
+
+If you use [ActiveRecord](https://guides.rubyonrails.org/active_record_basics.html) you might want to convert the verified json data during deserialization:
+
+```ruby
+class BookSerializer < MediaTypes::Serialization::Base
+  validator BookValidator
+
+  output versions: [1, 2, 3] do |obj, version, context|
+    attribute :book do
+      link rel: :self, href: context.book_url(obj) if version >= 3
+
+      attribute :title, obj.title
+      attribute :description, obj.description if version >= 2
+    end
+
+  input versions: [1, 2, 3] do |json, version, context|
+    book = Book.new
+    book.title = json['book']['title']
+    book.description = 'Not available'
+    book.description = json['book']['description'] if version >= 2
+
+    # Make sure not to save here but only save in the controller
+    book
+  end
+end
+
+class BookController < ActionController::API
+  include MediaTypes::Serialization
+
+  allow_output_serialization(BookSerializer, only: %i[show])
+  allow_input_serialization(BookSerializer, only: %i[create])
+  freeze_io!
+      
+  def show 
+    book = Book.new
+    book.title = 'Everything, abridged'
+
+    render media: serialize_media(book), content_type: request.format.to_s
+  end
+
+  def create
+    book = deserialize(request, context: self)
+    book.save!
+
+    render media: serialize_media(book), content_type request.format.to_s
+  end
+end
+```
 
 ### Raw output
 
-TODO?
+Sometimes you need to output raw data. This cannot be validated. You do this as follows:
 
-example with links!
+```ruby
+class BookSerializer < MediaTypes::Serialization::Base
+  validator BookValidator
+
+  output_raw view: :raw, version: 3 do |obj, version, context|
+    hidden do
+      # Make sure links are only set in the headers, not in the body.
+      
+      link rel: :self, href: context.book_url(obj)
+    end
+
+    "I'm a non-json output"
+  end
+end
+```
 
 ### Raw input
 
-TODO?
+You can do the same with input:
+
+```ruby
+class BookSerializer < MediaTypes::Serialization::Base
+  validator BookValidator
+
+  input_raw view: raw, version: 3 do |bytes, version, context|
+    book = Book.new
+    book.description = bytes
+
+    book
+  end
+end
+```
+
+### Remapping media type identifiers
+
+Sometimes you already have old clients using an `application/json` media type identifier when they do requests. While this is not a good practise as this makes it hard to add new fields or remove old ones, this library has support for migrating away:
+
+```ruby
+class BookSerializer < MediaTypes::Serialization::Base
+  validator BookValidator
+
+  alias_output 'application/json' # maps application/json to to applicaton/vnd.acme.book.v1+json
+  output versions: [1, 2, 3] do |obj, version, context|
+    attribute :book do
+      link rel: :self, href: context.book_url(obj) if version >= 3
+
+      attribute :title, obj.title
+      attribute :description, obj.description if version >= 2
+    end
+
+  alias_input 'application/json', view: :create # maps application/json to to applicaton/vnd.acme.book.v1+json
+  input view: :create, versions: [1, 2, 3] do |json, version, context|
+    book = Book.new
+    book.title = json['book']['title']
+    book.description = 'Not available'
+    book.description = json['book']['description'] if version >= 2
+
+    # Make sure not to save here but only save in the controller
+    book
+  end
+```
+
+Validation will be done using the remapped validator. It is not possible to map media type identifiers to versions higher than version 1.
 
 --- old
 
