@@ -515,6 +515,8 @@ end
 
 ### Serializer definition
 
+These methods become available during class definition if you inherit from `MediaTypes::Serialization::Base`.
+
 #### `unvalidated( prefix )`
 
 Disabled validation for this serializer. Prefix is of the form `application/vnd.<organisation>.<name>`.
@@ -527,11 +529,88 @@ Enabled validation for this serializer using a [Media Type Validator](https://gi
 
 Either validator or unvalidated must be used while defining a serializer.
 
-#### `output( view:, version:, versions:) do |obj, version, context|`
+#### `output( view:, version:, versions: ) do |obj, version, context|`
 
-Defines a serialization block. Either version or versions can be set. View should be a symbol.
+Defines a serialization block. Either version or versions can be set. View should be a symbol or unset.
 
 Obj is the object to be serialized, version is the negotiated version and context is the context passed in from the serialize function. When using the controller integration, context is the current controller.
+
+The block should return an object to convert into JSON.
+
+#### `output_raw( view:, version:, versions: ) do |obj, version, context|`
+
+This has the same behavior as `output` but should return a string instead of an object. Output is not validated.
+
+#### `output_alias( media_type_identifier, view: )`
+
+Defines a legacy mapping. This will make the deserializer parse the media type `media_type_identifier` as if it was version 1 of the specified view. If view is undefined it will use the output serializer without a view defined.
+
+#### `output_alias_optional( media_type_identifier, view: )`
+
+Has the same behavior as `output_alias` but can be used by multiple serializers. The serializer that is loaded first in the controller 'wins' control over this media type identifier. If any of the serializers have an `output_alias` defined with the same media type identifier that one will win instead.
+
+#### `input( view:, version:, versions: ) do |obj, version, context|`
+
+Defines a deserialization block. Either version or versions can be set. View should be a symbol or unset.
+
+Obj is the object to be serialized, version is the negotiated version and context is the context passed in from the serialize function. When using the controller integration, context is the current controller.
+
+The block should return the internal representation of the object. Best practise is to make sure not to change state in this function but to leave that up to the controller.
+
+#### `input_raw( view:, version:, versions: ) do |bytes, version, context|`
+
+This has the same behavior as `input` but takes in raw data. Input is not validated.
+
+#### `input_alias( media_type_identifier, view: )`
+
+Defines a legacy mapping. This will make the serializer parse the media type `media_type_identifier` as if it was version 1 of the specified view. If view is undefined it will use the input serializer without a view defined.
+
+#### `input_alias_optional( media_type_identifier, view: )`
+
+Has the same behavior as `input_alias` but can be used by multiple serializers. The serializer that is loaded first in the controller 'wins' control over this media type identifier. If any of the serializers have an `input_alias` defined with the same media type identifier that one will win instead.
+
+### Serializer definition
+
+The following methods are available within an `output ... do` block.
+
+#### `attribute( key, value = {} ) do`
+
+Sets a value for the given key. If a block is given, any `attribute`, `link`, `collection` and `index` statements are run in context of `value`.
+
+Returns the built up context so far.
+
+#### `link( rel:, href: )`
+
+Adds a `_link` block to the current context. Also adds the specified link to the HTTP Link header.
+
+Returns the built up context so far.
+
+#### `index( array, view: nil )`
+
+Adds an `_index` block to the current context. Uses the self links of the specified view to construct an index of urls to the child objects.
+
+Returns the built up context so far.
+
+#### `collection( array, view: nil )`
+
+Adds an `_embedded` block to the current context. Uses the specified serializer to embed the child objects.
+
+Returns the built up context so far.
+
+#### `hidden do`
+
+Sometimes you want to add links without actually modifying the object. Calls to `attribute`, `link`, `index`, `collection` made inside this block won't modify the context. Any calls to link will only set the HTTP Link header.
+
+Returns the unmodified context.
+
+### Controller definition
+
+These functions are available during the controller definition if you add `include MediaTypes::Serialization`.
+
+#### `allow_output_serialization( serializer, **filters )`
+
+TODO: need a way to either explicitly only use the default view or a way to use all views.
+
 
 ## Development
 
