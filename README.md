@@ -22,19 +22,6 @@ Or install it yourself as:
 
     $ gem install media_types-serialization
     
-If you have not done this before, and you're using `rails`, install the necessary parts using:
-
-```bash
-rails g media_types:serialization:api_viewer
-```
-
-This will:
-
-- Add the default `html_wrapper` layout which is an API Viewer used as fallback or the `.api_viewer` format
-- Add the default `template_controller` which allows the API Viewer to post templated links
-- Add the `route` for these templated link forms
-- Add an initializer that registers the `media` renderer and `api_viewer` media type
-
 ## Usage
 
 Serializers help you in converting a ruby object to a representation matching a specified [Media Type validator](https://github.com/SleeplessByte/media-types-ruby) and the other way around.
@@ -454,34 +441,34 @@ class BookSerializer < MediaTypes::Serialization::Base
   end
 ```
 
-Validation will be done using the remapped validator. It is not possible to map media type identifiers to versions higher than version 1.
+Validation will be done using the remapped validator. Aliasses map to version `nil` if that is available or `1` otherwise. It is not possible to configure this version.
 
 ### HTML
 
 This library has a built in API viewer. The viewer can be accessed by sending an `Accept: application/vnd.xpbytes.api-viewer.v1` header or by appending an `.api_viewer` extension to the URL.
 
-You can optionally configure the serializer to output the api viwer when the client requests the `text/html` media type:
-
 ```ruby
-class BookSerializer < MediaTypes::Serialization::Base
-  validator BookValidator
-
-  output versions: [1, 2, 3] do |obj, version, context|
-    attribute :book do
-      link rel: :self, href: context.book_url(obj) if version >= 3
-
-      attribute :title, obj.title
-      attribute :description, obj.description if version >= 2
-    end
-  end
+class BookController < ActionController::API
+  include MediaTypes::Serialization
   
-  output_html
-end
-```
-You can change the default `api_viewer` template by setting:
+  allow_output_serialization(MediaTypes::ApiViewer)
 
-```ruby
-::MediaTypes::Serialization.api_viewer_layout = '/path/to/wrapper/layout'
+  allow_output_serialization(BookSerializer, only: %i[show])
+  allow_input_serialization(BookSerializer, only: %i[create])
+  freeze_io!
+      
+  def show 
+    book = Book.new
+    book.title = 'Everything, abridged'
+
+    render media: serialize_media(book), content_type: request.format.to_s
+  end
+
+  def create
+    json = deserialize(request, context: self) # does validation for us
+    puts json
+  end
+end
 ```
 
 You can also output custom HTML:
@@ -499,9 +486,11 @@ class BookSerializer < MediaTypes::Serialization::Base
     end
   end
   
-  output_html do |obj, context|
+  output_raw view: :html do |obj, context|
     '<html><head><title>Hello World</title></head><body>hi</body></html>'   
   end
+  
+  alias_output 'text/html', view: :html
 end
 ```
 
@@ -547,7 +536,7 @@ Defines a legacy mapping. This will make the deserializer parse the media type `
 
 #### `output_alias_optional( media_type_identifier, view: )`
 
-Has the same behavior as `output_alias` but can be used by multiple serializers. The serializer that is loaded first in the controller 'wins' control over this media type identifier. If any of the serializers have an `output_alias` defined with the same media type identifier that one will win instead.
+Has the same behavior as `output_alias` but can be used by multiple serializers. The serializer that is loaded last in the controller 'wins' control over this media type identifier. If any of the serializers have an `output_alias` defined with the same media type identifier that one will win instead.
 
 #### `input( view:, version:, versions: ) do |obj, version, context|`
 
@@ -567,7 +556,7 @@ Defines a legacy mapping. This will make the serializer parse the media type `me
 
 #### `input_alias_optional( media_type_identifier, view: )`
 
-Has the same behavior as `input_alias` but can be used by multiple serializers. The serializer that is loaded first in the controller 'wins' control over this media type identifier. If any of the serializers have an `input_alias` defined with the same media type identifier that one will win instead.
+Has the same behavior as `input_alias` but can be used by multiple serializers. The serializer that is loaded last in the controller 'wins' control over this media type identifier. If any of the serializers have an `input_alias` defined with the same media type identifier that one will win instead.
 
 ### Serializer definition
 
