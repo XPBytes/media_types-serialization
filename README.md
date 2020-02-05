@@ -585,13 +585,13 @@ Adds a `_link` block to the current context. Also adds the specified link to the
 
 Returns the built up context so far.
 
-#### `index( array, view: nil )`
+#### `index( array, serializer, view: nil )`
 
 Adds an `_index` block to the current context. Uses the self links of the specified view to construct an index of urls to the child objects.
 
 Returns the built up context so far.
 
-#### `collection( array, view: nil )`
+#### `collection( array, serializer, view: nil )`
 
 Adds an `_embedded` block to the current context. Uses the specified serializer to embed the child objects.
 
@@ -607,10 +607,90 @@ Returns the unmodified context.
 
 These functions are available during the controller definition if you add `include MediaTypes::Serialization`.
 
-#### `allow_output_serialization( serializer, **filters )`
+#### `allow_output_serialization( serializer, views: nil, **filters )`
 
-TODO: need a way to either explicitly only use the default view or a way to use all views.
+Configure the controller to allow the client to request responses emitted by the specified serializer. Optionally allows you to specify which views to allow by passing an array in the views parameter.
 
+Accepts the same filters as `before_action`.
+
+#### `allow_input_serialization( serializer, views: nil, **filters )`
+
+Configure the controller to allow the client to send bodies with a `Content-Type` that can be deserialized using the specified serializer. Optionally allows you to specify which views to allow by passing an array in the views parameter.
+
+Accepts the same filters as `before_action`.
+
+#### `allow_all_input( **filters )`
+
+Disables input deserialization. Running `deserialize` while allowing all input will result in an error being thrown.
+
+#### `strict!( **filters )`
+
+Validates input before the controller action is called. This requires using `allow_all_input` when you want to handle arbitrary input.
+
+This enables rendering a nice error message to the client if input validation fails. You can add your own serializer using the `input_validation_failed_serializer` function.
+
+#### `not_acceptable_serializer( serializer )`
+
+Replaces the serializer used to render the error page when no media type could be negotiated using the `Accept` header.
+
+#### `unsupported_media_type_serializer( serializer )`
+
+Adds a serializer that can be used to render the error page when the client submits a body with a `Content-Type` that was not added to the whitelist using `allow_input_serialization`.
+
+#### `clear_unsupported_media_type_serializers!`
+
+Clears the list of serializers used to render the error when the client supplies non-valid input.
+
+#### `input_validation_failed_serializer( serializer )`
+
+Adds a serializer that can be used to render the error page when input validation fails.
+
+#### `clear_input_validation_failed_serializers!`
+
+Clears the list of serializers used to render the error when the client supplies non-valid input.
+
+#### `freeze_io!`
+
+Registers serialization and deserialization in the controller. This function must be called before using the controller.
+
+### Controller usage
+
+These functions are available during method execution in the controller.
+
+#### `render_media( obj = nil, serializers: nil, not_acceptable_serializer: nil, **options ) do`
+
+Serializes an object and renders it using the appropriate content type. Options are passed through to the controller `render` function. Allows you to specify different objects to different serializers using a block:
+
+```ruby
+render_media do
+  serialize BookSerializer book
+  serialize BooksSerializer do
+    [ book ]
+  end
+end
+```
+
+Warning: this block can be called multiple times when used together with recursive serializers like the API viewer. Try to avoid changing state in this block.
+
+If you want to render with different serializers than defined in the controller you can pass an array of serializers in the `serializers` property.
+
+If you want to override the serializer that is used to render the response when no acceptable Content-Type could be negotiated you can pass the desired serializer in the `not_acceptable_serializer` property.
+
+This method throws an TODO error if the output does not conform to the format defined by the configured validator. Best practise is to return a 500 error to the client.
+
+If no acceptable Content-Type could be negotiated the response will be rendered using the serialized defined by the class `not_acceptable_serializer` function or by the `not_acceptable_serializer` property.
+
+#### `deserialize( request )`
+
+Deserializes the request body using the configured input serializers and returns the deserialized object.
+
+Returns nil if no input body was given by the client. 
+
+This method throws an TODO error if the 
+
+#### `deserialize!( request )`
+
+#### `resolve_serializer`
 
 ## Development
 
