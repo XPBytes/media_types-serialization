@@ -1,127 +1,138 @@
 # frozen_string_literal: true
 
-require 'uri'
-
-require 'http_headers/link'
-require 'http_headers/utils/list'
-
-require 'media_types/serialization/mime_type_support'
-require 'media_types/serialization/migrations_support'
-require 'media_types/serialization/wrapper_support'
+require 'media_types/serialization/error'
+require 'media_types/serialization/fake_validator'
+require 'media_types/serialization/serialization_registration'
+require 'media_types/serialization/output_wrapper'
 
 module MediaTypes
   module Serialization
     class Base
-      include MimeTypeSupport
-      include MigrationsSupport
-      include WrapperSupport
 
-      attr_reader :current_media_type, :current_view, :serializable
+      @@serializer_validated = nil
+      @@serializer_validator = nil
+      @@serializer_input_registration = SerializationRegistration.new(:input)
+      @@serializer_output_registration = SerializationRegistration.new(:output)
 
-      def initialize(serializable, media_type:, view: nil, context:)
-        self.context = context
-        self.current_media_type = media_type
-        self.current_view = view
-
-        set(serializable)
+      def self.unvalidated(prefix)
+        @@serializer_validated = false
+        @@serializer_validator = FakeValidator.new(prefix)
       end
 
-      def to_link_header
-        entries = header_links(view: current_view).each_with_index.map do |(rel, links), index|
-          links = [links] unless links.is_a?(Array)
-
-          links.map do |opts|
-            next unless opts.is_a?(String) || opts.try(:[], :href)
-            href = opts.is_a?(String) ? opts : opts.delete(:href)
-            parameters =  { rel: rel }.merge(opts.is_a?(String) ? {} : opts)
-
-            HttpHeaders::Link::Entry.new("<#{href}>", index: index, parameters: parameters)
-          end
-        end.flatten.compact
-
-        return nil unless entries.present?
-        HttpHeaders::Utils::List.to_header(entries)
+      def self.validator(validator)
+        @@serializer_validated = true
+        @@serializer_validator = validator
       end
 
-      COMMON_DERIVED_CALLERS = [:to_h, :to_hash, :to_json, :to_text, :to_xml, :to_html, :to_body, :extract_self].freeze
+      def self.output(view: nil, version: nil, versions: nil, &block)
+        versions = [version] if versions == nil
 
-      def method_missing(symbol, *args, &block)
-        if COMMON_DERIVED_CALLERS.include?(symbol)
-          raise NotImplementedError, format(
-            'In %<class>s, %<symbol>s is not implemented. ' \
-            'Implement it or deny the MediaType[s] %<media_types>s for %<model>s',
-            symbol: symbol,
-            class: self.class.name,
-            model: serializable.class.name,
-            media_types: self.class.media_types(view: '[view]').to_s
-          )
+        raise ValidatorNotSpecifiedError, :output if serializer_validator.nil?
+
+        versions.each do |v|
+          validator = @@serializer_validator.view(view).version(v)
+          validator = validator.override_suffix(:json) unless @@serializer_validated
+          identifier = validator.identifier
+
+          serializer_output_registration.register_block(self, validator, v, block, false)
         end
-
-        super
       end
 
-      def respond_to_missing?(method_name, include_private = false)
-        if COMMON_DERIVED_CALLERS.include?(method_name)
-          return false
+      def self.output_raw(view: nil, version: nil, versions: nil, &block)
+        versions = [version] if versions == nil
+
+        raise ValidatorNotSpecifiedError, :output if serializer_validator.nil?
+
+        versions.each do |v|
+          validator = @@serializer_validator.view(view).version(v)
+          identifier = validator.identifier
+
+          serializer_output_registration.register_block(self, validator, v, block, false)
         end
-
-        super
       end
 
-      def header_links(view: current_view)
-        extract_view_links(view: view)
+      def self.output_alias(media_type_identifier, view: nil)
+        validator = @@serializer_validator.view(view).version(v)
+        victim_identifier = validator.identifier
+
+        serializer_output_registration.register_alias(self, media_type_identifier, victim_identifier, false)
       end
 
-      def set(serializable)
-        self.serializable = serializable
-        self
+      def self.output_alias_optional(media_type_identifier, view: nil)
+        validator = @@serializer_validator.view(view).version(v)
+        victim_identifier = validator.identifier
+
+        serializer_output_registration.register_alias(self, media_type_identifier, victim_identifier, true)
+      end
+      
+      def self.input(view: nil, version: nil, versions: nil, &block)
+        versions = [version] if versions == nil
+
+        raise ValidatorNotSpecifiedError, :input if serializer_validator.nil?
+
+        versions.each do |v|
+          validator = @@serializer_validator.view(view).version(v)
+          validator = validator.override_suffix(:json) unless @@serializer_validated
+          identifier = validator.identifier
+
+          serializer_output_registration.register_block(self, validator, v, block, false)
+        end
       end
 
-      protected
+      def self.input_raw(view: nil, version: nil, versions: nil, &block)
+        versions = [version] if versions == nil
 
-      attr_accessor :context
-      attr_writer :current_media_type, :current_view, :serializable
+        raise ValidatorNotSpecifiedError, :input if serializer_validator.nil?
 
-      def extract_links
-        {}
+        versions.each do |v|
+          validator = @@serializer_validator.view(view).version(v)
+          identifier = validator.identifier
+
+          serializer_input_registration.register_block(self, validator, v, block, false)
+        end
       end
 
-      def extract_set_links(view: current_view)
-        {}
+      def self.input_alias(media_type_identifier, view: nil)
+        validator = @@serializer_validator.view(view).version(v)
+        victim_identifier = validator.identifier
+
+        serializer_input_registration.register_alias(self, media_type_identifier, victim_identifier, false)
       end
 
-      def extract_view_links(view: current_view)
-        return extract_set_links(view: view) if view == ::MediaTypes::INDEX_VIEW
-        return extract_set_links(view: view) if view == ::MediaTypes::COLLECTION_VIEW
+      def self.input_alias_optional(media_type_identifier, view: nil)
+        validator = @@serializer_validator.view(view).version(v)
+        victim_identifier = validator.identifier
 
-        extract_links
+        serializer_input_registration.register_alias(self, media_type_identifier, victim_identifier, true)
       end
 
-      def extract(extractable, *keys)
-        return {} unless keys.present?
-        extractable.slice(*keys)
-      rescue TypeError => err
-        raise TypeError, format(
-          '[serializer] failed to slice keys to extract. Given keys: %<keys>s. Extractable: %<extractable>s' \
-          'Error: %<error>s',
-          keys: keys,
-          extractable: extractable,
-          error: err
-        )
+      def self.serialize(victim, media_type, context: nil)
+        raise "TODO: unimplemented"
       end
 
-      def resolve_file_url(url)
-        return url if !url || URI(url).absolute?
-
-        format(
-          'https://%<host>s:%<port>s%<path>s',
-          host: context.default_url_options[:host],
-          port: context.default_url_options[:port],
-          path: url
-        )
-      rescue URI::InvalidURIError
-        url
+      def render_media(obj = nil, serializers: nil, not_acceptable_serializer: nil, **options, &block)
+        raise "TODO: unimplemented"
+        # if type == block
+        # wrapper:
+        # # attribute(key, value={}, &block)
+        # # link(rel:, href:)
+        # # index(array, serializer, view: nil)
+        # # collection(array, serializer, view: nil)
+        # # hidden do
       end
+
+      def deserialize(request)
+        raise "TODO: unimplemented"
+      end
+
+      def deserialize!(request)
+        raise "TODO: unimplemented"
+      end
+
+      def resolve_serializer
+        raise "TODO: unimplemented"
+      end
+
     end
   end
 end
