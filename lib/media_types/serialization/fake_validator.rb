@@ -1,0 +1,4 @@
+
+class FakeValidator
+
+end
