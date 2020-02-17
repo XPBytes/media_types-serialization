@@ -53,7 +53,7 @@ end
 book = Book.new
 book.title = 'Everything, abridged'
 
-BookSerializer.serialize(book, BookValidator.version(1), context: nil)
+BookSerializer.serialize(book, 'vnd.acme.book.v1+json', context: nil)
 # => { "book": { "title": "Everything, abridged" } }
 ```
 
