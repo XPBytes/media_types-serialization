@@ -211,6 +211,34 @@ module MediaTypes
 
     protected
 
+    def serialize(victim, media_type, context: nil)
+      serializer_ouput_registration.call(victim, media_type, context)
+    end
+
+    def render_media(obj = nil, serializers: nil, not_acceptable_serializer: nil, **options, &block)
+      raise "TODO: unimplemented"
+      # if type == block
+      # wrapper:
+      # # attribute(key, value={}, &block)
+      # # link(rel:, href:)
+      # # index(array, serializer, view: nil)
+      # # collection(array, serializer, view: nil)
+      # # hidden do
+    end
+
+    def deserialize(request)
+      raise "TODO: unimplemented"
+    end
+
+    def deserialize!(request)
+      raise "TODO: unimplemented"
+    end
+
+    def resolve_serializer
+      raise "TODO: unimplemented"
+    end
+
+
     def media_type_serializer
       @media_type_serializer ||= resolve_media_type_serializer
     end

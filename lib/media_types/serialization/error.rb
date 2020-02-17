@@ -4,7 +4,7 @@ module MediaTypes
     class Error < StandardError
     end
 
-    class ConfigurationErrror < Error
+    class ConfigurationError < Error
     end
 
     class SerializationNotInitializedError < ConfigurationError
@@ -17,6 +17,7 @@ module MediaTypes
       def initialize(inout)
         super("Serializer tried to define an #{inout} without first specifying a validator using either the validator function or unvalidated function. Please call one of those before defining #{inout}s.")
       end
+    end
     
     class ValidatorNotDefinedError < ConfigurationError
       def initialize(identifier, inout)
@@ -43,8 +44,8 @@ module MediaTypes
     end
 
     class UnregisteredMediaTypeUsage < ConfigurationError
-      def initialize(identifier)
-        super("A serialization or deserialization method was called using a media type identifier '#{identifier}' but no such identifier has been registered yet.")
+      def initialize(identifier, available)
+        super("A serialization or deserialization method was called using a media type identifier '#{identifier}' but no such identifier has been registered yet. Available media types: [#{available.join ', '}]")
       end
     end
   end
