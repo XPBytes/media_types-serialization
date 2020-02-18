@@ -96,6 +96,8 @@ module MediaTypes
         
         result = block.call(victim, self.version, context)
 
+        validator.validate!(result) unless raw
+
         # TODO: validate output if output and not raw
         result
       end

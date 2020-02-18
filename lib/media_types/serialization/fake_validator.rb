@@ -33,6 +33,10 @@ class FakeValidator
     true
   end
 
+  def validate!
+    true
+  end
+
   attr_accessor :prefix
   attr_accessor :suffixes
 
