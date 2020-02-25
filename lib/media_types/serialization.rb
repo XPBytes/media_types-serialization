@@ -211,6 +211,5 @@ module MediaTypes
 
       nil
     end
-    end
   end
 end
