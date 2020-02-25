@@ -4,8 +4,8 @@ require 'delegator'
 
 module MediaTypes
   module Serialization
+    # Provides the serialization convenience methods
     class SerializationDSL < SimpleDelegator
-
       def initialize(serializer, links = [], value = {}, context: nil)
         serialization_dsl_result = value
         @serialization_links = links
@@ -58,11 +58,11 @@ module MediaTypes
           links.append(self_links.first)
         end
 
-        serialization_dsl_result[:_index] = links.reject { |k,_| k == :rel }
+        serialization_dsl_result[:_index] = links.reject { |k, _| k == :rel }
 
         serialization_dsl_result
       end
-      
+
       def collection(array, serializer, version:, view: nil)
         identifier = serializer.validator.view(view).version(version).identifier
 
@@ -70,7 +70,7 @@ module MediaTypes
 
         array.each do |e|
           context = SerializationDSL.new(__getobj__, context: @serialization_context)
-          result = context.instance_eval labda { return serializer.serialize(e, identifier, __getobj__, @serialization_context) }
+          result = context.instance_eval lambda { return serializer.serialize(e, identifier, __getobj__, @serialization_context) }
 
           rendered.append(result)
         end
@@ -82,7 +82,9 @@ module MediaTypes
 
       def hidden(&block)
         context = SerializationDSL.new(__getobj__, @serialization_links, context: @serialization_context)
+        context.instance_eval(block)
 
+        serialization_dsl_result
       end
     end
   end

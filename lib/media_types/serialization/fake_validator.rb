@@ -45,5 +45,4 @@ class FakeValidator
 
   attr_accessor :internal_view
   attr_accessor :internal_version
-
 end

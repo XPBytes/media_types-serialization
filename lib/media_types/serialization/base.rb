@@ -38,7 +38,6 @@ module MediaTypes
           versions.each do |v|
             validator = @@serializer_validator.view(view).version(v)
             validator.override_suffix(:json) unless @@serializer_validated
-            identifier = validator.identifier
 
             @@serializer_output_registration.register_block(self, validator, v, block, false)
           end
@@ -51,7 +50,6 @@ module MediaTypes
 
           versions.each do |v|
             validator = @@serializer_validator.view(view).version(v)
-            identifier = validator.identifier
 
             @@serializer_output_registration.register_block(self, validator, v, block, false)
           end

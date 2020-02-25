@@ -183,7 +183,7 @@ module MediaTypes
       return nil if identifier.nil?
 
       registration = registration.registrations[identifier]
-      raise "Assertion failed, inconsistent answer from resolve_media_type" if registration.nil?
+      raise 'Assertion failed, inconsistent answer from resolve_media_type' if registration.nil?
       registration.serializer
     end
 
