@@ -116,7 +116,7 @@ class BookController < ActionController::API
     book = Book.new
     book.title = 'Everything, abridged'
 
-    render media: serialize_media(book), content_type: request.format.to_s
+    render_media book
   end
 end
 ```
@@ -208,7 +208,7 @@ class BookSerializer < MediaTypes::Serialization::Base
     attribute :books do
       link rel: :self, href: context.book_index_url
       
-      index arr 
+      index arr, version: version
     end
   end
 end
@@ -250,7 +250,7 @@ class BookSerializer < MediaTypes::Serialization::Base
     attribute :books do
       link rel: :self, href: context.book_index_url
       
-      index arr 
+      index arr, version: version
     end
   end
   
@@ -258,7 +258,7 @@ class BookSerializer < MediaTypes::Serialization::Base
     attribute :books do
       link rel: :self, href: context.book_collection_url
       
-      collection arr 
+      collection arr, version: version
     end
   end
 end

@@ -58,7 +58,7 @@ module MediaTypes
           links.append(self_links.first)
         end
 
-        serialization_dsl_result[:_index] = links
+        serialization_dsl_result[:_index] = links.reject { |k,_| k == :rel }
 
         serialization_dsl_result
       end
@@ -75,7 +75,7 @@ module MediaTypes
           rendered.append(result)
         end
 
-        serialization_dsl_result[:_embed] = rendered
+        serialization_dsl_result[:_embedded] = rendered
 
         serialization_dsl_result
       end

@@ -12,6 +12,7 @@ require 'http_headers/accept'
 require 'media_types/serialization/no_media_type_serializers'
 require 'media_types/serialization/no_serializer_for_content_type'
 require 'media_types/serialization/base'
+require 'media_types/serialization/serialization_dsl'
 require 'media_types/serialization/wrapper/html_wrapper'
 
 require 'awesome_print'
