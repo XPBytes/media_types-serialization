@@ -13,6 +13,10 @@ module MediaTypes
 
       attr_accessor :registrations, :inout
 
+      def has?(identifier)
+        self.registrations.has? identifier
+      end
+
       def register_block(serializer, validator, version, block, raw)
         identifier = validator.identifier
 
@@ -20,7 +24,10 @@ module MediaTypes
         
         raise ValidatorNotDefinedError.new(identifier, inout) unless raw || validator.validatable?
 
-        registrations[identifier] = SerializationBlockRegistration.new serializer, inout, validator, version, block, raw
+        registration = SerializationBlockRegistration.new serializer, inout, validator, version, block, raw
+        registrations[identifier] = registration
+
+        register_wildcards(identifier, registration)
       end
 
       def register_alias(serializer, alias_identifier, target_identifier, optional)
@@ -28,7 +35,10 @@ module MediaTypes
         
         raise UnbackedAliasDefinitionError.new(target_identifier, inout) unless registrations.has_key? target_identifier
 
-        registrations[alias_identifier] = SerializationAliasRegistration.new serializer, inout, registrations[target_identifier], optional
+        registration = SerializationAliasRegistration.new serializer, inout, registrations[target_identifier], optional
+        registrations[alias_identifier] = registration
+
+        register_wildcards(alias_identifier, registration)
       end
 
       def merge(other)
@@ -56,9 +66,30 @@ module MediaTypes
 
       def call(victim, media_type, context)
         registration = registrations[media_type]
-        raise UnregisteredMediaTypeUsage.new(media_type, registrations.keys) if registration.nil?
+        raise UnregisteredMediaTypeUsageError.new(media_type, registrations.keys) if registration.nil?
 
         registration.call(victim, context)
+      end
+
+      def filter(views:)
+        result = SerializationRegistration.new self.inout
+
+        self.registrations.each do |identifier, registration|
+          if views.include? registration.validator.view
+            result.registrations[identifier] = registration
+          end
+        end
+
+        result
+      end
+
+      private
+
+      def register_wildcards(identifier, registration)
+        registrations['*/*'] = registration unless has? '*/*'
+
+        partial = "#{identifier.split('/')[0]}/*"
+        registrations[partial] = registration unless has? partial
       end
     end
 
@@ -92,13 +123,12 @@ module MediaTypes
 
       def call(victim, context)
         # TODO: un-JSON if not raw and input
-        # TODO: validate input if input and not raw
+        validator.validate!(victim) if !raw && inout == :input
         
         result = block.call(victim, self.version, context)
 
-        validator.validate!(result) unless raw
+        validator.validate!(result) if !raw && inout == :output
 
-        # TODO: validate output if output and not raw
         result
       end
 

@@ -43,9 +43,15 @@ module MediaTypes
       end
     end
 
-    class UnregisteredMediaTypeUsage < ConfigurationError
+    class UnregisteredMediaTypeUsageError < ConfigurationError
       def initialize(identifier, available)
         super("A serialization or deserialization method was called using a media type identifier '#{identifier}' but no such identifier has been registered yet. Available media types: [#{available.join ', '}]")
+      end
+    end
+
+    class UnmatchedSerializerError < ConfigurationError
+      def initialize(serializer)
+        super("Called render_media with a resolved serializer that was not specified in the do block. Please add a 'serializer #{serializer.class.name}, <value>' entry.")
       end
     end
   end

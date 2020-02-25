@@ -117,6 +117,14 @@ module MediaTypes
         def deserialize(victim, media_type_identifier, context)
           @@serializer_input_registration.call(victim, media_type_identifier, context)
         end
+
+        def outputs_for(views:)
+          @@serializer_output_registration.filter(views: views)
+        end
+
+        def inputs_for(views:)
+          @@serializer_input_registration.filter(views: views)
+        end
       end
 
       def self.inherited(subclass)
