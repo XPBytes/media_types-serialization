@@ -21,7 +21,7 @@ And then execute:
 Or install it yourself as:
 
     $ gem install media_types-serialization
-    
+
 ## Usage
 
 Serializers help you in converting a ruby object to a representation matching a specified [Media Type validator](https://github.com/SleeplessByte/media-types-ruby) and the other way around.
@@ -487,7 +487,7 @@ class BookSerializer < MediaTypes::Serialization::Base
   end
   
   output_raw view: :html do |obj, context|
-    '<html><head><title>Hello World</title></head><body>hi</body></html>'   
+    '<html><head><title>Hello World</title></head><body>hi</body></html>'
   end
   
   alias_output 'text/html', view: :html
@@ -673,9 +673,9 @@ If no acceptable Content-Type could be negotiated the response will be rendered 
 
 Deserializes the request body using the configured input serializers and returns the deserialized object.
 
-Returns nil if no input body was given by the client. 
+Returns nil if no input body was given by the client.
 
-This method throws an TODO error if the 
+This method throws an TODO error if the
 
 #### `deserialize!( request )`
 

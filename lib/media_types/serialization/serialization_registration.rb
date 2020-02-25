@@ -4,8 +4,8 @@ require 'media_types/serialization/error'
 
 module MediaTypes
   module Serialization
+    # A collection that manages media type identifier registrations
     class SerializationRegistration
-
       def initialize(direction)
         self.registrations = {}
         self.inout = direction
@@ -21,7 +21,7 @@ module MediaTypes
         identifier = validator.identifier
 
         raise DuplicateDefinitionError.new(identifier, inout) if registrations.has_key? identifier
-        
+
         raise ValidatorNotDefinedError.new(identifier, inout) unless raw || validator.validatable?
 
         registration = SerializationBlockRegistration.new serializer, inout, validator, version, block, raw
@@ -32,7 +32,7 @@ module MediaTypes
 
       def register_alias(serializer, alias_identifier, target_identifier, optional)
         raise DuplicateDefinitionError.new(identifier, inout) if registrations.has_key? identifier
-        
+
         raise UnbackedAliasDefinitionError.new(target_identifier, inout) unless registrations.has_key? target_identifier
 
         registration = SerializationAliasRegistration.new serializer, inout, registrations[target_identifier], optional
@@ -45,7 +45,7 @@ module MediaTypes
         raise Error, 'Trying to merge two SerializationRegistration objects with a different direction.' unless inout == other.inout
 
         result = SerializationRegistration.new(inout)
-        
+
         prev_keys = Set.new(registrations.keys)
         new_keys = Set.new(other.registrations.keys)
         overlap = prev_keys & new_keys
@@ -60,7 +60,7 @@ module MediaTypes
 
           result.registrations[identifier] = merge_result
         end
-        
+
         result
       end
 
@@ -93,25 +93,26 @@ module MediaTypes
       end
     end
 
+    # A registration in a SerializationRegistration collection
     class SerializationBaseRegistration
-
       def initialize(serializer, inout, validator)
         self.serializer = serializer
         self.inout = inout
         self.validator = validator
       end
 
-      def merge(other)
+      def merge(_other)
         nil
       end
 
-      def call(victim, context)
+      def call(_victim, _context)
         raise "Assertion failed, call function called on base registration."
       end
 
       attr_accessor :serializer, :inout, :validator
     end
 
+    # A registration with a block to be executed when called.
     class SerializationBlockRegistration < SerializationBaseRegistration
 
       def initialize(serializer, inout, validator, version, block, raw)
@@ -122,12 +123,17 @@ module MediaTypes
       end
 
       def call(victim, context)
-        # TODO: un-JSON if not raw and input
-        validator.validate!(victim) if !raw && inout == :input
+        if !raw && inout == :input
+          victim = json_decoder.call(victim)
+          validator.validate!(victim)
+        end
         
         result = block.call(victim, self.version, context)
 
-        validator.validate!(result) if !raw && inout == :output
+        if !raw && inout == :output
+          validator.validate!(result)
+          result = json_encoder.call(result)
+        end
 
         result
       end
@@ -135,8 +141,8 @@ module MediaTypes
       attr_accessor :version, :block, :raw
     end
 
+    # A registration that calls another registration when called.
     class SerializationAliasRegistration < SerializationBaseRegistration
-      
       def initialize(serializer, inout, validator, target, optional)
         self.target = target
         self.optional = optional

@@ -46,6 +46,16 @@ module MediaTypes
 
     HEADER_ACCEPT         = 'HTTP_ACCEPT'
 
+    mattr_accessor :json_encoder, :json_decoder
+    if defined?(::Oj)
+      json_encoder = Oj.method(:dump)
+      json_decoder = Oj.method(:load)
+    else
+      require 'json'
+      json_encoder = JSON.method(:pretty_generate)
+      json_decoder = JSON.method(:parse)
+    end
+
     # rubocop:disable Metrics/BlockLength
     class_methods do
 
@@ -161,7 +171,7 @@ module MediaTypes
       result = context.instance_eval labda { return registration.call(obj, identifier, self) }
       
       # TODO: Set link header
-      render body: result, content_type: identifier, **options)
+      render body: result, content_type: identifier, **options
     end
 
     def deserialize(request)
