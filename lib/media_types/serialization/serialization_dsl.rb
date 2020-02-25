@@ -17,8 +17,8 @@ module MediaTypes
 
       def attribute(key, value = {}, &block)
         unless block.nil?
-          subcontext = SerializationDSL.new(__getobj__, links, value, context: @serialization_context)
-          value = subcontext.instance_eval(block)
+          subcontext = SerializationDSL.new(__getobj__, @serialization_links, value, context: @serialization_context)
+          value = subcontext.instance_exec(&block)
         end
 
         serialization_dsl_result[key] = value
@@ -49,7 +49,7 @@ module MediaTypes
         array.each do |e|
           child_links = []
           context = SerializationDSL.new(__getobj__, child_links, context: @serialization_context)
-          context.instance_eval labda { serializer.serialize(e, identifier, __getobj__, @serialization_context) }
+          serializer.serialize(e, identifier, __getobj__, @serialization_context, dsl: context)
 
           self_links = self_links.select { |l| l.rel == :self }
           raise NoSelfLinkProvidedError, identifier unless self_links.any?
@@ -70,7 +70,7 @@ module MediaTypes
 
         array.each do |e|
           context = SerializationDSL.new(__getobj__, context: @serialization_context)
-          result = context.instance_eval lambda { return serializer.serialize(e, identifier, __getobj__, @serialization_context) }
+          result = serializer.serialize(e, identifier, __getobj__, @serialization_context, dsl: context)
 
           rendered.append(result)
         end

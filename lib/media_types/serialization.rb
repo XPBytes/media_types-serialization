@@ -92,9 +92,9 @@ module MediaTypes
         views = [view] if views.nil?
 
         before_action(**filter_opts) do
-          @serialization_ouput_registrations ||= SerializationRegistration.new(:output)
+          @serialization_output_registrations ||= SerializationRegistration.new(:output)
 
-          @serialization_output_registrations = @serialization_output_registrations.merge(serializer.outputs_for(views))
+          @serialization_output_registrations = @serialization_output_registrations.merge(serializer.outputs_for(views: views))
         end
       end
 
@@ -113,7 +113,7 @@ module MediaTypes
         before_action(**filter_opts) do
           @serialization_input_registrations ||= SerializationRegistration.new(:input)
 
-          @serialization_input_registrations = @serialization_input_registrations.merge(serializer.inputs_for(views))
+          @serialization_input_registrations = @serialization_input_registrations.merge(serializer.inputs_for(views: views))
         end
       end
 
@@ -121,6 +121,7 @@ module MediaTypes
       # Freezes additions to the serializes and notifies the controller what it will be able to respond to.
       #
       def freeze_io!
+        # TODO: check not_acceptable in before action
       end
 
     end
@@ -135,28 +136,35 @@ module MediaTypes
 
     def serialize(victim, media_type, links: [])
       context = SerializationDSL.new(self, links, context: self)
-      context.instance_eval lambda { @serializer_ouput_registration.call(victim, media_type, context) }
+      context.instance_exec { @serialization_output_registrations.call(victim, media_type, context) }
     end
 
-    def render_media(obj = nil, serializers: nil, not_acceptable_serializer: nil, **options, &block)
+    def render_media(obj: nil, serializers: nil, not_acceptable_serializer: nil, **options, &block)
       raise "TODO: unimplemented" unless serializers.nil?
       # TODO: set not_acceptable_serializer to global one if nil?
 
       # TODO: Convert serializers list to new registration
 
-      registration = @serializer_output_registration
+      @serialization_output_registrations ||= SerializationRegistration.new(:output)
+      registration = @serialization_output_registrations
 
       identifier = resolve_media_type(request, registration)
+      not_acceptable = false
+      serializer = nil
 
-      serializer = resolve_serializer(request, identifier, registration)
-      if serializer.nil?
+      if identifier.nil?
         serializer = not_acceptable_serializer
         obj = request
+        not_acceptable = true
+      else
+        serializer = resolve_serializer(request, identifier, registration)
       end
+
+      raise 'TODO: fall back to internal not-acceptable serializer' if serializer.nil?
 
       if obj.nil? && !block.nil?
         selector = SerializationSelectorDsl.new(self, serializer)
-        selector.instance_eval(&block)
+        selector.instance_exec(&block)
 
         raise UnmatchedSerializerError(serializer) unless selector.matched
         obj = selector.value
@@ -164,10 +172,13 @@ module MediaTypes
 
       links = []
       context = SerializationDSL.new(self, links, context: self)
-      result = context.instance_eval lambda { return registration.call(obj, identifier, self) }
+      result = registration.call(obj, identifier, self, dsl: context)
 
       # TODO: Set link header
-      render body: result, content_type: identifier, **options
+
+      options[:status] = :not_acceptable if not_acceptable
+      render body: result, **options
+      response.content_type = identifier
     end
 
     def deserialize(request)
@@ -178,7 +189,7 @@ module MediaTypes
       raise "TODO: unimplemented"
     end
 
-    def resolve_serializer(request, identifier = nil, registration = @serializer_output_registration)
+    def resolve_serializer(request, identifier = nil, registration = @serialization_output_registrations)
       identifier = resolve_media_type(request, registration) if identifier.nil?
       return nil if identifier.nil?
 
@@ -198,11 +209,11 @@ module MediaTypes
 
       accept_header = HttpHeaders::Accept.new(request.get_header(HEADER_ACCEPT)) || ''
       accept_header.each do |mime_type|
-        next unless registration.has? mime_type
+        next unless registration.has? mime_type.to_s
 
         # Override Rails selected format
-        request.set_header("action_dispatch.request.formats", [mime_type])
-        return mime_type
+        request.set_header("action_dispatch.request.formats", [mime_type.to_s])
+        return mime_type.to_s
       end
 
       nil

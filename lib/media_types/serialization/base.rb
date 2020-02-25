@@ -108,8 +108,8 @@ module MediaTypes
           @@serializer_input_registration.register_alias(self, media_type_identifier, victim_identifier, true)
         end
 
-        def serialize(victim, media_type_identifier, context)
-          @@serializer_output_registration.call(victim, media_type_identifier, context)
+        def serialize(victim, media_type_identifier, context, dsl: nil)
+          @@serializer_output_registration.call(victim, media_type_identifier, context, dsl: dsl)
         end
 
         def deserialize(victim, media_type_identifier, context)

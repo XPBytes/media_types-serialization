@@ -47,13 +47,12 @@ class MediaTypes::SerializationTest < Minitest::Test
   class MyResourceSerializer < ::MediaTypes::Serialization::Base
     validator MyResourceMediaType
 
-
     output version: 1 do |obj, version, context|
       attribute :name, obj[:title]
       attribute :number, obj[:count]
-      attribute :items, obj[:data].map do |k, v|
+      attribute :items, (obj[:data].map do |k, v|
         { label: k, data: v }
-      end
+      end)
     end
 
   end
@@ -69,12 +68,14 @@ class MediaTypes::SerializationTest < Minitest::Test
   end
 
   class FakeController < BaseController
-    allow_output_serializer(MyResourceSerializer)
+    allow_output_serializer MyResourceSerializer
+    freeze_io!
 
     def action
       input = request.body
+      raise 'input nil' if input.nil?
 
-      render_media input
+      render_media obj: input
     end
   end
 
@@ -95,7 +96,7 @@ class MediaTypes::SerializationTest < Minitest::Test
     assert_equal content_type, @response.content_type.split(';').first
 
     result = Oj.load(@response.body)
-    assert_equal( { "my_resource" => { "name" => "test serialization", "number" => 1, "items" => [] } }, result )
+    assert_equal( { "name" => "test serialization", "number" => 1, "items" => [] }, result )
   end
 
   def test_it_only_serializes_what_it_knows
@@ -113,33 +114,6 @@ class MediaTypes::SerializationTest < Minitest::Test
 
     assert_equal content_type, @response.content_type.split(';').first
     assert_equal '<code>{"name":"test serialization","number":1,"items":[],"source":"to_html"}</code>', @response.body
-  end
-
-  def test_it_uses_the_html_wrapper
-    request = ActionDispatch::Request.new({
-      Rack::RACK_INPUT => { title: 'test serialization', count: 1, data: {} },
-      'HTTP_ACCEPT' => "application/vnd.mydomain.nope, text/html; q=0.1"
-    })
-
-    assert_raises ActionView::MissingTemplate do
-      @controller.dispatch(:action, request, @response)
-    end
-  end
-
-  def test_it_uses_the_html_wrapper_for_the_api_viewer
-    request = ActionDispatch::Request.new({
-      Rack::RACK_INPUT => { title: 'test serialization', count: 1, data: {} },
-      'HTTP_ACCEPT' => "application/vnd.xpbytes.api-viewer.v1"
-    })
-
-    # Define it to ensure this was not used
-    MyResourceSerializer.define_method :to_html do |options = {}|
-      "<code>#{to_hash.merge(source: 'to_html').to_json(options)}</code>"
-    end
-
-    assert_raises ActionView::MissingTemplate do
-      @controller.dispatch(:action, request, @response)
-    end
   end
 
   def test_it_extracts_links
