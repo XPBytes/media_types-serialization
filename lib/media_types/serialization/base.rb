@@ -21,7 +21,11 @@ module MediaTypes
           @@serializer_output_registration = SerializationRegistration.new(:output)
         end
 
-        def validator(validator)
+        def validator(validator = nil)
+
+          raise NoValidatorSetError if @@serializer_validator.nil? && validator.nil?
+          return @@serializer_validator if validator.nil?
+
           @@serializer_validated = true
           @@serializer_validator = validator
           @@serializer_input_registration = SerializationRegistration.new(:input)

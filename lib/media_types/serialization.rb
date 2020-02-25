@@ -75,9 +75,6 @@ module MediaTypes
       ##
       # Allow output serialization using the passed in +serializer+ for the given +view+
       #
-      # By default will also accept the first call to this as HTML
-      # By default will also accept the first call to this as Api Viewer
-      #
       # @see #freeze_io!
       #
       # @param serializer the serializer to use for serialization.
@@ -129,8 +126,9 @@ module MediaTypes
 
     protected
 
-    def serialize(victim, media_type, context: nil)
-      @serializer_ouput_registration.call(victim, media_type, context)
+    def serialize(victim, media_type, links: [], context: nil)
+      context = SerializationDSL.new(self, links, context: self)
+      context.instance_eval labda { @serializer_ouput_registration.call(victim, media_type, context) }
     end
 
     def render_media(obj = nil, serializers: nil, not_acceptable_serializer: nil, **options, &block)
@@ -157,7 +155,9 @@ module MediaTypes
         obj = selector.value
       end
 
-      result = registration.call(obj, identifier, self)
+      links = []
+      context = SerializationDSL.new(self, links, context: self)
+      result = context.instance_eval labda { return registration.call(obj, identifier, self) }
       
       # TODO: Set link header
       render body: result, content_type: identifier, **options)

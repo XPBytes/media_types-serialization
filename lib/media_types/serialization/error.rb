@@ -54,5 +54,23 @@ module MediaTypes
         super("Called render_media with a resolved serializer that was not specified in the do block. Please add a 'serializer #{serializer.class.name}, <value>' entry.")
       end
     end
+
+    class NoValidatorSetError < ConfigurationError
+      def initialize
+        super("Unable to return validator as no validator has been set. Either someone tried to fetch the currently defined validator or someone tried to set the validator to 'nil'.")
+      end
+    end
+
+    class NoSelfLinkProvidedError < ConfigurationError
+      def initialize(media_type_identifier)
+        super("Tried to render an index of '#{media_type_identifier}' elements but the serializer did not return a :self link for me to use. Please call 'link rel: :self, href: 'https://...' in the #{media_type_identifier} serializer.")
+      end
+    end
+
+    class MultipleSelfLinksProvidedError < ConfigurationError
+      def initialize(media_type_identifier)
+        super("Tried to render an index of '#{media_type_identifier}' elements but the serializer returned more than one :self link. Please make sure to only call 'link rel: :self, ...' once in the #{media_type_identifier} serializer.")
+      end
+    end
   end
 end
