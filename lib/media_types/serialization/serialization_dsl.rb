@@ -1,13 +1,13 @@
 # frozen_string_literal: true
 
-require 'delegator'
+require 'delegate'
 
 module MediaTypes
   module Serialization
     # Provides the serialization convenience methods
     class SerializationDSL < SimpleDelegator
       def initialize(serializer, links = [], value = {}, context: nil)
-        serialization_dsl_result = value
+        self.serialization_dsl_result = value
         @serialization_links = links
         @serialization_context = context
         super(serializer)

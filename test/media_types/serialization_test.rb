@@ -45,29 +45,17 @@ class MediaTypes::SerializationTest < Minitest::Test
   end
 
   class MyResourceSerializer < ::MediaTypes::Serialization::Base
-    serializes_media_type MyResourceMediaType, additional_versions: [1]
+    validator MyResourceMediaType
 
-    def to_hash
-      {
-        name: serializable[:title],
-        number: serializable[:count],
-        items: serializable[:data].map do |k, v|
-          { label: k, data: v }
-        end
-      }
+
+    output version: 1 do |obj, version, context|
+      attribute :name, obj[:title]
+      attribute :number, obj[:count]
+      attribute :items, obj[:data].map do |k, v|
+        { label: k, data: v }
+      end
     end
 
-    def to_xml(options = {})
-      to_hash.merge(source: 'to_xml').to_xml(options)
-    end
-
-    def to_json(options = {})
-      to_hash.merge(source: 'to_json').to_json(options)
-    end
-
-    def extract_view_links(*)
-      { google: { href: 'https://google.com', foo: 'bar' } }
-    end
   end
 
   class BaseController < ActionController::Metal
@@ -77,26 +65,16 @@ class MediaTypes::SerializationTest < Minitest::Test
     include ActionController::Rendering
     include ActionController::Renderers
 
-    use_renderers :media
-
     include MediaTypes::Serialization
   end
 
   class FakeController < BaseController
-    allow_output_serializer(MyResourceSerializer)
-    allow_all_input
-    freeze_io!
+    allow_output_serialization(MyResourceSerializer)
 
     def action
       input = request.body
-      serializer = serialize_media(input)
 
-      entries = serializer.to_link_header
-      if entries.present?
-        response.header['Link'] = entries
-      end
-
-      render media: serializer, content_type: request.format.to_s
+      render_media input
     end
   end
 
@@ -105,14 +83,8 @@ class MediaTypes::SerializationTest < Minitest::Test
     @response = ActionDispatch::Response.new
   end
 
-  def teardown
-    Mime::Type.unregister(:my_special_symbol)
-    MyResourceSerializer.undef_method :to_html if MyResourceSerializer.method_defined? :to_html
-  end
-
   def test_it_serializes_via_serializer
-    content_type = MyResourceMediaType.to_constructable.version(1).to_s
-    Mime::Type.register(content_type, :my_special_symbol)
+    content_type = MyResourceMediaType.version(1).identifier
 
     request = ActionDispatch::Request.new({
       Rack::RACK_INPUT => { title: 'test serialization', count: 1, data: {} },

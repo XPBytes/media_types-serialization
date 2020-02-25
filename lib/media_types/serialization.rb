@@ -9,11 +9,9 @@ require 'active_support/core_ext/object/blank'
 
 require 'http_headers/accept'
 
-require 'media_types/serialization/no_media_type_serializers'
-require 'media_types/serialization/no_serializer_for_content_type'
 require 'media_types/serialization/base'
+require 'media_types/serialization/error'
 require 'media_types/serialization/serialization_dsl'
-require 'media_types/serialization/wrapper/html_wrapper'
 
 require 'awesome_print'
 
@@ -32,7 +30,7 @@ class SerializationSelectorDsl < SimpleDelegator
   def serializer(klazz, obj = nil, &block)
     return if klazz != @serializer
 
-    matched = true
+    self.matched = true
     self.value = block.nil? ? obj : block.call
   end
 end
@@ -51,6 +49,8 @@ module MediaTypes
       self.json_encoder = JSON.method(:pretty_generate)
       self.json_decoder = JSON.method(:parse)
     end
+
+    extend ActiveSupport::Concern
 
     # rubocop:disable Metrics/BlockLength
     class_methods do
