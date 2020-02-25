@@ -21,7 +21,7 @@ module MediaTypes
         end
 
         def validator(validator = nil)
-          raise NoValidatorSetError if @@serializer_validator.nil? && validator.nil?
+          raise NoValidatorSetError if !defined? @@serializer_validator && validator.nil?
           return @@serializer_validator if validator.nil?
 
           @@serializer_validated = true

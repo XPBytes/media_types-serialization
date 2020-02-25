@@ -14,7 +14,7 @@ module MediaTypes
       attr_accessor :registrations, :inout
 
       def has?(identifier)
-        registrations.has? identifier
+        registrations.key? identifier
       end
 
       def register_block(serializer, validator, version, block, raw)

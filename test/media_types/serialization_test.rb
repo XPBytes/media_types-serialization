@@ -69,7 +69,7 @@ class MediaTypes::SerializationTest < Minitest::Test
   end
 
   class FakeController < BaseController
-    allow_output_serialization(MyResourceSerializer)
+    allow_output_serializer(MyResourceSerializer)
 
     def action
       input = request.body

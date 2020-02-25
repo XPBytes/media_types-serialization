@@ -109,7 +109,7 @@ require 'media_types/serialization/renderer/register'
 class BookController < ActionController::API
   include MediaTypes::Serialization
 
-  allow_output_serialization(BookSerializer, only: %i[show])
+  allow_output_serializer(BookSerializer, only: %i[show])
   freeze_io!
       
   def show 

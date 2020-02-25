@@ -3,7 +3,9 @@ require 'test_helper'
 require 'active_support/callbacks'
 require 'abstract_controller/callbacks'
 require 'abstract_controller/rendering'
+require 'rack/response'
 require 'action_dispatch/http/content_security_policy'
+require 'action_controller'
 require 'action_controller/metal'
 require 'action_controller/metal/mime_responds'
 require 'action_controller/metal/rendering'
@@ -41,12 +43,8 @@ class MediaTypes::DeserializationTest < Minitest::Test
   end
 
   class MyResourceSerializer < ::MediaTypes::Serialization::Base
-    serializes_media_type MyResourceMediaType, additional_versions: [1, 2]
+    validator MyResourceMediaType
 
-    def to_hash
-      {
-      }
-    end
   end
 
   class BaseController < ActionController::Metal
@@ -56,8 +54,6 @@ class MediaTypes::DeserializationTest < Minitest::Test
     include ActionController::Rendering
     include ActionController::Renderers
 
-    use_renderers :media
-
     include MediaTypes::Serialization
   end
 
@@ -66,7 +62,7 @@ class MediaTypes::DeserializationTest < Minitest::Test
     freeze_io!
 
     def action
-      render media: {}, content_type: request.format.to_s
+      render_media {}
     end
   end
 
