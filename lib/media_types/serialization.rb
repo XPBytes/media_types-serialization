@@ -48,6 +48,30 @@ module MediaTypes
     # rubocop:disable Metrics/BlockLength
     class_methods do
 
+      def strict!(**filter_opts)
+        raise "TODO: implement me"
+      end
+
+      def not_acceptable_serializer(serializer, **filter_opts)
+        raise "TODO: implement me"
+      end
+
+      def unsupported_media_type_serializer(serializer, **filter_opts)
+        raise "TODO: implement me"
+      end
+
+      def clear_unsupported_media_type_serializer!(**filter_opts)
+        raise "TODO: implement me"
+      end
+
+      def input_validation_failed_serializer(serializer, **filter_opts)
+        raise "TODO: implement me"
+      end
+
+      def clear_input_validation_failed_serializers!(**filter_opts)
+        raise "TODO: implement me"
+      end
+
       ##
       # Allow output serialization using the passed in +serializer+ for the given +view+
       #
@@ -111,9 +135,9 @@ module MediaTypes
 
     def render_media(obj = nil, serializers: nil, not_acceptable_serializer: nil, **options, &block)
       raise "TODO: unimplemented" unless serializers.nil?
+      # TODO: set not_acceptable_serializer to global one if nil?
 
       # TODO: Convert serializers list to new registration
-      
       
       registration = @serializer_output_registration
 
