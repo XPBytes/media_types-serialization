@@ -7,7 +7,6 @@ require 'media_types/serialization/serialization_registration'
 module MediaTypes
   module Serialization
     class Base
-
       @@serializer_validated = nil
       @@serializer_validator = nil
       @@serializer_input_registration = nil
@@ -22,7 +21,6 @@ module MediaTypes
         end
 
         def validator(validator = nil)
-
           raise NoValidatorSetError if @@serializer_validator.nil? && validator.nil?
           return @@serializer_validator if validator.nil?
 
@@ -33,7 +31,7 @@ module MediaTypes
         end
 
         def output(view: nil, version: nil, versions: nil, &block)
-          versions = [version] if versions == nil
+          versions = [version] if versions.nil?
 
           raise ValidatorNotSpecifiedError, :output if @@serializer_validator.nil?
 
@@ -47,7 +45,7 @@ module MediaTypes
         end
 
         def output_raw(view: nil, version: nil, versions: nil, &block)
-          versions = [version] if versions == nil
+          versions = [version] if versions.nil?
 
           raise ValidatorNotSpecifiedError, :output if @@serializer_validator.nil?
 
@@ -72,29 +70,27 @@ module MediaTypes
 
           @@serializer_output_registration.register_alias(self, media_type_identifier, victim_identifier, true)
         end
-        
+
         def input(view: nil, version: nil, versions: nil, &block)
-          versions = [version] if versions == nil
+          versions = [version] if versions.nil?
 
           raise ValidatorNotSpecifiedError, :input if serializer_validator.nil?
 
           versions.each do |v|
             validator = @@serializer_validator.view(view).version(v)
             validator.override_suffix(:json) unless @@serializer_validated
-            identifier = validator.identifier
 
             @@serializer_output_registration.register_block(self, validator, v, block, false)
           end
         end
 
         def input_raw(view: nil, version: nil, versions: nil, &block)
-          versions = [version] if versions == nil
+          versions = [version] if versions.nil?
 
           raise ValidatorNotSpecifiedError, :input if serializer_validator.nil?
 
           versions.each do |v|
             validator = @@serializer_validator.view(view).version(v)
-            identifier = validator.identifier
 
             @@serializer_input_registration.register_block(self, validator, v, block, false)
           end
@@ -134,7 +130,6 @@ module MediaTypes
       def self.inherited(subclass)
         subclass.extend(ClassMethods)
       end
-
     end
   end
 end

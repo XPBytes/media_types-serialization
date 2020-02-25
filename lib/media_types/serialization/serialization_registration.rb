@@ -14,13 +14,13 @@ module MediaTypes
       attr_accessor :registrations, :inout
 
       def has?(identifier)
-        self.registrations.has? identifier
+        registrations.has? identifier
       end
 
       def register_block(serializer, validator, version, block, raw)
         identifier = validator.identifier
 
-        raise DuplicateDefinitionError.new(identifier, inout) if registrations.has_key? identifier
+        raise DuplicateDefinitionError.new(identifier, inout) if registrations.key? identifier
 
         raise ValidatorNotDefinedError.new(identifier, inout) unless raw || validator.validatable?
 
@@ -31,9 +31,9 @@ module MediaTypes
       end
 
       def register_alias(serializer, alias_identifier, target_identifier, optional)
-        raise DuplicateDefinitionError.new(identifier, inout) if registrations.has_key? identifier
+        raise DuplicateDefinitionError.new(identifier, inout) if registrations.key? identifier
 
-        raise UnbackedAliasDefinitionError.new(target_identifier, inout) unless registrations.has_key? target_identifier
+        raise UnbackedAliasDefinitionError.new(target_identifier, inout) unless registrations.key? target_identifier
 
         registration = SerializationAliasRegistration.new serializer, inout, registrations[target_identifier], optional
         registrations[alias_identifier] = registration
@@ -72,9 +72,9 @@ module MediaTypes
       end
 
       def filter(views:)
-        result = SerializationRegistration.new self.inout
+        result = SerializationRegistration.new inout
 
-        self.registrations.each do |identifier, registration|
+        registrations.each do |identifier, registration|
           if views.include? registration.validator.view
             result.registrations[identifier] = registration
           end
@@ -106,7 +106,7 @@ module MediaTypes
       end
 
       def call(_victim, _context)
-        raise "Assertion failed, call function called on base registration."
+        raise 'Assertion failed, call function called on base registration.'
       end
 
       attr_accessor :serializer, :inout, :validator
@@ -114,7 +114,6 @@ module MediaTypes
 
     # A registration with a block to be executed when called.
     class SerializationBlockRegistration < SerializationBaseRegistration
-
       def initialize(serializer, inout, validator, version, block, raw)
         self.version = version
         self.block = block
@@ -124,15 +123,15 @@ module MediaTypes
 
       def call(victim, context)
         if !raw && inout == :input
-          victim = json_decoder.call(victim)
+          victim = MediaTypes::Serialization.json_decoder.call(victim)
           validator.validate!(victim)
         end
-        
-        result = block.call(victim, self.version, context)
+
+        result = block.call(victim, version, context)
 
         if !raw && inout == :output
           validator.validate!(result)
-          result = json_encoder.call(result)
+          result = MediaTypes::Serialization.json_encoder.call(result)
         end
 
         result
@@ -152,16 +151,16 @@ module MediaTypes
       def merge(other)
         return nil unless other.is_a?(SerializationAliasRegistration)
 
-        if !optional
+        unless optional
           return nil unless other.optional # two non-optional can't merge
           return self
         end
 
-        return other # if both optional, or other is !optional, newer one wins.
+        other # if both optional, or other is !optional, newer one wins.
       end
 
       def call(victim, context)
-        self.target.call(victim, context)
+        target.call(victim, context)
       end
 
       attr_accessor :target, :optional

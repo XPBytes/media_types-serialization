@@ -7,18 +7,12 @@ module MediaTypes
     class ConfigurationError < Error
     end
 
-    class SerializationNotInitializedError < ConfigurationError
-      def initialize(msg='Controller did not call freeze_io!')
-        super
-      end
-    end
-
     class ValidatorNotSpecifiedError < ConfigurationError
       def initialize(inout)
         super("Serializer tried to define an #{inout} without first specifying a validator using either the validator function or unvalidated function. Please call one of those before defining #{inout}s.")
       end
     end
-    
+
     class ValidatorNotDefinedError < ConfigurationError
       def initialize(identifier, inout)
         super("Serializer tried to define an #{inout} using the media type identifier #{identifier}, but no validation has been set up for that identifier. Please add it to the validator.")
@@ -30,7 +24,7 @@ module MediaTypes
         super("Serializer tried to define an #{inout}_alias that points to the media type identifier #{identifier} but no such #{inout} has been defined yet. Please move the #{inout} definition above the alias.")
       end
     end
-    
+
     class DuplicateDefinitionError < ConfigurationError
       def initialize(identifier, inout)
         super("Serializer tried to define an #{inout} using the media type identifier #{identifier}, but another #{inout} was already defined with that identifier. Please remove one of the two.")

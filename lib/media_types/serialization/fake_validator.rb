@@ -1,4 +1,5 @@
 
+# Validator that accepts all input
 class FakeValidator
   def initialize(prefix, view = nil, version = nil, suffixes = {})
     self.prefix = prefix
@@ -8,19 +9,19 @@ class FakeValidator
   end
 
   def view(view)
-    FakeValidator.new(self.prefix, view, self.internal_version, self.suffixes)
+    FakeValidator.new(prefix, view, internal_version, suffixes)
   end
 
   def version(version)
-    FakeValidator.new(self.prefix, self.internal_view, version, self.suffixes)
+    FakeValidator.new(prefix, internal_view, version, suffixes)
   end
 
   def override_suffix(suffix)
-    suffixes[[internal_view,internal_version]] = suffix
+    suffixes[[internal_view, internal_version]] = suffix
   end
 
   def identifier
-    suffix = suffixes[[internal_view,internal_version]] || ''
+    suffix = suffixes[[internal_view, internal_version]] || ''
     result = prefix
     result += '.' + internal_view.to_s unless internal_view.nil?
     result += '.v' + internal_version.to_s unless internal_version.nil?

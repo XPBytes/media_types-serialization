@@ -22,8 +22,8 @@ require 'delegate'
 class SerializationSelectorDsl < SimpleDelegator
   def initialize(controller, selected_serializer)
     @serializer = selected_serializer
-    value = nil
-    matched = false
+    self.value = nil
+    self.matched = false
     super controller
   end
 
@@ -33,27 +33,23 @@ class SerializationSelectorDsl < SimpleDelegator
     return if klazz != @serializer
 
     matched = true
-    if block.nil?
-      value = obj
-    else
-      value = block.call
-    end
+    self.value = block.nil? ? obj : block.call
   end
 end
 
 module MediaTypes
   module Serialization
 
-    HEADER_ACCEPT         = 'HTTP_ACCEPT'
+    HEADER_ACCEPT = 'HTTP_ACCEPT'
 
     mattr_accessor :json_encoder, :json_decoder
     if defined?(::Oj)
-      json_encoder = Oj.method(:dump)
-      json_decoder = Oj.method(:load)
+      self.json_encoder = Oj.method(:dump)
+      self.json_decoder = Oj.method(:load)
     else
       require 'json'
-      json_encoder = JSON.method(:pretty_generate)
-      json_decoder = JSON.method(:parse)
+      self.json_encoder = JSON.method(:pretty_generate)
+      self.json_decoder = JSON.method(:parse)
     end
 
     # rubocop:disable Metrics/BlockLength
@@ -137,9 +133,9 @@ module MediaTypes
 
     protected
 
-    def serialize(victim, media_type, links: [], context: nil)
+    def serialize(victim, media_type, links: [])
       context = SerializationDSL.new(self, links, context: self)
-      context.instance_eval labda { @serializer_ouput_registration.call(victim, media_type, context) }
+      context.instance_eval lambda { @serializer_ouput_registration.call(victim, media_type, context) }
     end
 
     def render_media(obj = nil, serializers: nil, not_acceptable_serializer: nil, **options, &block)
@@ -147,7 +143,7 @@ module MediaTypes
       # TODO: set not_acceptable_serializer to global one if nil?
 
       # TODO: Convert serializers list to new registration
-      
+
       registration = @serializer_output_registration
 
       identifier = resolve_media_type(request, registration)
@@ -168,8 +164,8 @@ module MediaTypes
 
       links = []
       context = SerializationDSL.new(self, links, context: self)
-      result = context.instance_eval labda { return registration.call(obj, identifier, self) }
-      
+      result = context.instance_eval lambda { return registration.call(obj, identifier, self) }
+
       # TODO: Set link header
       render body: result, content_type: identifier, **options
     end
@@ -201,8 +197,8 @@ module MediaTypes
       #
 
       accept_header = HttpHeaders::Accept.new(request.get_header(HEADER_ACCEPT)) || ''
-      request_accept.each do |mime_type|
-        next unless @serializer_output_registration.has? mime_type
+      accept_header.each do |mime_type|
+        next unless registration.has? mime_type
 
         # Override Rails selected format
         request.set_header("action_dispatch.request.formats", [mime_type])
