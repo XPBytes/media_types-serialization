@@ -128,12 +128,12 @@ class MediaTypes::ReadmeTest < Minitest::Test
   end
 
   class FakeController < BaseController
-    allow_output_serializer BookSerializer, only: %i[action]
+    allow_output_serializer BookSerializer, only: %i[show]
     allow_output_serializer BookSerializer, view: :index, only: %i[index]
     allow_output_serializer BookSerializer, view: :collection, only: %i[index]
     freeze_io!
 
-    def action
+    def show
       book = Book.new
       book.title = 'Everything, abridged'
       book.description = 'Mu'
@@ -163,7 +163,7 @@ class MediaTypes::ReadmeTest < Minitest::Test
       'HTTP_ACCEPT' => "#{content_type}, text/html; q=0.1"
     })
 
-    @controller.dispatch(:action, request, @response)
+    @controller.dispatch(:show, request, @response)
     assert_equal content_type, @response.content_type.split(';').first
 
     result = Oj.load(@response.body)
@@ -178,7 +178,7 @@ class MediaTypes::ReadmeTest < Minitest::Test
       'HTTP_ACCEPT' => "#{content_type}, text/html; q=0.1"
     })
 
-    @controller.dispatch(:action, request, @response)
+    @controller.dispatch(:show, request, @response)
     assert_equal content_type, @response.content_type.split(';').first
 
     result = Oj.load(@response.body)
@@ -193,7 +193,7 @@ class MediaTypes::ReadmeTest < Minitest::Test
       'HTTP_ACCEPT' => "#{content_type}, text/html; q=0.1"
     })
 
-    @controller.dispatch(:action, request, @response)
+    @controller.dispatch(:show, request, @response)
     assert_equal content_type, @response.content_type.split(';').first
 
     result = Oj.load(@response.body)
