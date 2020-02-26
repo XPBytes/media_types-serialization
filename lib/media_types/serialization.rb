@@ -55,28 +55,44 @@ module MediaTypes
     # rubocop:disable Metrics/BlockLength
     class_methods do
 
+      #attr_accessor :serialization_not_acceptable_serializer
+      #attr_accessor :serialization_unsupported_media_type_serializer
+      #attr_accessor :serialization_input_validation_failed_serializer
+
       def strict!(**filter_opts)
         raise "TODO: implement me"
       end
 
       def not_acceptable_serializer(serializer, **filter_opts)
-        raise "TODO: implement me"
+        before_action(**filter_opts) do
+          @serialization_not_acceptable_serializer = serializer
+        end
       end
 
       def unsupported_media_type_serializer(serializer, **filter_opts)
-        raise "TODO: implement me"
+        before_action(**filter_opts) do
+          @serialization_unsupported_media_type_serializer ||= []
+          @serialization_unsupported_media_type_serializer.append(serializer)
+        end
       end
 
       def clear_unsupported_media_type_serializer!(**filter_opts)
-        raise "TODO: implement me"
+        before_action(**filter_opts) do
+          @serialization_unsupported_media_type_serializer = []
+        end
       end
 
       def input_validation_failed_serializer(serializer, **filter_opts)
-        raise "TODO: implement me"
+        before_action(**filter_opts) do
+          @serialization_input_validation_failed_serializer ||= []
+          @serialization_input_validation_failed_serializer.append(serializer)
+        end
       end
 
       def clear_input_validation_failed_serializers!(**filter_opts)
-        raise "TODO: implement me"
+        before_action(**filter_opts) do
+          @serialization_input_validation_failed_serializer = []
+        end
       end
 
       ##
@@ -140,9 +156,9 @@ module MediaTypes
     end
 
     def render_media(obj: nil, serializers: nil, not_acceptable_serializer: nil, **options, &block)
-      raise "TODO: unimplemented" unless serializers.nil?
-      # TODO: set not_acceptable_serializer to global one if nil?
+      not_acceptable_serializer ||= @serialization_not_acceptable_serializer if defined? @serialization_not_acceptable_serializer
 
+      raise "TODO: unimplemented" unless serializers.nil?
       # TODO: Convert serializers list to new registration
 
       @serialization_output_registrations ||= SerializationRegistration.new(:output)
@@ -154,13 +170,12 @@ module MediaTypes
 
       if identifier.nil?
         serializer = not_acceptable_serializer
+        raise 'TODO: fall back to internal not-acceptable serializer' if serializer.nil?
         obj = request
         not_acceptable = true
       else
         serializer = resolve_serializer(request, identifier, registration)
       end
-
-      raise 'TODO: fall back to internal not-acceptable serializer' if serializer.nil?
 
       if obj.nil? && !block.nil?
         selector = SerializationSelectorDsl.new(self, serializer)
