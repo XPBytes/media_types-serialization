@@ -8,11 +8,15 @@ class FakeValidator
     self.internal_version = version
   end
 
-  def view(view)
+  UNSET = Object.new
+
+  def view(view = UNSET)
+    return self.internal_view if view == UNSET
     FakeValidator.new(prefix, view, internal_version, suffixes)
   end
 
-  def version(version)
+  def version(version = UNSET)
+    return self.internal_version if version == UNSET
     FakeValidator.new(prefix, internal_view, version, suffixes)
   end
 
@@ -25,7 +29,7 @@ class FakeValidator
     result = prefix
     result += '.' + internal_view.to_s unless internal_view.nil?
     result += '.v' + internal_version.to_s unless internal_version.nil?
-    result += '+' + suffix.to_s unless suffix.nil?
+    result += '+' + suffix.to_s unless suffix.empty?
 
     result
   end
@@ -34,7 +38,7 @@ class FakeValidator
     true
   end
 
-  def validate!
+  def validate!(_)
     true
   end
 

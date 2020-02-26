@@ -1,4 +1,5 @@
 require 'media_types/serialization/version'
+require 'media_types/serialization/serializers/fallback_not_acceptable_serializer'
 
 require 'abstract_controller'
 require 'action_controller/metal/mime_responds'
@@ -158,11 +159,15 @@ module MediaTypes
     def render_media(obj: nil, serializers: nil, not_acceptable_serializer: nil, **options, &block)
       not_acceptable_serializer ||= @serialization_not_acceptable_serializer if defined? @serialization_not_acceptable_serializer
 
-      raise "TODO: unimplemented" unless serializers.nil?
-      # TODO: Convert serializers list to new registration
 
       @serialization_output_registrations ||= SerializationRegistration.new(:output)
       registration = @serialization_output_registrations
+      unless serializers.nil?
+        registration = SerializationRegistration.new(:output)
+        serializers.each do |s|
+          registration = registration.merge(s.registrations)
+        end
+      end
 
       identifier = resolve_media_type(request, registration)
       not_acceptable = false
@@ -170,8 +175,10 @@ module MediaTypes
 
       if identifier.nil?
         serializer = not_acceptable_serializer
-        raise 'TODO: fall back to internal not-acceptable serializer' if serializer.nil?
-        obj = request
+        serializer = MediaTypes::Serialization::Serializers::FallbackNotAcceptableSerializer if serializer.nil?
+        identifier = serializer.validator.identifier
+        obj = { request: request, registrations: registration }
+        registration = serializer.outputs_for(views: [nil])
         not_acceptable = true
       else
         serializer = resolve_serializer(request, identifier, registration)
@@ -189,7 +196,6 @@ module MediaTypes
       context = SerializationDSL.new(self, links, context: self)
       result = registration.call(obj, identifier, self, dsl: context)
 
-      # TODO: Set link header
       if links.any?
         items = links.map do |l|
           href_part = "<#{l[:href]}>"
@@ -199,9 +205,9 @@ module MediaTypes
         response.set_header('Link', items.join(', '))
       end
 
-      options[:status] = :not_acceptable if not_acceptable
       render body: result, **options
       response.content_type = identifier
+      response.status = :not_acceptable if not_acceptable
     end
 
     def deserialize(request)
@@ -234,8 +240,6 @@ module MediaTypes
       accept_header.each do |mime_type|
         next unless registration.has? mime_type.to_s
 
-        # Override Rails selected format
-        request.set_header("action_dispatch.request.formats", [mime_type.to_s])
         return mime_type.to_s
       end
 

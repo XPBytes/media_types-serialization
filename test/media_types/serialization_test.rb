@@ -115,7 +115,7 @@ class MediaTypes::SerializationTest < Minitest::Test
     @controller.dispatch(:action, request, @response)
 
     assert_equal content_type, @response.content_type.split(';').first
-    assert_equal '<code>{"name":"test serialization","number":1,"items":[],"source":"to_html"}</code>', @response.body
+    assert_equal 406, @response.status # not acceptable
   end
 
   def test_it_extracts_links
