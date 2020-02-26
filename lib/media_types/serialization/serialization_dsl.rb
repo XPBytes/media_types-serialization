@@ -26,15 +26,19 @@ module MediaTypes
         serialization_dsl_result
       end
 
-      def link(rel:, href:, **opts)
+      def link(rel, href:, **attributes)
         serialization_dsl_result[:_links] = {} unless serialization_dsl_result.has_key? :_links
 
-        link = opts.dup
-        link[:rel] = rel
-        link[:href] = href
+        link = {
+          href: href,
+          rel: rel,
+        }
+        link = link.merge(attributes)
 
-        json = opts.dup
-        json[:href] = href
+        json = {
+          href: href,
+        }
+        json = json.merge(attributes)
 
         @serialization_links.append(link)
         serialization_dsl_result[:_links][rel] = json

@@ -158,7 +158,7 @@ class BookSerializer < MediaTypes::Serialization::Base
 
   output versions: [1, 2, 3] do |obj, version, context|
     attribute :book do
-      link rel: :self, href: context.book_url(obj) if version >= 3
+      link :self, href: context.book_url(obj) if version >= 3
 
       attribute :title, obj.title
       attribute :description, obj.description if version >= 2
@@ -197,7 +197,7 @@ class BookSerializer < MediaTypes::Serialization::Base
 
   output versions: [1, 2, 3] do |obj, version, context|
     attribute :book do
-      link rel: :self, href: context.book_url(obj) if version >= 3
+      link :self, href: context.book_url(obj) if version >= 3
 
       attribute :title, obj.title
       attribute :description, obj.description if version >= 2
@@ -206,7 +206,7 @@ class BookSerializer < MediaTypes::Serialization::Base
 
   output view: :index, version: 3 do |arr, version, context|
     attribute :books do
-      link rel: :self, href: context.book_index_url
+      link :self, href: context.book_index_url
       
       index arr, version: version
     end
@@ -239,7 +239,7 @@ class BookSerializer < MediaTypes::Serialization::Base
 
   output versions: [1, 2, 3] do |obj, version, context|
     attribute :book do
-      link rel: :self, href: context.book_url(obj) if version >= 3
+      link :self, href: context.book_url(obj) if version >= 3
 
       attribute :title, obj.title
       attribute :description, obj.description if version >= 2
@@ -248,7 +248,7 @@ class BookSerializer < MediaTypes::Serialization::Base
 
   output view: :index, version: 3 do |arr, version, context|
     attribute :books do
-      link rel: :self, href: context.book_index_url
+      link :self, href: context.book_index_url
       
       index arr, version: version
     end
@@ -256,7 +256,7 @@ class BookSerializer < MediaTypes::Serialization::Base
   
   output view: :collection, version: 3 do |arr, version, context|
     attribute :books do
-      link rel: :self, href: context.book_collection_url
+      link :self, href: context.book_collection_url
       
       collection arr, version: version
     end
@@ -295,7 +295,7 @@ class BookSerializer < MediaTypes::Serialization::Base
 
   output versions: [1, 2, 3] do |obj, version, context|
     attribute :book do
-      link rel: :self, href: context.book_url(obj) if version >= 3
+      link :self, href: context.book_url(obj) if version >= 3
 
       attribute :title, obj.title
       attribute :description, obj.description if version >= 2
@@ -333,7 +333,7 @@ class BookSerializer < MediaTypes::Serialization::Base
 
   output versions: [1, 2, 3] do |obj, version, context|
     attribute :book do
-      link rel: :self, href: context.book_url(obj) if version >= 3
+      link :self, href: context.book_url(obj) if version >= 3
 
       attribute :title, obj.title
       attribute :description, obj.description if version >= 2
@@ -387,7 +387,7 @@ class BookSerializer < MediaTypes::Serialization::Base
     hidden do
       # Make sure links are only set in the headers, not in the body.
       
-      link rel: :self, href: context.book_url(obj)
+      link :self, href: context.book_url(obj)
     end
 
     "I'm a non-json output"
@@ -423,7 +423,7 @@ class BookSerializer < MediaTypes::Serialization::Base
   alias_output 'application/json' # maps application/json to to applicaton/vnd.acme.book.v1+json
   output versions: [1, 2, 3] do |obj, version, context|
     attribute :book do
-      link rel: :self, href: context.book_url(obj) if version >= 3
+      link :self, href: context.book_url(obj) if version >= 3
 
       attribute :title, obj.title
       attribute :description, obj.description if version >= 2
@@ -479,7 +479,7 @@ class BookSerializer < MediaTypes::Serialization::Base
 
   output versions: [1, 2, 3] do |obj, version, context|
     attribute :book do
-      link rel: :self, href: context.book_url(obj) if version >= 3
+      link :self, href: context.book_url(obj) if version >= 3
 
       attribute :title, obj.title
       attribute :description, obj.description if version >= 2
@@ -568,9 +568,9 @@ Sets a value for the given key. If a block is given, any `attribute`, `link`, `c
 
 Returns the built up context so far.
 
-#### `link( rel:, href: )`
+#### `link( rel, href:, **attributes )`
 
-Adds a `_link` block to the current context. Also adds the specified link to the HTTP Link header.
+Adds a `_link` block to the current context. Also adds the specified link to the HTTP Link header. `attributes` allows passing in custom attributes.
 
 Returns the built up context so far.
 

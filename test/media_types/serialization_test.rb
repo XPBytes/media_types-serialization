@@ -34,6 +34,7 @@ class MediaTypes::SerializationTest < Minitest::Test
       version 1 do
         attribute :name
         attribute :number, Numeric
+        link :google
         collection :items, allow_empty: true do
           attribute :label
           attribute :data, Object
@@ -53,6 +54,7 @@ class MediaTypes::SerializationTest < Minitest::Test
       attribute :items, (obj[:data].map do |k, v|
         { label: k, data: v }
       end)
+      link :google, href: 'https://google.com', foo: 'bar'
     end
 
   end
@@ -96,7 +98,7 @@ class MediaTypes::SerializationTest < Minitest::Test
     assert_equal content_type, @response.content_type.split(';').first
 
     result = Oj.load(@response.body)
-    assert_equal( { "name" => "test serialization", "number" => 1, "items" => [] }, result )
+    assert_equal( { "name" => "test serialization", "number" => 1, "items" => [], "_links" => {"google" => {"href" => "https://google.com", "foo" => "bar"}} }, result )
   end
 
   def test_it_only_serializes_what_it_knows

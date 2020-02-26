@@ -175,6 +175,14 @@ module MediaTypes
       result = registration.call(obj, identifier, self, dsl: context)
 
       # TODO: Set link header
+      if links.any?
+        items = links.map do |l|
+          href_part = "<#{l[:href]}>"
+          tags = l.to_a.select { |k,_| k != :href }.map { |k,v| "#{k}=#{v}" }
+          ([href_part] + tags).join('; ')
+        end
+        response.set_header('Link', items.join(', '))
+      end
 
       options[:status] = :not_acceptable if not_acceptable
       render body: result, **options
