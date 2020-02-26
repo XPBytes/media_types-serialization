@@ -175,8 +175,8 @@ module MediaTypes
 
     protected
 
-    def serialize(victim, media_type, links: [])
-      context = SerializationDSL.new(self, links, context: self)
+    def serialize(victim, media_type, serializer: Object.new, links: [])
+      context = SerializationDSL.new(serializer, links, context: self)
       context.instance_exec { @serialization_output_registrations.call(victim, media_type, context) }
     end
 
@@ -212,7 +212,7 @@ module MediaTypes
         obj = selector.value
       end
 
-      serialization_render_resolved(obj: obj, identifier: identifier, registrations: registration, options: options)
+      serialization_render_resolved(obj: obj, serializer: serializer, identifier: identifier, registrations: registration, options: options)
     end
 
     def deserialize(request)
@@ -258,13 +258,13 @@ module MediaTypes
         obj = { request: request, registrations: registrations }
         new_registrations = serializer.outputs_for(views: [nil])
       
-        serialization_render_resolved(obj: obj, identifier: identifier, registrations: new_registrations, options: {})
+        serialization_render_resolved(obj: obj, serializer: serializer, identifier: identifier, registrations: new_registrations, options: {})
         response.status = :not_acceptable
     end
 
-    def serialization_render_resolved(obj:, identifier:, registrations:, options:)
+    def serialization_render_resolved(obj:, identifier:, serializer:, registrations:, options:)
       links = []
-      context = SerializationDSL.new(self, links, context: self)
+      context = SerializationDSL.new(serializer, links, context: self)
       result = registrations.call(obj, identifier, self, dsl: context)
 
       if links.any?

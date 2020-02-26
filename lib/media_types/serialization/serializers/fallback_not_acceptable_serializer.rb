@@ -11,7 +11,7 @@ module MediaTypes
 
         output_raw do |obj, version, context|
           #TODO: Add list of media types and correct html
-          'unacceptable'
+          '<html lang="en"><head><title>Unable to statify acceptable media types</title></head><body>Available: ' + obj[:registrations].registrations.keys.to_s + '</body></html>'
         end
       end
     end

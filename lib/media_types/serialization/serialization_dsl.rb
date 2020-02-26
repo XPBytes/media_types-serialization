@@ -46,35 +46,35 @@ module MediaTypes
         serialization_dsl_result
       end
 
-      def index(array, serializer, version:, view: nil)
+      def index(array, serializer = __getobj__, version:, view: nil)
         links = []
-        identifier = serializer.validator.view(view).version(version).identifier
+        identifier = serializer.serializer_validator.view(view).version(version).identifier
 
         array.each do |e|
           child_links = []
           context = SerializationDSL.new(__getobj__, child_links, context: @serialization_context)
-          serializer.serialize(e, identifier, __getobj__, @serialization_context, dsl: context)
+          serializer.serialize(e, identifier, @serialization_context, dsl: context)
 
-          self_links = self_links.select { |l| l.rel == :self }
+          self_links = child_links.select { |l| l[:rel] == :self }
           raise NoSelfLinkProvidedError, identifier unless self_links.any?
           raise MultipleSelfLinksProvidedError, identifier if self_links.length > 1
 
-          links.append(self_links.first)
+          links.append(self_links.first.reject { |k, _| k == :rel } )
         end
 
-        serialization_dsl_result[:_index] = links.reject { |k, _| k == :rel }
+        serialization_dsl_result[:_index] = links
 
         serialization_dsl_result
       end
 
-      def collection(array, serializer, version:, view: nil)
-        identifier = serializer.validator.view(view).version(version).identifier
+      def collection(array, serializer = __getobj__, version:, view: nil)
+        identifier = serializer.serializer_validator.view(view).version(version).identifier
 
         rendered = []
 
         array.each do |e|
           context = SerializationDSL.new(__getobj__, context: @serialization_context)
-          result = serializer.serialize(e, identifier, __getobj__, @serialization_context, dsl: context)
+          result = serializer.serialize(e, identifier, @serialization_context, dsl: context, raw: true)
 
           rendered.append(result)
         end

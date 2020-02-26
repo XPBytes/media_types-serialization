@@ -64,11 +64,11 @@ module MediaTypes
         result
       end
 
-      def call(victim, media_type, context, dsl: nil)
+      def call(victim, media_type, context, dsl: nil, raw: nil)
         registration = registrations[media_type]
         raise UnregisteredMediaTypeUsageError.new(media_type, registrations.keys) if registration.nil?
 
-        registration.call(victim, context, dsl: dsl)
+        registration.call(victim, context, dsl: dsl, raw: raw)
       end
 
       def filter(views:)
@@ -105,7 +105,7 @@ module MediaTypes
         nil
       end
 
-      def call(_victim, _context, dsl: nil)
+      def call(_victim, _context, dsl: nil, raw: nil)
         raise 'Assertion failed, call function called on base registration.'
       end
 
@@ -121,7 +121,9 @@ module MediaTypes
         super(serializer, inout, validator)
       end
 
-      def call(victim, context, dsl: nil)
+      def call(victim, context, dsl: nil, raw: nil)
+        raw = self.raw if raw.nil?
+
         if !raw && inout == :input
           victim = MediaTypes::Serialization.json_decoder.call(victim)
           validator.validate!(victim)
@@ -164,8 +166,8 @@ module MediaTypes
         other # if both optional, or other is !optional, newer one wins.
       end
 
-      def call(victim, context, dsl: nil)
-        target.call(victim, context, dsl: dsl)
+      def call(victim, context, dsl: nil, raw: nil)
+        target.call(victim, context, dsl: dsl, raw: raw)
       end
 
       attr_accessor :target, :optional
