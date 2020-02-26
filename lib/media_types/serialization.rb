@@ -56,22 +56,22 @@ module MediaTypes
     # rubocop:disable Metrics/BlockLength
     class_methods do
 
-      #attr_accessor :serialization_not_acceptable_serializer
-      #attr_accessor :serialization_unsupported_media_type_serializer
-      #attr_accessor :serialization_input_validation_failed_serializer
-
       def strict!(**filter_opts)
         raise "TODO: implement me"
       end
 
       def not_acceptable_serializer(serializer, **filter_opts)
         before_action(**filter_opts) do
+          raise SerializersAlreadyFrozenError if defined? @serialization_frozen
+
           @serialization_not_acceptable_serializer = serializer
         end
       end
 
       def unsupported_media_type_serializer(serializer, **filter_opts)
         before_action(**filter_opts) do
+          raise SerializersAlreadyFrozenError if defined? @serialization_frozen
+
           @serialization_unsupported_media_type_serializer ||= []
           @serialization_unsupported_media_type_serializer.append(serializer)
         end
@@ -79,12 +79,16 @@ module MediaTypes
 
       def clear_unsupported_media_type_serializer!(**filter_opts)
         before_action(**filter_opts) do
+          raise SerializersAlreadyFrozenError if defined? @serialization_frozen
+
           @serialization_unsupported_media_type_serializer = []
         end
       end
 
       def input_validation_failed_serializer(serializer, **filter_opts)
         before_action(**filter_opts) do
+          raise SerializersAlreadyFrozenError if defined? @serialization_frozen
+
           @serialization_input_validation_failed_serializer ||= []
           @serialization_input_validation_failed_serializer.append(serializer)
         end
@@ -92,6 +96,8 @@ module MediaTypes
 
       def clear_input_validation_failed_serializers!(**filter_opts)
         before_action(**filter_opts) do
+          raise SerializersAlreadyFrozenError if defined? @serialization_frozen
+
           @serialization_input_validation_failed_serializer = []
         end
       end
@@ -106,9 +112,13 @@ module MediaTypes
       # @param [(String | NilClass|)[]|NilClass] views the views it should use the serializer for. Use nil for no view
       #
       def allow_output_serializer(serializer, view: nil, views: nil, **filter_opts)
+        raise SerializersAlreadyFrozenError if defined? @serialization_frozen
+
         views = [view] if views.nil?
 
         before_action(**filter_opts) do
+          raise SerializersAlreadyFrozenError if defined? @serialization_frozen
+
           @serialization_output_registrations ||= SerializationRegistration.new(:output)
 
           @serialization_output_registrations = @serialization_output_registrations.merge(serializer.outputs_for(views: views))
@@ -128,6 +138,8 @@ module MediaTypes
         views = [view] if views.nil?
 
         before_action(**filter_opts) do
+          raise SerializersAlreadyFrozenError if defined? @serialization_frozen
+
           @serialization_input_registrations ||= SerializationRegistration.new(:input)
 
           @serialization_input_registrations = @serialization_input_registrations.merge(serializer.inputs_for(views: views))
@@ -138,7 +150,19 @@ module MediaTypes
       # Freezes additions to the serializes and notifies the controller what it will be able to respond to.
       #
       def freeze_io!
-        # TODO: check not_acceptable in before action
+        before_action do
+          raise UnableToRefreezeError if defined? @serialization_frozen
+
+          @serialization_frozen = true
+
+          resolved_identifier = resolve_media_type(request, @serialization_output_registrations)
+
+          not_acceptable_serializer = nil
+          not_acceptable_serializer = @serialization_not_acceptable_serializer if defined? @serialization_not_acceptable_serializer
+          not_acceptable_serializer ||= MediaTypes::Serialization::Serializers::FallbackNotAcceptableSerializer
+
+          serialization_render_not_acceptable(@serialization_output_registrations, not_acceptable_serializer) if resolved_identifier.nil?
+        end
       end
 
     end
@@ -157,6 +181,8 @@ module MediaTypes
     end
 
     def render_media(obj: nil, serializers: nil, not_acceptable_serializer: nil, **options, &block)
+      raise SerializersNotFrozenError unless defined? @serialization_frozen
+
       not_acceptable_serializer ||= @serialization_not_acceptable_serializer if defined? @serialization_not_acceptable_serializer
 
 
@@ -170,19 +196,13 @@ module MediaTypes
       end
 
       identifier = resolve_media_type(request, registration)
-      not_acceptable = false
-      serializer = nil
 
       if identifier.nil?
-        serializer = not_acceptable_serializer
-        serializer = MediaTypes::Serialization::Serializers::FallbackNotAcceptableSerializer if serializer.nil?
-        identifier = serializer.validator.identifier
-        obj = { request: request, registrations: registration }
-        registration = serializer.outputs_for(views: [nil])
-        not_acceptable = true
-      else
-        serializer = resolve_serializer(request, identifier, registration)
+        serialization_render_not_acceptable(registration, not_acceptable_serializer)
+        return
       end
+
+      serializer = resolve_serializer(request, identifier, registration)
 
       if obj.nil? && !block.nil?
         selector = SerializationSelectorDsl.new(self, serializer)
@@ -192,22 +212,7 @@ module MediaTypes
         obj = selector.value
       end
 
-      links = []
-      context = SerializationDSL.new(self, links, context: self)
-      result = registration.call(obj, identifier, self, dsl: context)
-
-      if links.any?
-        items = links.map do |l|
-          href_part = "<#{l[:href]}>"
-          tags = l.to_a.select { |k,_| k != :href }.map { |k,v| "#{k}=#{v}" }
-          ([href_part] + tags).join('; ')
-        end
-        response.set_header('Link', items.join(', '))
-      end
-
-      render body: result, **options
-      response.content_type = identifier
-      response.status = :not_acceptable if not_acceptable
+      serialization_render_resolved(obj: obj, identifier: identifier, registrations: registration, options: options)
     end
 
     def deserialize(request)
@@ -244,6 +249,35 @@ module MediaTypes
       end
 
       nil
+    end
+
+    def serialization_render_not_acceptable(registrations, override = nil)
+        serializer = override
+        serializer ||= MediaTypes::Serialization::Serializers::FallbackNotAcceptableSerializer
+        identifier = serializer.validator.identifier
+        obj = { request: request, registrations: registrations }
+        new_registrations = serializer.outputs_for(views: [nil])
+      
+        serialization_render_resolved(obj: obj, identifier: identifier, registrations: new_registrations, options: {})
+        response.status = :not_acceptable
+    end
+
+    def serialization_render_resolved(obj:, identifier:, registrations:, options:)
+      links = []
+      context = SerializationDSL.new(self, links, context: self)
+      result = registrations.call(obj, identifier, self, dsl: context)
+
+      if links.any?
+        items = links.map do |l|
+          href_part = "<#{l[:href]}>"
+          tags = l.to_a.select { |k,_| k != :href }.map { |k,v| "#{k}=#{v}" }
+          ([href_part] + tags).join('; ')
+        end
+        response.set_header('Link', items.join(', '))
+      end
+
+      render body: result, **options
+      response.content_type = identifier
     end
   end
 end

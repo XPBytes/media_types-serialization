@@ -66,5 +66,23 @@ module MediaTypes
         super("Tried to render an index of '#{media_type_identifier}' elements but the serializer returned more than one :self link. Please make sure to only call 'link rel: :self, ...' once in the #{media_type_identifier} serializer.")
       end
     end
+
+    class SerializersNotFrozenError < ConfigurationError
+      def initialize
+        super("Unable to serialize or deserialize objects with unfrozen serializers. Please add 'freeze_io!' to the controller definition.")
+      end
+    end
+
+    class SerializersAlreadyFrozenError < ConfigurationError
+      def initialize
+        super("Unable to add a serializer when they are already frozen. Please make sure to call 'freeze_io!' last.")
+      end
+    end
+
+    class UnableToRefreezeError < ConfigurationError
+      def initialize
+        super("Freeze was called while the serializers are already frozen. Please make sure to only call 'freeze_io!' once.")
+      end
+    end
   end
 end
