@@ -4,6 +4,23 @@ module MediaTypes
     class Error < StandardError
     end
 
+    class RuntimeError < Error
+    end
+
+    class InputValidationFailedError < RuntimeError
+      def initialize(inner)
+        @inner = inner
+        super(inner.message)
+      end
+    end
+    
+    class OutputValidationFailedError < RuntimeError
+      def initialize(inner)
+        @inner = inner
+        super(inner.message)
+      end
+    end
+
     class ConfigurationError < Error
     end
 
@@ -21,6 +38,19 @@ module MediaTypes
 
     class UnbackedAliasDefinitionError < ConfigurationError
       def initialize(identifier, inout)
+        # TODO: do this:
+        # Move the output definition above the alias:
+        #
+        # class MySerializer < MediaTypes::Serialization::Base
+        # #...
+        # output do
+        #    # ...
+        # end
+        #
+        # output_alias 'text/html'
+        # # ^----- move here
+        # end
+
         super("Serializer tried to define an #{inout}_alias that points to the media type identifier #{identifier} but no such #{inout} has been defined yet. Please move the #{inout} definition above the alias.")
       end
     end

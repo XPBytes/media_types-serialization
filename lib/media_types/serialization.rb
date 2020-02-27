@@ -134,7 +134,7 @@ module MediaTypes
       # @param [(String | NilClass|)] view the view it should serializer for. Use nil for no view
       # @param [(String | NilClass|)[]|NilClass] views the views it should serializer for. Use nil for no view
       #
-      def allow_input_serializer(serializer, view: [nil], **filter_opts)
+      def allow_input_serializer(serializer, view: nil, views: nil, **filter_opts)
         views = [view] if views.nil?
 
         before_action(**filter_opts) do

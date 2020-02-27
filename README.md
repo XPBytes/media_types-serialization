@@ -420,7 +420,7 @@ Sometimes you already have old clients using an `application/json` media type id
 class BookSerializer < MediaTypes::Serialization::Base
   validator BookValidator
 
-  alias_output 'application/json' # maps application/json to to applicaton/vnd.acme.book.v1+json
+  output_alias 'application/json' # maps application/json to to applicaton/vnd.acme.book.v1+json
   output versions: [1, 2, 3] do |obj, version, context|
     attribute :book do
       link :self, href: context.book_url(obj) if version >= 3
@@ -490,7 +490,7 @@ class BookSerializer < MediaTypes::Serialization::Base
     '<html><head><title>Hello World</title></head><body>hi</body></html>'
   end
   
-  alias_output 'text/html', view: :html
+  output_alias 'text/html', view: :html
 end
 ```
 
@@ -665,7 +665,7 @@ If you want to render with different serializers than defined in the controller 
 
 If you want to override the serializer that is used to render the response when no acceptable Content-Type could be negotiated you can pass the desired serializer in the `not_acceptable_serializer` property.
 
-This method throws an TODO error if the output does not conform to the format defined by the configured validator. Best practise is to return a 500 error to the client.
+This method throws a `MediaTypes::Serialization::OutputValidationFailedError` error if the output does not conform to the format defined by the configured validator. Best practise is to return a 500 error to the client.
 
 If no acceptable Content-Type could be negotiated the response will be rendered using the serialized defined by the class `not_acceptable_serializer` function or by the `not_acceptable_serializer` property.
 
@@ -675,7 +675,7 @@ Deserializes the request body using the configured input serializers and returns
 
 Returns nil if no input body was given by the client.
 
-This method throws an TODO error if the
+This method throws a `MediaTypes::Serialization::InputValidationFailedError` error if the incoming data does not conform to the specified schema.
 
 #### `deserialize!( request )`
 

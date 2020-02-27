@@ -31,11 +31,13 @@ module MediaTypes
       end
 
       def register_alias(serializer, alias_identifier, target_identifier, optional)
-        raise DuplicateDefinitionError.new(identifier, inout) if registrations.key? identifier
+        raise DuplicateDefinitionError.new(identifier, inout) if registrations.key? alias_identifier
 
         raise UnbackedAliasDefinitionError.new(target_identifier, inout) unless registrations.key? target_identifier
 
-        registration = SerializationAliasRegistration.new serializer, inout, registrations[target_identifier], optional
+        target = registrations[target_identifier]
+
+        registration = SerializationAliasRegistration.new serializer, inout, target.validator, target, optional
         registrations[alias_identifier] = registration
 
         register_wildcards(alias_identifier, registration)

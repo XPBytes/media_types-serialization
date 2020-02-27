@@ -46,19 +46,19 @@ module MediaTypes
           versions.each do |v|
             validator = serializer_validator.view(view).version(v)
 
-            serializer_output_registration.register_block(self, validator, v, block, false)
+            serializer_output_registration.register_block(self, validator, v, block, true)
           end
         end
 
         def output_alias(media_type_identifier, view: nil)
-          validator = serializer_validator.view(view).version(v)
+          validator = serializer_validator.view(view)
           victim_identifier = validator.identifier
 
           serializer_output_registration.register_alias(self, media_type_identifier, victim_identifier, false)
         end
 
         def output_alias_optional(media_type_identifier, view: nil)
-          validator = serializer_validator.view(view).version(v)
+          validator = serializer_validator.view(view)
           victim_identifier = validator.identifier
 
           serializer_output_registration.register_alias(self, media_type_identifier, victim_identifier, true)
@@ -85,19 +85,19 @@ module MediaTypes
           versions.each do |v|
             validator = serializer_validator.view(view).version(v)
 
-            serializer_input_registration.register_block(self, validator, v, block, false)
+            serializer_input_registration.register_block(self, validator, v, block, true)
           end
         end
 
         def input_alias(media_type_identifier, view: nil)
-          validator = serializer_validator.view(view).version(v)
+          validator = serializer_validator.view(view)
           victim_identifier = validator.identifier
 
           serializer_input_registration.register_alias(self, media_type_identifier, victim_identifier, false)
         end
 
         def input_alias_optional(media_type_identifier, view: nil)
-          validator = serializer_validator.view(view).version(v)
+          validator = serializer_validator.view(view)
           victim_identifier = validator.identifier
 
           serializer_input_registration.register_alias(self, media_type_identifier, victim_identifier, true)
