@@ -3,6 +3,7 @@
 require 'media_types/serialization/error'
 require 'media_types/serialization/fake_validator'
 require 'media_types/serialization/serialization_registration'
+require 'media_types/serialization/serialization_dsl'
 
 module MediaTypes
   module Serialization
@@ -104,7 +105,8 @@ module MediaTypes
         end
 
         def serialize(victim, media_type_identifier, context, dsl: nil, raw: nil)
-          serializer_output_registration.call(victim, media_type_identifier, context, dsl: dsl, raw: raw)
+          dsl ||= SerializationDSL.new(self, context: context)
+          serializer_output_registration.call(victim, media_type_identifier.to_s, context, dsl: dsl, raw: raw)
         end
 
         def deserialize(victim, media_type_identifier, context)

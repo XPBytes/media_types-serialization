@@ -97,6 +97,12 @@ module MediaTypes
       end
     end
 
+    class ArrayInViewParameterError < ConfigurationError
+      def initialize(function)
+        super("Tried to call #{function} with an array in the view: parameter. Please use the views: parameter instead.")
+      end
+    end
+
     class SerializersNotFrozenError < ConfigurationError
       def initialize
         super("Unable to serialize or deserialize objects with unfrozen serializers. Please add 'freeze_io!' to the controller definition.")
