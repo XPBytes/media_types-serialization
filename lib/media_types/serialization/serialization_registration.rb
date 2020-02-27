@@ -128,7 +128,11 @@ module MediaTypes
 
         if !raw && inout == :input
           victim = MediaTypes::Serialization.json_decoder.call(victim)
-          validator.validate!(victim)
+          begin
+            validator.validate!(victim)
+          rescue ValidationError => inner
+            raise IntputValidationFailedError, inner
+          end
         end
 
         result = nil
@@ -139,7 +143,11 @@ module MediaTypes
         end
 
         if !raw && inout == :output
-          validator.validate!(result)
+          begin
+            validator.validate!(result)
+          rescue ValidationError => inner
+            raise OutputValidationFailedError, inner
+          end
           result = MediaTypes::Serialization.json_encoder.call(result)
         end
 
