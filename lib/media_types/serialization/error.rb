@@ -120,5 +120,11 @@ module MediaTypes
         super("Freeze was called while the serializers are already frozen. Please make sure to only call 'freeze_io!' once.")
       end
     end
+
+    class NoOutputSerializersDefinedError < ConfigurationError
+      def intialize
+        super("Called freeze_io! without any allowed output serializers. Users won't be able to make any requests. Please make sure to add at least one allow_output_serializer call to your controller.")
+      end
+    end
   end
 end

@@ -43,7 +43,7 @@ module MediaTypes
 
     mattr_accessor :json_encoder, :json_decoder
     if defined?(::Oj)
-      self.json_encoder = Oj.method(:dump)
+      self.json_encoder = ->(obj) { Oj.dump(obj, {indent: 2, space: ' '} ) }
       self.json_decoder = Oj.method(:load)
     else
       require 'json'
@@ -156,6 +156,7 @@ module MediaTypes
           raise UnableToRefreezeError if defined? @serialization_frozen
 
           @serialization_frozen = true
+          raise NoOutputSerializersDefinedError unless defined? @serialization_output_registrations
 
           resolved_identifier = resolve_media_type(request, @serialization_output_registrations)
 
