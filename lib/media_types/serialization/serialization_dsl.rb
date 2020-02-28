@@ -86,7 +86,7 @@ module MediaTypes
 
       def hidden(&block)
         context = SerializationDSL.new(__getobj__, @serialization_links, context: @serialization_context)
-        context.instance_eval(block)
+        context.instance_exec(&block)
 
         serialization_dsl_result
       end
