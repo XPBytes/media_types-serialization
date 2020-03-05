@@ -86,7 +86,7 @@ GEM
       mini_portile2 (~> 2.4.0)
     nokogiri (1.10.8-x64-mingw32)
       mini_portile2 (~> 2.4.0)
-    oj (3.10.3)
+    oj (3.10.5)
     rack (2.2.2)
     rack-test (1.1.0)
       rack (>= 1.0, < 3)
