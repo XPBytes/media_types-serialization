@@ -146,7 +146,7 @@ module MediaTypes
 
       def allow_all_input(**filter_opts)
         before_action(**filter_opts) do
-          @serialization_input_allow_all ||= True
+          @serialization_input_allow_all ||= true
         end
       end
 
@@ -158,17 +158,16 @@ module MediaTypes
           raise UnableToRefreezeError if defined? @serialization_frozen
 
           @serialization_frozen = true
+          @serialization_input_registrations ||= SerializationRegistration.new(:input)
+
           raise NoOutputSerializersDefinedError unless defined? @serialization_output_registrations
 
-          all_allowed = False
+          all_allowed = false
           all_allowed ||= @serialization_input_allow_all if defined?(@serialization_input_allow_all)
 
-          input_is_allowed = True
-          if request.content_type
+          input_is_allowed = true
+          unless request.content_type.blank?
             input_is_allowed = @serialization_input_registrations.has? request.content_type
-          end
-
-          if input_is_allowed
             begin
               @serialization_decoded_input = @serialization_input_registrations.decode(request.body, request.content_type, self)
             rescue InputValidationFailedError => e

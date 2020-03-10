@@ -9,7 +9,7 @@ module MediaTypes
 
     class InputNotAcceptableError < ControlFlowError
       def initialize
-        super('Content-Type provided in the request is not acceptable.'.)
+        super('Content-Type provided in the request is not acceptable.')
       end
     end
 
@@ -18,7 +18,7 @@ module MediaTypes
 
     class NoInputReceivedError < RuntimeError
       def initialize
-        super('No Content-Type specified in request'.)
+        super('No Content-Type specified in request.')
       end
     end
 
