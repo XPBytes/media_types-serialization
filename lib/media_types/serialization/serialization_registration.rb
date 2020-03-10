@@ -66,6 +66,13 @@ module MediaTypes
         result
       end
 
+      def decode(victim, media_type, context)
+        registration = registrations[media_type]
+        raise UnregisteredMediaTypeUsageError.new(media_type, registrations.keys) if registration.nil?
+
+        registration.decode(victim, context)
+      end
+
       def call(victim, media_type, context, dsl: nil, raw: nil)
         registration = registrations[media_type]
         raise UnregisteredMediaTypeUsageError.new(media_type, registrations.keys) if registration.nil?
@@ -107,6 +114,9 @@ module MediaTypes
         nil
       end
 
+      def decode(_victim, _context)
+        raise 'Assertion failed, decode function called on base registration.'
+      end
       def call(_victim, _context, dsl: nil, raw: nil)
         raise 'Assertion failed, call function called on base registration.'
       end
@@ -123,17 +133,23 @@ module MediaTypes
         super(serializer, inout, validator)
       end
 
-      def call(victim, context, dsl: nil, raw: nil)
-        raw = self.raw if raw.nil?
+      def decode(victim, context)
+        raise CannotDecodeOutputError if inout != :input
 
-        if !raw && inout == :input
+        if !self.raw
           victim = MediaTypes::Serialization.json_decoder.call(victim)
           begin
             validator.validate!(victim)
           rescue ValidationError => inner
-            raise IntputValidationFailedError, inner
+            raise InputValidationFailedError, inner
           end
         end
+
+        victim
+      end
+
+      def call(victim, context, dsl: nil, raw: nil)
+        raw = self.raw if raw.nil?
 
         result = nil
         if dsl.nil?
@@ -174,6 +190,10 @@ module MediaTypes
         end
 
         other # if both optional, or other is !optional, newer one wins.
+      end
+
+      def decode(victim, context)
+        target.decode(victim, context)
       end
 
       def call(victim, context, dsl: nil, raw: nil)

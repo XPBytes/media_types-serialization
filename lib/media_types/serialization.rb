@@ -56,10 +56,6 @@ module MediaTypes
     # rubocop:disable Metrics/BlockLength
     class_methods do
 
-      def strict!(**filter_opts)
-        raise "TODO: implement me"
-      end
-
       def not_acceptable_serializer(serializer, **filter_opts)
         before_action(**filter_opts) do
           raise SerializersAlreadyFrozenError if defined? @serialization_frozen
@@ -148,6 +144,12 @@ module MediaTypes
         end
       end
 
+      def allow_all_input(**filter_opts)
+        before_action(**filter_opts) do
+          @serialization_input_allow_all ||= True
+        end
+      end
+
       ##
       # Freezes additions to the serializes and notifies the controller what it will be able to respond to.
       #
@@ -157,6 +159,26 @@ module MediaTypes
 
           @serialization_frozen = true
           raise NoOutputSerializersDefinedError unless defined? @serialization_output_registrations
+
+          all_allowed = False
+          all_allowed ||= @serialization_input_allow_all if defined?(@serialization_input_allow_all)
+
+          input_is_allowed = True
+          if request.content_type
+            input_is_allowed = @serialization_input_registrations.has? request.content_type
+          end
+
+          if input_is_allowed
+            begin
+              @serialization_decoded_input = @serialization_input_registrations.decode(request.body, request.content_type, self)
+            rescue InputValidationFailedError => e
+              raise 'TODO: render with validation failed serializer'
+            end
+          end
+
+          unless input_is_allowed or all_allowed
+            raise 'TODO: render with unacceptable input serializer'
+          end
 
           resolved_identifier = resolve_media_type(request, @serialization_output_registrations)
 
@@ -219,11 +241,22 @@ module MediaTypes
     end
 
     def deserialize(request)
-      raise "TODO: unimplemented"
+      raise SerializersNotFrozenError unless defined?(@serialization_frozen)
+
+      result = nil
+      begin
+        result = deserialize!(request)
+      rescue NoInputReceivedError
+        return nil
+      end
+      result
     end
 
     def deserialize!(request)
-      raise "TODO: unimplemented"
+      raise SerializersNotFrozenError unless defined?(@serialization_frozen)
+      raise NoInputReceivedError unless request.content_type
+      raise InputNotAcceptableError unless @serialization_input_registrations.has_key? request.content_type
+      @serialization_input_registrations.call(@serialization_decoded_input, request.content_type, self)
     end
 
     def resolve_serializer(request, identifier = nil, registration = @serialization_output_registrations)

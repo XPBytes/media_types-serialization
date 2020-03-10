@@ -4,7 +4,22 @@ module MediaTypes
     class Error < StandardError
     end
 
+    class ControlFlowError < Error
+    end
+
+    class InputNotAcceptableError < ControlFlowError
+      def initialize
+        super('Content-Type provided in the request is not acceptable.'.)
+      end
+    end
+
     class RuntimeError < Error
+    end
+
+    class NoInputReceivedError < RuntimeError
+      def initialize
+        super('No Content-Type specified in request'.)
+      end
     end
 
     class InputValidationFailedError < RuntimeError
@@ -22,6 +37,12 @@ module MediaTypes
     end
 
     class ConfigurationError < Error
+    end
+
+    class CannotDecodeOutputError < ConfigurationError
+      def initialize
+        super('Unable to call decode on an output registration.')
+      end
     end
 
     class ValidatorNotSpecifiedError < ConfigurationError

@@ -612,12 +612,6 @@ Accepts the same filters as `before_action`.
 
 Disables input deserialization. Running `deserialize` while allowing all input will result in an error being thrown.
 
-#### `strict!( **filters )`
-
-Validates input before the controller action is called. This requires using `allow_all_input` when you want to handle arbitrary input.
-
-This enables rendering a nice error message to the client if input validation fails. You can add your own serializer using the `input_validation_failed_serializer` function.
-
 #### `not_acceptable_serializer( serializer )`
 
 Replaces the serializer used to render the error page when no media type could be negotiated using the `Accept` header.
