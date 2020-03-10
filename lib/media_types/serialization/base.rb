@@ -74,7 +74,7 @@ module MediaTypes
             validator = serializer_validator.view(view).version(v)
             validator.override_suffix(:json) unless serializer_validated
 
-            serializer_output_registration.register_block(self, validator, v, block, false)
+            serializer_input_registration.register_block(self, validator, v, block, false)
           end
         end
 

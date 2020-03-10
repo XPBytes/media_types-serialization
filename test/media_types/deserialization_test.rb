@@ -38,6 +38,7 @@ class MediaTypes::DeserializationTest < Minitest::Test
       version 2 do
       end
       version 1 do
+        empty
       end
     end
   end
@@ -45,6 +46,9 @@ class MediaTypes::DeserializationTest < Minitest::Test
   class MyResourceSerializer < ::MediaTypes::Serialization::Base
     validator MyResourceMediaType
 
+    input version: 1 do |obj, version, context|
+      obj
+    end
   end
 
   class BaseController < ActionController::Metal
@@ -107,7 +111,7 @@ class MediaTypes::DeserializationTest < Minitest::Test
     Mime::Type.register(content_type, :my_special_symbol)
 
     request = ActionDispatch::Request.new({
-      Rack::RACK_INPUT => {},
+      Rack::RACK_INPUT => {}.to_json,
       'HTTP_ACCEPT' => "#{content_type}, text/html; q=0.1",
     })
     request.headers['Content-Type'] = content_type
