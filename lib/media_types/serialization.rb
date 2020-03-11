@@ -1,5 +1,6 @@
 require 'media_types/serialization/version'
 require 'media_types/serialization/serializers/fallback_not_acceptable_serializer'
+require 'media_types/serialization/serializers/api_viewer'
 
 require 'abstract_controller'
 require 'action_controller/metal/mime_responds'
@@ -121,6 +122,16 @@ module MediaTypes
           @serialization_output_registrations = @serialization_output_registrations.merge(serializer.outputs_for(views: views))
         end
       end
+      
+      def allow_api_viewer(serializer: MediaTypes::Serialization::Serializers::ApiViewer, **filter_opts)
+        before_action(**filter_opts) do
+          return unless request.query_parameters['api_viewer']
+
+          @serialization_override_accept = request.query_parameters['api_viewer']
+          @serialization_wrapping_renderer = serializer
+        end
+      end
+
 
       ##
       # Allow input serialization using the passed in +serializer+ for the given +view+
@@ -270,6 +281,8 @@ module MediaTypes
     private
 
     def resolve_media_type(request, registration)
+      return @serialization_override_accept if defined? @serialization_override_accept
+
       # Ruby negotiation
       #
       # This is similar to the respond_to logic. It sorts the accept values and tries to match against each option.
@@ -311,7 +324,23 @@ module MediaTypes
         response.set_header('Link', items.join(', '))
       end
 
+      if defined? @serialization_wrapping_renderer
+        input = {
+          identifier: identifier,
+          registrations: registrations,
+          output: result,
+          links: links,
+        }
+        wrapped = @serialization_wrapping_renderer.serialize input, '*/*', context: self
+        render body: wrapped
+        # TODO: display identifiers
+
+        response.content_type = 'text/html'
+      end
+
       render body: result, **options
+
+      # TODO: fix display identifiers, don't output Content-Type: */*
       response.content_type = identifier
     end
   end
