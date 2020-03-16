@@ -155,6 +155,12 @@ module MediaTypes
         end
       end
 
+      def allow_all_output(**filter_opts)
+        before_action(**filter_opts) do
+          @serialization_output_allow_all ||= true
+        end
+      end
+
       def allow_all_input(**filter_opts)
         before_action(**filter_opts) do
           @serialization_input_allow_all ||= true
@@ -195,6 +201,9 @@ module MediaTypes
           not_acceptable_serializer = nil
           not_acceptable_serializer = @serialization_not_acceptable_serializer if defined? @serialization_not_acceptable_serializer
           not_acceptable_serializer ||= MediaTypes::Serialization::Serializers::FallbackNotAcceptableSerializer
+
+          can_satify_allow = !resolved_identifier.nil?
+          can_satify_allow ||= @serialization_output_allow_all if defined?(@serialization_output_allow_all)
 
           serialization_render_not_acceptable(@serialization_output_registrations, not_acceptable_serializer) if resolved_identifier.nil?
         end
