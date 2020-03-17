@@ -134,7 +134,7 @@ module MediaTypes
       def allow_api_viewer(serializer: MediaTypes::Serialization::Serializers::ApiViewer, **filter_opts)
         before_action(**filter_opts) do
           if request.query_parameters['api_viewer']
-            @serialization_override_accept = request.query_parameters['api_viewer']
+            @serialization_override_accept = request.query_parameters['api_viewer'].sub ' ', '+'
             @serialization_wrapping_renderer = serializer
           end
         end
@@ -291,6 +291,7 @@ module MediaTypes
       return nil if identifier.nil?
 
       registration = registration.registrations[identifier]
+      
       raise 'Assertion failed, inconsistent answer from resolve_media_type' if registration.nil?
       registration.serializer
     end

@@ -17,8 +17,6 @@ module MediaTypes
           original_links = obj[:links]
           #TODO: Add list of media types and correct html
 
-          #TODO: append ?api_viewer=*/* after internal links
-          
           original_uri = URI.parse(context.request.original_url)
           api_fied_links = original_links.map do |l|
             new = l.dup
@@ -39,12 +37,23 @@ module MediaTypes
             new
           end
           
-          media_types = []
-          # TODO:
-          # [{
-          #  identfifier: 'text/html',
-          #  href: 'https://...
-          # }]
+          stripped_original = original_uri.dup
+          query_parts = stripped_original.query&.split('&') | []
+          query_parts = query_parts.select { |q| !q.start_with? 'api_viewer=' }
+
+          media_types = registrations.registrations.keys.map do |identifier|
+            stripped_original.query = (query_parts + ["api_viewer=#{identifier}"]).join('&')
+            result = {
+              identifier: identifier,
+              href: stripped_original.to_s,
+              internal: identifier == original_identifier,
+            }
+            result[:href] = '#output' if identifier == original_identifier
+
+            result
+          end
+
+
           escaped_output = original_output.split("\n").
             map { |l| CGI::escapeHTML(l) }.
             join("<br>\n")
@@ -64,16 +73,16 @@ module MediaTypes
               <body>
                 <h1><%= CGI::escapeHTML(original_identifier) %></h1>
                 <ul>
-                  <% api_fied_links.each do |l| %>
-                  <li><a <% if l[:invalid] %> style="color: red" <% end %>href="<%= l[:href] %>"><%= CGI::escapeHTML(l[:rel].to_s) %></a></li>
-                  <% end %>
-                </ul>
-                <code><pre><%= original_output %></pre></code>
-                <ul>
                   <% media_types.each do |m| %>
                   <li><a href="<%= m[:href] %>"><%= CGI::escapeHTML(m[:identifier]) %></a></li>
                   <% end %>
                 </ul>
+                <ul>
+                  <% api_fied_links.each do |l| %>
+                  <li><a <% if l[:invalid] %> style="color: red" <% end %>href="<%= l[:href] %>"><%= CGI::escapeHTML(l[:rel].to_s) %></a></li>
+                  <% end %>
+                </ul>
+                <code><pre id="output"><%= original_output %></pre></code>
                 <!-- API viewer made with ❤ by: https://delftsolutions.com -->
               </body>
             </html>
