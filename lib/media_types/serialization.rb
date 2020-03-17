@@ -127,7 +127,10 @@ module MediaTypes
 
           @serialization_output_registrations ||= SerializationRegistration.new(:output)
 
-          @serialization_output_registrations = @serialization_output_registrations.merge(serializer.outputs_for(views: views))
+          mergeable_outputs = serializer.outputs_for(views: views)
+          raise AddedEmptyOutputSerializer unless mergeable_outputs.registrations.length > 0
+
+          @serialization_output_registrations = @serialization_output_registrations.merge(mergeable_outputs)
         end
       end
       
@@ -159,7 +162,10 @@ module MediaTypes
 
           @serialization_input_registrations ||= SerializationRegistration.new(:input)
 
-          @serialization_input_registrations = @serialization_input_registrations.merge(serializer.inputs_for(views: views))
+          mergeable_inputs = serializer.inputs_for(views: views)
+          raise AddedEmptyInputSerializer unless mergeable_inputs.registrations.length > 0
+
+          @serialization_input_registrations = @serialization_input_registrations.merge(mergeable_inputs)
         end
       end
 
@@ -299,7 +305,10 @@ module MediaTypes
     private
 
     def resolve_media_type(request, registration)
-      return @serialization_override_accept if defined? @serialization_override_accept
+      if defined? @serialization_override_accept
+        return nil unless registration.has? @serialization_override_accept
+        return @serialization_override_accept
+      end
 
       # Ruby negotiation
       #

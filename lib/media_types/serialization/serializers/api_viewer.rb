@@ -57,10 +57,11 @@ module MediaTypes
           escaped_output = original_output.split("\n").
             map { |l| CGI::escapeHTML(l) }.
             join("<br>\n")
+          
 
           input = OpenStruct.new(
             original_identifier: original_identifier,
-            original_output: escaped_output,
+            escaped_output: escaped_output,
             api_fied_links: api_fied_links,
             media_types: media_types,
           )
@@ -82,7 +83,7 @@ module MediaTypes
                   <li><a <% if l[:invalid] %> style="color: red" <% end %>href="<%= l[:href] %>"><%= CGI::escapeHTML(l[:rel].to_s) %></a></li>
                   <% end %>
                 </ul>
-                <code><pre id="output"><%= original_output %></pre></code>
+                <code><pre id="output"><%= escaped_output %></pre></code>
                 <!-- API viewer made with ❤ by: https://delftsolutions.com -->
               </body>
             </html>

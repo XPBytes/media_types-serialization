@@ -147,5 +147,16 @@ module MediaTypes
         super("Called freeze_io! without any allowed output serializers. Users won't be able to make any requests. Please make sure to add at least one allow_output_serializer call to your controller.")
       end
     end
+
+    class AddedEmptyOutputSerializer < ConfigurationError
+      def initialize
+        super('A serializer was just added to the controller but it contained no output definitions. Usually this is due to using the wrong view parameter when adding it.')
+      end
+    end
+    class AddedEmptyInputSerializer < ConfigurationError
+      def initialize
+        super('A serializer was just added to the controller but it contained no input definitions. Usually this is due to using the wrong view parameter when adding it.')
+      end
+    end
   end
 end
