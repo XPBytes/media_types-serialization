@@ -161,7 +161,7 @@ module MediaTypes
         if !raw && inout == :output
           begin
             validator.validate!(result)
-          rescue ValidationError => inner
+          rescue MediaTypes::Scheme::ValidationError => inner
             raise OutputValidationFailedError, inner
           end
           result = MediaTypes::Serialization.json_encoder.call(result)

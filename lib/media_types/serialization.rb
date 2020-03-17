@@ -44,7 +44,15 @@ module MediaTypes
 
     mattr_accessor :json_encoder, :json_decoder
     if defined?(::Oj)
-      self.json_encoder = ->(obj) { Oj.dump(obj, {indent: 2, space: ' '} ) }
+      self.json_encoder = ->(obj) { Oj.dump(obj,
+        mode: :compat,
+        indent: '  ',
+        space: ' ',
+        array_nl: "\n",
+        object_nl: "\n",
+        ascii_only: false,
+        allow_nan: false,
+      ) }
       self.json_decoder = Oj.method(:load)
     else
       require 'json'
@@ -125,10 +133,10 @@ module MediaTypes
       
       def allow_api_viewer(serializer: MediaTypes::Serialization::Serializers::ApiViewer, **filter_opts)
         before_action(**filter_opts) do
-          return unless request.query_parameters['api_viewer']
-
-          @serialization_override_accept = request.query_parameters['api_viewer']
-          @serialization_wrapping_renderer = serializer
+          if request.query_parameters['api_viewer']
+            @serialization_override_accept = request.query_parameters['api_viewer']
+            @serialization_wrapping_renderer = serializer
+          end
         end
       end
 
@@ -224,7 +232,7 @@ module MediaTypes
       context.instance_exec { @serialization_output_registrations.call(victim, media_type, context) }
     end
 
-    def render_media(obj: nil, serializers: nil, not_acceptable_serializer: nil, **options, &block)
+    def render_media(obj = nil, serializers: nil, not_acceptable_serializer: nil, **options, &block)
       raise SerializersNotFrozenError unless defined? @serialization_frozen
 
       not_acceptable_serializer ||= @serialization_not_acceptable_serializer if defined? @serialization_not_acceptable_serializer
@@ -300,9 +308,10 @@ module MediaTypes
 
       accept_header = HttpHeaders::Accept.new(request.get_header(HEADER_ACCEPT)) || ''
       accept_header.each do |mime_type|
-        next unless registration.has? mime_type.to_s
+        stripped = mime_type.to_s.split(';')[0]
+        next unless registration.has? stripped
 
-        return mime_type.to_s
+        return stripped
       end
 
       nil
@@ -340,11 +349,12 @@ module MediaTypes
           output: result,
           links: links,
         }
-        wrapped = @serialization_wrapping_renderer.serialize input, '*/*', context: self
+        wrapped = @serialization_wrapping_renderer.serialize input, '*/*', self
         render body: wrapped
         # TODO: display identifiers
 
         response.content_type = 'text/html'
+        return
       end
 
       render body: result, **options
