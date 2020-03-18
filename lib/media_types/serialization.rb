@@ -1,4 +1,5 @@
 require 'media_types/serialization/version'
+require 'media_types/serialization/serializers/common_css'
 require 'media_types/serialization/serializers/fallback_not_acceptable_serializer'
 require 'media_types/serialization/serializers/api_viewer'
 

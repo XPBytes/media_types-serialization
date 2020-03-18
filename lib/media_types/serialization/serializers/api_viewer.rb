@@ -55,7 +55,7 @@ module MediaTypes
 
 
           escaped_output = original_output.split("\n").
-            map { |l| CGI::escapeHTML(l) }.
+            map { |l| CGI::escapeHTML(l).gsub(/ (?= )/, '&nbsp;') }.
             join("<br>\n")
           
 
@@ -64,26 +64,46 @@ module MediaTypes
             escaped_output: escaped_output,
             api_fied_links: api_fied_links,
             media_types: media_types,
+            css: CommonCSS.css,
           )
 
           template = ERB.new <<-TEMPLATE
             <html lang="en">
               <head>
                 <title>API Viewer [<%= CGI::escapeHTML(original_identifier) %>]</title>
+                <style>
+                  <%= css.split("\n").join("\n      ") %>
+                </style>
               </head>
               <body>
-                <h1><%= CGI::escapeHTML(original_identifier) %></h1>
-                <ul>
-                  <% media_types.each do |m| %>
-                  <li><a href="<%= m[:href] %>"><%= CGI::escapeHTML(m[:identifier]) %></a></li>
-                  <% end %>
-                </ul>
-                <ul>
-                  <% api_fied_links.each do |l| %>
-                  <li><a <% if l[:invalid] %> style="color: red" <% end %>href="<%= l[:href] %>"><%= CGI::escapeHTML(l[:rel].to_s) %></a></li>
-                  <% end %>
-                </ul>
-                <code><pre id="output"><%= escaped_output %></pre></code>
+                <header>
+                  <div id="logo"></div>
+                  <h1>Api Viewer - <%= CGI::escapeHTML(original_identifier) %></h1>
+                </header>
+                <section id="content">
+                  <nav>
+                    <section id="representations">
+                      <h2>Representations:</h2>
+                      <ul>
+                        <% media_types.each do |m| %>
+                        <li><a href="<%= m[:href] %>"><%= CGI::escapeHTML(m[:identifier]) %></a></li>
+                        <% end %>
+                      </ul>
+                      <hr>
+                    </section>
+                    <section id="links">
+                      <ul>
+                        <% api_fied_links.each do |l| %>
+                        <li><a <% if l[:invalid] %> style="color: red" <% end %>href="<%= l[:href] %>"><%= CGI::escapeHTML(l[:rel].to_s) %></a></li>
+                        <% end %>
+                      </ul>
+                    </section>
+                  </nav>
+                  <main>
+                  <code id="output">
+                    <%= escaped_output %>
+                  </code>
+                </section>
                 <!-- API viewer made with ❤ by: https://delftsolutions.com -->
               </body>
             </html>
