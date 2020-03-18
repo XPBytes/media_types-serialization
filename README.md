@@ -307,8 +307,8 @@ end
 class BookController < ActionController::API
   include MediaTypes::Serialization
 
-  allow_output_serialization(BookSerializer, only: %i[show])
-  allow_input_serialization(BookSerializer, only: %i[create])
+  allow_output_serializer(BookSerializer, only: %i[show])
+  allow_input_serializer(BookSerializer, only: %i[create])
   freeze_io!
       
   def show 
@@ -353,8 +353,8 @@ end
 class BookController < ActionController::API
   include MediaTypes::Serialization
 
-  allow_output_serialization(BookSerializer, only: %i[show])
-  allow_input_serialization(BookSerializer, only: %i[create])
+  allow_output_serializer(BookSerializer, only: %i[show])
+  allow_input_serializer(BookSerializer, only: %i[create])
   freeze_io!
       
   def show 
@@ -451,10 +451,10 @@ This library has a built in API viewer. The viewer can be accessed by sending an
 class BookController < ActionController::API
   include MediaTypes::Serialization
   
-  allow_output_serialization(MediaTypes::ApiViewer)
+  allow_output_serializer(MediaTypes::ApiViewer)
 
-  allow_output_serialization(BookSerializer, only: %i[show])
-  allow_input_serialization(BookSerializer, only: %i[create])
+  allow_output_serializer(BookSerializer, only: %i[show])
+  allow_input_serializer(BookSerializer, only: %i[create])
   freeze_io!
       
   def show 
@@ -592,17 +592,23 @@ Sometimes you want to add links without actually modifying the object. Calls to 
 
 Returns the unmodified context.
 
+#### `emit`
+
+Can be added to the end of a block to fix up the return value to return the built up context so far.
+
+Returns the built up context so far.
+
 ### Controller definition
 
 These functions are available during the controller definition if you add `include MediaTypes::Serialization`.
 
-#### `allow_output_serialization( serializer, views: nil, **filters )`
+#### `allow_output_serializer( serializer, views: nil, **filters )`
 
 Configure the controller to allow the client to request responses emitted by the specified serializer. Optionally allows you to specify which views to allow by passing an array in the views parameter.
 
 Accepts the same filters as `before_action`.
 
-#### `allow_input_serialization( serializer, views: nil, **filters )`
+#### `allow_input_serializer( serializer, views: nil, **filters )`
 
 Configure the controller to allow the client to send bodies with a `Content-Type` that can be deserialized using the specified serializer. Optionally allows you to specify which views to allow by passing an array in the views parameter.
 

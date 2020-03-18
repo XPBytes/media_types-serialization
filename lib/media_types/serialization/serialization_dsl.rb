@@ -90,6 +90,10 @@ module MediaTypes
 
         serialization_dsl_result
       end
+
+      def emit
+        serialization_dsl_result
+      end
     end
   end
 end
