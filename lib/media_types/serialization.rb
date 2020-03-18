@@ -307,6 +307,7 @@ module MediaTypes
 
     def resolve_media_type(request, registration)
       if defined? @serialization_override_accept
+        @serialization_override_accept = registration.registrations.keys.last if @serialization_override_accept == 'last'
         return nil unless registration.has? @serialization_override_accept
         return @serialization_override_accept
       end

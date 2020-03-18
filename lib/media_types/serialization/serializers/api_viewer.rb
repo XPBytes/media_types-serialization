@@ -26,7 +26,7 @@ module MediaTypes
               
               if uri.host == context.request.host
                 query_parts = uri.query&.split('&') || []
-                query_parts.append('api_viewer=*/*')
+                query_parts.append('api_viewer=last')
                 uri.query = query_parts.join('&')
                 new[:href] = uri.to_s
               end
@@ -46,7 +46,7 @@ module MediaTypes
             result = {
               identifier: identifier,
               href: stripped_original.to_s,
-              internal: identifier == original_identifier,
+              selected: identifier == original_identifier,
             }
             result[:href] = '#output' if identifier == original_identifier
 
@@ -86,12 +86,17 @@ module MediaTypes
                       <h2>Representations:</h2>
                       <ul>
                         <% media_types.each do |m| %>
-                        <li><a href="<%= m[:href] %>"><%= CGI::escapeHTML(m[:identifier]) %></a></li>
+                        <li>
+                          <a href="<%= m[:href] %>" <%= m[:selected] ? 'class="active" ' : '' %>>
+                            <%= CGI::escapeHTML(m[:identifier]) %>
+                          </a>
+                        </li>
                         <% end %>
                       </ul>
                       <hr>
                     </section>
                     <section id="links">
+                      <span class="label">Links:&nbsp</span>
                       <ul>
                         <% api_fied_links.each do |l| %>
                         <li><a <% if l[:invalid] %> style="color: red" <% end %>href="<%= l[:href] %>"><%= CGI::escapeHTML(l[:rel].to_s) %></a></li>
