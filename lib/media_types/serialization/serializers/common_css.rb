@@ -8,10 +8,11 @@ module MediaTypes
     module Serializers
       module CommonCSS
 
-        mattr_accessor :logo_data, :logo_media_type, :background, :custom_css
+        mattr_accessor :logo_data, :logo_media_type, :logo_width, :background, :custom_css
 
         self.background = 'linear-gradient(245deg, rgba(255,89,89,1) 0%, rgba(255,164,113,1) 100%)'
         self.logo_media_type = 'image/svg+xml'
+        self.logo_width = 8
         self.logo_data = <<-HERE
 							<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 114 93">
                 <title>Delft Solutions</title>
@@ -78,10 +79,11 @@ module MediaTypes
           }
           
           #logo {
-            width: 8em;
+            width: <%= logo_width %>em;
             height: 6em;
 						background-repeat: no-repeat;
 						background-position-x: right;
+						background-position-y: center;
             background-image: url(<%= logo_url %>);
             float: left;
           }
@@ -125,6 +127,9 @@ module MediaTypes
           }
           nav li a.active {
             font-weight: bold;
+          }
+          nav li a.active:link, nav li a.active:visited {
+            color: #060B34;
           }
           nav li + li:before {
             content: "|";
