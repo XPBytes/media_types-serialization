@@ -86,12 +86,14 @@ module MediaTypes
 						background-position-y: center;
             background-image: url(<%= logo_url %>);
             float: left;
+            margin-right: 0.75em;
           }
 
           header h1 {
-            float: left;
-            margin-left: 0.75em;
             clear: right;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            overflow: hidden;
           }
 
           #content {
