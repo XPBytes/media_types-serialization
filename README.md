@@ -568,9 +568,11 @@ Sets a value for the given key. If a block is given, any `attribute`, `link`, `c
 
 Returns the built up context so far.
 
-#### `link( rel, href:, **attributes )`
+#### `link( rel, href:, emit_header: true, **attributes )`
 
 Adds a `_link` block to the current context. Also adds the specified link to the HTTP Link header. `attributes` allows passing in custom attributes.
+
+If `emit_header` is `true` the link will also be emitted as a http header.
 
 Returns the built up context so far.
 

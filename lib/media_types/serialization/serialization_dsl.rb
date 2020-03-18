@@ -26,7 +26,7 @@ module MediaTypes
         serialization_dsl_result
       end
 
-      def link(rel, href:, **attributes)
+      def link(rel, href:, emit_header: true **attributes)
         serialization_dsl_result[:_links] = {} unless serialization_dsl_result.has_key? :_links
 
         link = {
@@ -40,7 +40,7 @@ module MediaTypes
         }
         json = json.merge(attributes)
 
-        @serialization_links.append(link)
+        @serialization_links.append(link) if emit_header
         serialization_dsl_result[:_links][rel] = json
 
         serialization_dsl_result
