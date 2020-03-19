@@ -26,7 +26,7 @@ module MediaTypes
         serialization_dsl_result
       end
 
-      def link(rel, href:, emit_header: true **attributes)
+      def link(rel, href:, emit_header: true, **attributes)
         serialization_dsl_result[:_links] = {} unless serialization_dsl_result.has_key? :_links
 
         link = {

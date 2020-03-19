@@ -105,9 +105,10 @@ module MediaTypes
                     </section>
                   </nav>
                   <main>
-                  <code id="output">
-                    <%= escaped_output %>
-                  </code>
+                    <code id="output">
+                      <%= escaped_output %>
+                    </code>
+                  </main>
                 </section>
                 <!-- API viewer made with ❤ by: https://delftsolutions.com -->
               </body>
