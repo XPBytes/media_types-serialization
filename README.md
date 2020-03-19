@@ -683,6 +683,23 @@ This method throws a `MediaTypes::Serialization::InputValidationFailedError` err
 
 #### `resolve_serializer`
 
+## Customization
+The easiest way to customize the look and feel of the built in pages is to provide your own logo and background in an initializer:
+
+```ruby
+# config/initializers/serialization.rb
+
+MediaTypes::Serialization::Serializers::CommonCSS.background = 'linear-gradient(245deg, #3a2f28 0%, #201a16 100%)'
+MediaTypes::Serialization::Serializers::CommonCSS.logo_width = 12
+MediaTypes::Serialization::Serializers::CommonCSS.logo_data = <<-HERE
+<svg height="150" width="500">
+  <ellipse cx="240" cy="100" rx="220" ry="30" style="fill:purple" />
+  <ellipse cx="220" cy="70" rx="190" ry="20" style="fill:lime" />
+  <ellipse cx="210" cy="45" rx="170" ry="15" style="fill:yellow" />
+</svg>
+HERE
+```
+
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake test` to run the tests. You can
