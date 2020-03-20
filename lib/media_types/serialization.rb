@@ -127,11 +127,13 @@ module MediaTypes
         before_action do
           @serialization_available_serializers ||= {}
           @serialization_available_serializers[:output] ||= {}
-          action = filter_opts[:only] || :all_actions
-          
-          @serialization_available_serializers[:output][action] ||= []
-          views.each do |v|
-            @serialization_available_serializers[:output][action].push({serializer: serializer, view: view})
+          actions = filter_opts[:only] || :all_actions
+          actions = [actions] unless actions.kind_of?(Array)
+          actions.each do |action|
+            @serialization_available_serializers[:output][action] ||= []
+            views.each do |v|
+              @serialization_available_serializers[:output][action].push({serializer: serializer, view: view})
+            end
           end
         end
 
@@ -150,8 +152,11 @@ module MediaTypes
       def allow_api_viewer(serializer: MediaTypes::Serialization::Serializers::ApiViewer, **filter_opts)
         before_action do
           @serialization_api_viewer_enabled ||= {}
-          action = filter_opts[:only] || :all_actions
-          @serialization_api_viewer_enabled[action] = true
+          actions = filter_opts[:only] || :all_actions
+          actions = [actions] unless actions.kind_of?(Array)
+          actions.each do |action|
+            @serialization_api_viewer_enabled[action] = true
+          end
         end
 
         before_action(**filter_opts) do
@@ -178,11 +183,14 @@ module MediaTypes
         
         before_action do
           @serialization_available_serializers ||= {}
-          @serialization_available_serializers[:output] ||= {}
-          action = filter_opts[:only] || :all_actions
-          @serialization_available_serializers[:output][action] ||= []
-          views.each do |v|
-            @serialization_available_serializers[:output][action].push({serializer: serializer, view: view})
+          @serialization_available_serializers[:input] ||= {}
+          actions = filter_opts[:only] || :all_actions
+          actions = [actions] unless actions.kind_of?(Array)
+          actions.each do |action|
+            @serialization_available_serializers[:input][action] ||= []
+            views.each do |v|
+              @serialization_available_serializers[:input][action].push({serializer: serializer, view: view})
+            end
           end
         end
 

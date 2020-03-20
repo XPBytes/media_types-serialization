@@ -445,11 +445,15 @@ Validation will be done using the remapped validator. Aliasses map to version `n
 
 ### HTML
 
-This library has a built in API viewer. The viewer can be accessed by sending an `Accept: application/vnd.xpbytes.api-viewer.v1` header or by appending an `.api_viewer` extension to the URL.
+This library has a built in API viewer. The viewer can be accessed by by appending a `?api_viewer=last` query parameter to the URL.
+
+To enable the API viewer, use: `allow_api_viewer` in the controller.
 
 ```ruby
 class BookController < ActionController::API
   include MediaTypes::Serialization
+
+  allow_api_viewer
   
   allow_output_serializer(MediaTypes::ApiViewer)
 
@@ -558,6 +562,10 @@ Defines a legacy mapping. This will make the serializer parse the media type `me
 
 Has the same behavior as `input_alias` but can be used by multiple serializers. The serializer that is loaded last in the controller 'wins' control over this media type identifier. If any of the serializers have an `input_alias` defined with the same media type identifier that one will win instead.
 
+#### `disable_wildcards`
+
+Disables registering wildcard media types.
+
 ### Serializer definition
 
 The following methods are available within an `output ... do` block.
@@ -639,6 +647,10 @@ Adds a serializer that can be used to render the error page when input validatio
 #### `clear_input_validation_failed_serializers!`
 
 Clears the list of serializers used to render the error when the client supplies non-valid input.
+
+#### `allow_api_viewer(serializer: MediaTypes::Serialization::Serializers::ApiViewer, **filter_opts)`
+
+Enables rendering the api viewer when adding the `api_viewer=last` query parameter to the url.
 
 #### `freeze_io!`
 
