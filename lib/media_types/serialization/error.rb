@@ -28,7 +28,7 @@ module MediaTypes
         super(inner.message)
       end
     end
-    
+
     class OutputValidationFailedError < RuntimeError
       def initialize(inner)
         @inner = inner
@@ -60,18 +60,18 @@ module MediaTypes
     class UnbackedAliasDefinitionError < ConfigurationError
       def initialize(identifier, inout)
         super(
-          "Serializer tried to define an #{inout}_alias that points to the media type identifier #{identifier} but no such #{inout} has been defined yet. Please move the #{inout} definition above the alias.\n\n" +
-          "Move the output definition above the alias:\n" +
-          "\n" +
-          "class MySerializer < MediaTypes::Serialization::Base\n" +
-          "#...\n" +
-          "output do\n" +
-          "  # ...\n" +
-          "end\n" +
-          "\n" +
-          "output_alias 'text/html'\n" +
-          "# ^----- move here\n" +
-          "end"
+            "Serializer tried to define an #{inout}_alias that points to the media type identifier #{identifier} but no such #{inout} has been defined yet. Please move the #{inout} definition above the alias.\n\n" \
+            "Move the output definition above the alias:\n" \
+            "\n" \
+            "class MySerializer < MediaTypes::Serialization::Base\n" \
+            "#...\n" \
+            "output do\n" \
+            "  # ...\n" \
+            "end\n" \
+            "\n" \
+            "output_alias 'text/html'\n" \
+            "# ^----- move here\n" \
+            'end'
         )
       end
     end
@@ -102,12 +102,12 @@ module MediaTypes
 
     class VersionsNotAnArrayError < ConfigurationError
       def initialize
-        super("Tried to create an input or output with a versions: parameter that is set to something that is not an array. Please use the version: parameter or conver the current value to an array.")
+        super('Tried to create an input or output with a versions: parameter that is set to something that is not an array. Please use the version: parameter or conver the current value to an array.')
       end
     end
     class ViewsNotAnArrayError < ConfigurationError
       def initialize
-        super("Tried to create an input or output with a views: parameter that is set to something that is not an array. Please use the view: parameter or conver the current value to an array.")
+        super('Tried to create an input or output with a views: parameter that is set to something that is not an array. Please use the view: parameter or conver the current value to an array.')
       end
     end
 

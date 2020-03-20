@@ -30,7 +30,7 @@ module MediaTypes
         register_wildcards(identifier, registration) if wildcards && inout == :output
       end
 
-      def register_alias(serializer, alias_identifier, target_identifier, optional, wildcards: true, display_identifier: nil)
+      def register_alias(serializer, alias_identifier, target_identifier, optional, wildcards: true)
         raise DuplicateDefinitionError.new(identifier, inout) if registrations.key? alias_identifier
 
         raise UnbackedAliasDefinitionError.new(target_identifier, inout) unless registrations.key? target_identifier
@@ -143,10 +143,10 @@ module MediaTypes
         super(serializer, inout, validator, display_identifier)
       end
 
-      def decode(victim, context)
+      def decode(victim, _context)
         raise CannotDecodeOutputError if inout != :input
 
-        if !self.raw
+        unless raw
           begin
             victim = MediaTypes::Serialization.json_decoder.call(victim)
             validator.validate!(victim)

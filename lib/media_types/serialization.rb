@@ -35,7 +35,7 @@ class SerializationSelectorDsl < SimpleDelegator
     return if klazz != @serializer
 
     self.matched = true
-    self.value = block.nil? ? obj : block.call
+    self.value = block.nil? ? obj : yield
   end
 end
 
@@ -46,15 +46,17 @@ module MediaTypes
 
     mattr_accessor :json_encoder, :json_decoder
     if defined?(::Oj)
-      self.json_encoder = ->(obj) { Oj.dump(obj,
-        mode: :compat,
-        indent: '  ',
-        space: ' ',
-        array_nl: "\n",
-        object_nl: "\n",
-        ascii_only: false,
-        allow_nan: false,
-      ) }
+      self.json_encoder = ->(obj) {
+        Oj.dump(obj,
+          mode:       :compat,
+          indent:     '  ',
+          space:      ' ',
+          array_nl:   "\n",
+          object_nl:  "\n",
+          ascii_only: false,
+          allow_nan:  false,
+        )
+      }
       self.json_decoder = Oj.method(:load)
     else
       require 'json'
@@ -129,11 +131,11 @@ module MediaTypes
           @serialization_available_serializers ||= {}
           @serialization_available_serializers[:output] ||= {}
           actions = filter_opts[:only] || :all_actions
-          actions = [actions] unless actions.kind_of?(Array)
+          actions = [actions] unless actions.is_a?(Array)
           actions.each do |action|
             @serialization_available_serializers[:output][action.to_s] ||= []
             views.each do |v|
-              @serialization_available_serializers[:output][action.to_s].push({serializer: serializer, view: view})
+              @serialization_available_serializers[:output][action.to_s].push({serializer: serializer, view: v})
             end
           end
         end
@@ -144,7 +146,7 @@ module MediaTypes
           @serialization_output_registrations ||= SerializationRegistration.new(:output)
 
           mergeable_outputs = serializer.outputs_for(views: views)
-          raise AddedEmptyOutputSerializer unless mergeable_outputs.registrations.length > 0
+          raise AddedEmptyOutputSerializer if mergeable_outputs.registrations.empty?
 
           @serialization_output_registrations = @serialization_output_registrations.merge(mergeable_outputs)
         end
@@ -168,7 +170,6 @@ module MediaTypes
         end
       end
 
-
       ##
       # Allow input serialization using the passed in +serializer+ for the given +view+
       #
@@ -188,11 +189,11 @@ module MediaTypes
           @serialization_available_serializers ||= {}
           @serialization_available_serializers[:input] ||= {}
           actions = filter_opts[:only] || :all_actions
-          actions = [actions] unless actions.kind_of?(Array)
+          actions = [actions] unless actions.is_a?(Array)
           actions.each do |action|
             @serialization_available_serializers[:input][action.to_s] ||= []
             views.each do |v|
-              @serialization_available_serializers[:input][action.to_s].push({serializer: serializer, view: view})
+              @serialization_available_serializers[:input][action.to_s].push({serializer: serializer, view: v})
             end
           end
         end
@@ -203,7 +204,7 @@ module MediaTypes
           @serialization_input_registrations ||= SerializationRegistration.new(:input)
 
           mergeable_inputs = serializer.inputs_for(views: views)
-          raise AddedEmptyInputSerializer unless mergeable_inputs.registrations.length > 0
+          raise AddedEmptyInputSerializer if mergeable_inputs.registrations.empty?
 
           @serialization_input_registrations = @serialization_input_registrations.merge(mergeable_inputs)
         end
@@ -240,10 +241,10 @@ module MediaTypes
           input_is_allowed = true
           input_is_allowed = @serialization_input_registrations.has? request.content_type unless request.content_type.blank?
 
-          unless input_is_allowed or all_allowed
+          unless input_is_allowed || all_allowed
             raise 'TODO: render with unacceptable input serializer'
           end
-           
+
           if input_is_allowed && request.content_type
             begin
               @serialization_decoded_input = @serialization_input_registrations.decode(request.body, request.content_type, self)
@@ -254,7 +255,7 @@ module MediaTypes
           end
 
           # Endpoint description media type
-          
+
           description_serializer = MediaTypes::Serialization::Serializers::EndpointDescriptionSerializer
 
           # All endpoints have endpoint description.
@@ -284,10 +285,10 @@ module MediaTypes
           not_acceptable_serializer = @serialization_not_acceptable_serializer if defined? @serialization_not_acceptable_serializer
           not_acceptable_serializer ||= MediaTypes::Serialization::Serializers::FallbackNotAcceptableSerializer
 
-          can_satify_allow = !resolved_identifier.nil?
-          can_satify_allow ||= @serialization_output_allow_all if defined?(@serialization_output_allow_all)
+          can_satisfy_allow = !resolved_identifier.nil?
+          can_satisfy_allow ||= @serialization_output_allow_all if defined?(@serialization_output_allow_all)
 
-          serialization_render_not_acceptable(@serialization_output_registrations, not_acceptable_serializer) if resolved_identifier.nil?
+          serialization_render_not_acceptable(@serialization_output_registrations, not_acceptable_serializer) unless can_satisfy_allow
         end
       end
 
@@ -310,7 +311,6 @@ module MediaTypes
       raise SerializersNotFrozenError unless defined? @serialization_frozen
 
       not_acceptable_serializer ||= @serialization_not_acceptable_serializer if defined? @serialization_not_acceptable_serializer
-
 
       @serialization_output_registrations ||= SerializationRegistration.new(:output)
       registration = @serialization_output_registrations
@@ -397,14 +397,14 @@ module MediaTypes
     end
 
     def serialization_render_not_acceptable(registrations, override = nil)
-        serializer = override
-        serializer ||= MediaTypes::Serialization::Serializers::FallbackNotAcceptableSerializer
-        identifier = serializer.validator.identifier
-        obj = { request: request, registrations: registrations }
-        new_registrations = serializer.outputs_for(views: [nil])
-      
-        serialization_render_resolved(obj: obj, serializer: serializer, identifier: identifier, registrations: new_registrations, options: {})
-        response.status = :not_acceptable
+      serializer = override
+      serializer ||= MediaTypes::Serialization::Serializers::FallbackNotAcceptableSerializer
+      identifier = serializer.validator.identifier
+      obj = { request: request, registrations: registrations }
+      new_registrations = serializer.outputs_for(views: [nil])
+    
+      serialization_render_resolved(obj: obj, serializer: serializer, identifier: identifier, registrations: new_registrations, options: {})
+      response.status = :not_acceptable
     end
 
     def serialization_render_resolved(obj:, identifier:, serializer:, registrations:, options:)
