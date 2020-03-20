@@ -1,6 +1,7 @@
 require 'media_types/serialization/version'
 require 'media_types/serialization/serializers/common_css'
 require 'media_types/serialization/serializers/fallback_not_acceptable_serializer'
+require 'media_types/serialization/serializers/fallback_unsupported_media_type_serializer'
 require 'media_types/serialization/serializers/endpoint_description_serializer'
 require 'media_types/serialization/serializers/api_viewer'
 
@@ -226,70 +227,7 @@ module MediaTypes
       # Freezes additions to the serializes and notifies the controller what it will be able to respond to.
       #
       def freeze_io!
-        before_action do
-          raise UnableToRefreezeError if defined? @serialization_frozen
-
-          @serialization_frozen = true
-          @serialization_input_registrations ||= SerializationRegistration.new(:input)
-
-          raise NoOutputSerializersDefinedError unless defined? @serialization_output_registrations
-
-          # Input content-type negotiation and validation
-          all_allowed = false
-          all_allowed ||= @serialization_input_allow_all if defined?(@serialization_input_allow_all)
-
-          input_is_allowed = true
-          input_is_allowed = @serialization_input_registrations.has? request.content_type unless request.content_type.blank?
-
-          unless input_is_allowed || all_allowed
-            raise 'TODO: render with unacceptable input serializer'
-          end
-
-          if input_is_allowed && request.content_type
-            begin
-              @serialization_decoded_input = @serialization_input_registrations.decode(request.body, request.content_type, self)
-            rescue InputValidationFailedError => e
-              raise e
-              raise 'TODO: render with validation failed serializer'
-            end
-          end
-
-          # Endpoint description media type
-
-          description_serializer = MediaTypes::Serialization::Serializers::EndpointDescriptionSerializer
-
-          # All endpoints have endpoint description.
-          # Placed in front of the list to make sure the api viewer doesn't pick it.
-          @serialization_output_registrations = description_serializer.outputs_for(views: [nil]).merge(@serialization_output_registrations)
-
-          endpoint_matched_identifier = resolve_media_type(request, description_serializer.serializer_output_registration, allow_last: false)
-          if endpoint_matched_identifier
-            # We picked an endpoint description media type
-            #
-            @serialization_available_serializers ||= {}
-            @serialization_available_serializers[:output] ||= {}
-            @serialization_api_viewer_enabled ||= {}
-
-            input = {
-              api_viewer: @serialization_api_viewer_enabled,
-              actions: @serialization_available_serializers,
-            }
-
-            serialization_render_resolved obj: input, serializer: description_serializer, identifier: endpoint_matched_identifier, registrations: @serialization_output_registrations, options: {}
-          end
-
-          # Output content negotiation
-          resolved_identifier = resolve_media_type(request, @serialization_output_registrations)
-
-          not_acceptable_serializer = nil
-          not_acceptable_serializer = @serialization_not_acceptable_serializer if defined? @serialization_not_acceptable_serializer
-          not_acceptable_serializer ||= MediaTypes::Serialization::Serializers::FallbackNotAcceptableSerializer
-
-          can_satisfy_allow = !resolved_identifier.nil?
-          can_satisfy_allow ||= @serialization_output_allow_all if defined?(@serialization_output_allow_all)
-
-          serialization_render_not_acceptable(@serialization_output_registrations, not_acceptable_serializer) unless can_satisfy_allow
-        end
+        before_action :serializer_freeze_io_internal
       end
 
     end
@@ -317,7 +255,7 @@ module MediaTypes
       unless serializers.nil?
         registration = SerializationRegistration.new(:output)
         serializers.each do |s|
-          registration = registration.merge(s.registrations)
+          registration = registration.merge(s)
         end
       end
 
@@ -405,6 +343,83 @@ module MediaTypes
     
       serialization_render_resolved(obj: obj, serializer: serializer, identifier: identifier, registrations: new_registrations, options: {})
       response.status = :not_acceptable
+    end
+
+    def serializer_freeze_io_internal
+      raise UnableToRefreezeError if defined? @serialization_frozen
+
+      @serialization_frozen = true
+      @serialization_input_registrations ||= SerializationRegistration.new(:input)
+
+      raise NoOutputSerializersDefinedError unless defined? @serialization_output_registrations
+
+      # Input content-type negotiation and validation
+      all_allowed = false
+      all_allowed ||= @serialization_input_allow_all if defined?(@serialization_input_allow_all)
+
+      input_is_allowed = true
+      input_is_allowed = @serialization_input_registrations.has? request.content_type unless request.content_type.blank?
+
+      unless input_is_allowed || all_allowed
+        serializers = @serialization_unsupported_media_type_serializer || [MediaTypes::Serialization::Serializers::FallbackUnsupportedMediaTypeSerializer]
+        registrations = SerializationRegistration.new(:output)
+        serializers.each do |s|
+          registrations = registrations.merge(s.outputs_for(views: [nil]))
+        end
+
+        input = {
+          registrations: @serialization_input_registrations
+        }
+
+        render_media input, serializers: [registrations]
+        return
+      end
+
+      if input_is_allowed && request.content_type
+        begin
+          @serialization_decoded_input = @serialization_input_registrations.decode(request.body, request.content_type, self)
+        rescue InputValidationFailedError => e
+          raise e
+          raise 'TODO: render with validation failed serializer'
+        end
+      end
+
+      # Endpoint description media type
+
+      description_serializer = MediaTypes::Serialization::Serializers::EndpointDescriptionSerializer
+
+      # All endpoints have endpoint description.
+      # Placed in front of the list to make sure the api viewer doesn't pick it.
+      @serialization_output_registrations = description_serializer.outputs_for(views: [nil]).merge(@serialization_output_registrations)
+
+      endpoint_matched_identifier = resolve_media_type(request, description_serializer.serializer_output_registration, allow_last: false)
+      if endpoint_matched_identifier
+        # We picked an endpoint description media type
+        #
+        @serialization_available_serializers ||= {}
+        @serialization_available_serializers[:output] ||= {}
+        @serialization_api_viewer_enabled ||= {}
+
+        input = {
+          api_viewer: @serialization_api_viewer_enabled,
+          actions: @serialization_available_serializers,
+        }
+
+        serialization_render_resolved obj: input, serializer: description_serializer, identifier: endpoint_matched_identifier, registrations: @serialization_output_registrations, options: {}
+        return
+      end
+
+      # Output content negotiation
+      resolved_identifier = resolve_media_type(request, @serialization_output_registrations)
+
+      not_acceptable_serializer = nil
+      not_acceptable_serializer = @serialization_not_acceptable_serializer if defined? @serialization_not_acceptable_serializer
+      not_acceptable_serializer ||= MediaTypes::Serialization::Serializers::FallbackNotAcceptableSerializer
+
+      can_satisfy_allow = !resolved_identifier.nil?
+      can_satisfy_allow ||= @serialization_output_allow_all if defined?(@serialization_output_allow_all)
+
+      serialization_render_not_acceptable(@serialization_output_registrations, not_acceptable_serializer) unless can_satisfy_allow
     end
 
     def serialization_render_resolved(obj:, identifier:, serializer:, registrations:, options:)
