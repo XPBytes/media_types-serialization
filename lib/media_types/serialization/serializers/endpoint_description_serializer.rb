@@ -13,8 +13,31 @@ module MediaTypes
         disable_wildcards
 
         output version: 1 do |input, version, context|
-          #Rails.application.routes.recognize_path
+          request_path = context.request.original_fullpath.split('?')[0]
+
+          path_prefix = ENV.fetch('RAILS_RELATIVE_URL_ROOT') { '' }
+          request_path = request_path.sub(path_prefix, '')
+
+          my_controller = Rails.application.routes.recognize_path request_path
+
+          methods_available = {}
           methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
+          methods.each do |m|
+            begin
+              found_controller = Rails.application.routes.recognize_path request_path, method: m
+              if found_controller[:controller] == my_controller[:controller]
+                methods_available[m] = found_controller[:action]
+              end
+            rescue ActionController::RoutingError
+              # not available
+            end
+          end
+
+          {
+            methods: methods_available,
+            input: input,
+          }
+
         end
 
       end

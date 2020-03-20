@@ -102,10 +102,12 @@ module MediaTypes
       private
 
       def register_wildcards(identifier, registration)
-        registrations['*/*'] = registration unless has? '*/*'
+        new_alias = SerializationAliasRegistration.new registration.serializer, registration.inout, registration.validator, registration.display_identifier, registration, true
+
+        registrations['*/*'] = new_alias unless has? '*/*'
 
         partial = "#{identifier.split('/')[0]}/*"
-        registrations[partial] = registration unless has? partial
+        registrations[partial] = new_alias unless has? partial
       end
     end
 

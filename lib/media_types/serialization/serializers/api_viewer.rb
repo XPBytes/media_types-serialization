@@ -15,7 +15,6 @@ module MediaTypes
           registrations = obj[:registrations]
           original_output = obj[:output]
           original_links = obj[:links]
-          #TODO: Add list of media types and correct html
 
           original_uri = URI.parse(context.request.original_url)
           api_fied_links = original_links.map do |l|

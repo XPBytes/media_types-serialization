@@ -124,12 +124,15 @@ module MediaTypes
 
         views = [view] if views.nil?
 
-        @serialization_available_serializers ||= {}
-        @serialization_available_serializers[:output] ||= {}
-        action = filter_opts[:only] || :all_actions
-        @serialization_available_serializers[:output][action] ||= []
-        views.each do |v|
-          @serialization_available_serializers[:output][action].push({serializer: serializer, view: view})
+        before_action do
+          @serialization_available_serializers ||= {}
+          @serialization_available_serializers[:output] ||= {}
+          action = filter_opts[:only] || :all_actions
+          
+          @serialization_available_serializers[:output][action] ||= []
+          views.each do |v|
+            @serialization_available_serializers[:output][action].push({serializer: serializer, view: view})
+          end
         end
 
         before_action(**filter_opts) do
@@ -145,9 +148,11 @@ module MediaTypes
       end
       
       def allow_api_viewer(serializer: MediaTypes::Serialization::Serializers::ApiViewer, **filter_opts)
-        @serialization_api_viewer_enabled ||= {}
-        action = filter_opts[:only] || :all_actions
-        @serialization_api_viewer_enabled[action] = true
+        before_action do
+          @serialization_api_viewer_enabled ||= {}
+          action = filter_opts[:only] || :all_actions
+          @serialization_api_viewer_enabled[action] = true
+        end
 
         before_action(**filter_opts) do
           if request.query_parameters['api_viewer']
@@ -171,12 +176,14 @@ module MediaTypes
         raise ArrayInViewParameterError, :allow_input_serializer if view.is_a? Array
         views = [view] if views.nil?
         
-        @serialization_available_serializers ||= {}
-        @serialization_available_serializers[:output] ||= {}
-        action = filter_opts[:only] || :all_actions
-        @serialization_available_serializers[:output][action] ||= []
-        views.each do |v|
-          @serialization_available_serializers[:output][action].push({serializer: serializer, view: view})
+        before_action do
+          @serialization_available_serializers ||= {}
+          @serialization_available_serializers[:output] ||= {}
+          action = filter_opts[:only] || :all_actions
+          @serialization_available_serializers[:output][action] ||= []
+          views.each do |v|
+            @serialization_available_serializers[:output][action].push({serializer: serializer, view: view})
+          end
         end
 
         before_action(**filter_opts) do
@@ -244,6 +251,11 @@ module MediaTypes
           endpoint_matched_identifier = resolve_media_type(request, description_serializer.serializer_output_registration, allow_last: false)
           if endpoint_matched_identifier
             # We picked an endpoint description media type
+            #
+            @serialization_available_serializers ||= {}
+            @serialization_available_serializers[:output] ||= {}
+            @serialization_api_viewer_enabled ||= {}
+
             input = {
               api_viewer: @serialization_api_viewer_enabled,
               actions: @serialization_available_serializers,
