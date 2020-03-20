@@ -16,6 +16,7 @@ module MediaTypes
           return uri unless viewer.host == current_host
 
           query_parts = viewer.query&.split('&') || []
+          query_parts = query_parts.select { |p| !p.starts_with? 'api_viewer=' }
           query_parts.append("api_viewer=#{type}")
           viewer.query = query_parts.join('&')
           viewer.to_s
