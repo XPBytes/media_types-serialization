@@ -10,41 +10,40 @@ module MediaTypes
       class ApiViewer < MediaTypes::Serialization::Base
         unvalidated 'text/html'
 
+        def self.viewerify(uri, current_host, type: 'last')
+          viewer = URI.parse(uri)
+
+          return uri unless viewer.host == current_host
+
+          query_parts = viewer.query&.split('&') || []
+          query_parts.append("api_viewer=#{type}")
+          viewer.query = query_parts.join('&')
+          viewer.to_s
+        end
+
         output_raw do |obj, version, context|
           original_identifier = obj[:identifier]
           registrations = obj[:registrations]
           original_output = obj[:output]
           original_links = obj[:links]
 
-          original_uri = URI.parse(context.request.original_url)
           api_fied_links = original_links.map do |l|
             new = l.dup
             new[:invalid] = false
             begin
-              uri = URI.parse(new[:href])
-              
-              if uri.host == context.request.host
-                query_parts = uri.query&.split('&') || []
-                query_parts.append('api_viewer=last')
-                uri.query = query_parts.join('&')
-                new[:href] = uri.to_s
-              end
+              uri = viewerify(new[:href], context.request.host)
+              new[:href] = uri.to_s
             rescue URI::InvalidURIError
               new[:invalid] = true
             end
 
             new
           end
-          
-          stripped_original = original_uri.dup
-          query_parts = stripped_original.query&.split('&') | []
-          query_parts = query_parts.select { |q| !q.start_with? 'api_viewer=' }
 
           media_types = registrations.registrations.keys.map do |identifier|
-            stripped_original.query = (query_parts + ["api_viewer=#{identifier}"]).join('&')
             result = {
               identifier: identifier,
-              href: stripped_original.to_s,
+              href: viewerify(context.request.original_url, context.request.host, type: identifier),
               selected: identifier == original_identifier,
             }
             result[:href] = '#output' if identifier == original_identifier
@@ -55,6 +54,18 @@ module MediaTypes
 
           escaped_output = original_output.split("\n").
             map { |l| CGI::escapeHTML(l).gsub(/ (?= )/, '&nbsp;') }.
+            map { |l| (l.gsub(/\bhttps?:\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;{}]*[-A-Z0-9+@#\/%=}~_|](?![a-z]*;)/i) do |m|
+              converted = m
+              invalid = false
+              begin
+                converted = viewerify(m, context.request.host)
+              rescue URI::InvalidURIError
+                invalid = true
+              end
+              style = ''
+              style = ' style="color: red"' if invalid
+              "<a#{style} href=\"#{converted}\">#{m}</a>"
+            end) }.
             join("<br>\n")
           
 
