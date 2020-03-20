@@ -67,6 +67,7 @@ module MediaTypes
               output: to_output_identifiers(output_serializers),
             }
 
+            result[method].delete(:input) if method == 'GET'
             result[method][:api_viewer] = viewer_uri.to_s if has_viewer
           end
 
