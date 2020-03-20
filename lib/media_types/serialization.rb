@@ -235,17 +235,19 @@ module MediaTypes
           all_allowed ||= @serialization_input_allow_all if defined?(@serialization_input_allow_all)
 
           input_is_allowed = true
-          unless request.content_type.blank?
-            input_is_allowed = @serialization_input_registrations.has? request.content_type
-            begin
-              @serialization_decoded_input = @serialization_input_registrations.decode(request.body, request.content_type, self)
-            rescue InputValidationFailedError => e
-              raise 'TODO: render with validation failed serializer'
-            end
-          end
+          input_is_allowed = @serialization_input_registrations.has? request.content_type unless request.content_type.blank?
 
           unless input_is_allowed or all_allowed
             raise 'TODO: render with unacceptable input serializer'
+          end
+           
+          if input_is_allowed && request.content_type
+            begin
+              @serialization_decoded_input = @serialization_input_registrations.decode(request.body, request.content_type, self)
+            rescue InputValidationFailedError => e
+              raise e
+              raise 'TODO: render with validation failed serializer'
+            end
           end
 
           # Endpoint description media type
@@ -301,7 +303,7 @@ module MediaTypes
       context.instance_exec { @serialization_output_registrations.call(victim, media_type, context) }
     end
 
-    def render_media(obj = nil, serializers: nil, not_acceptable_serializer: nil, **options, &block)
+    def render_media(obj, serializers: nil, not_acceptable_serializer: nil, **options, &block)
       raise SerializersNotFrozenError unless defined? @serialization_frozen
 
       not_acceptable_serializer ||= @serialization_not_acceptable_serializer if defined? @serialization_not_acceptable_serializer
@@ -351,7 +353,7 @@ module MediaTypes
     def deserialize!(request)
       raise SerializersNotFrozenError unless defined?(@serialization_frozen)
       raise NoInputReceivedError unless request.content_type
-      raise InputNotAcceptableError unless @serialization_input_registrations.has_key? request.content_type
+      raise InputNotAcceptableError unless @serialization_input_registrations.has? request.content_type
       @serialization_input_registrations.call(@serialization_decoded_input, request.content_type, self)
     end
 

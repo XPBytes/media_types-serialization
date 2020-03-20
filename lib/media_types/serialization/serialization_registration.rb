@@ -27,7 +27,7 @@ module MediaTypes
         registration = SerializationBlockRegistration.new serializer, inout, validator, identifier, version, block, raw
         registrations[identifier] = registration
 
-        register_wildcards(identifier, registration) if wildcards
+        register_wildcards(identifier, registration) if wildcards && inout == :output
       end
 
       def register_alias(serializer, alias_identifier, target_identifier, optional, wildcards: true, display_identifier: nil)
@@ -40,7 +40,7 @@ module MediaTypes
         registration = SerializationAliasRegistration.new serializer, inout, target.validator, alias_identifier, target, optional
         registrations[alias_identifier] = registration
 
-        register_wildcards(alias_identifier, registration) if wildcards
+        register_wildcards(alias_identifier, registration) if wildcards && inout == :output
       end
 
       def merge(other)
@@ -147,10 +147,10 @@ module MediaTypes
         raise CannotDecodeOutputError if inout != :input
 
         if !self.raw
-          victim = MediaTypes::Serialization.json_decoder.call(victim)
           begin
+            victim = MediaTypes::Serialization.json_decoder.call(victim)
             validator.validate!(victim)
-          rescue ValidationError => inner
+          rescue MediaTypes::Scheme::ValidationError, Oj::ParseError, JSON::ParserError => inner
             raise InputValidationFailedError, inner
           end
         end
@@ -163,7 +163,8 @@ module MediaTypes
 
         result = nil
         if dsl.nil?
-          result = block.call(victim, version, context)
+          result = victim
+          result = block.call(victim, version, context) if block
         else
           result = dsl.instance_exec victim, version, context, &block
         end

@@ -660,7 +660,7 @@ Registers serialization and deserialization in the controller. This function mus
 
 These functions are available during method execution in the controller.
 
-#### `render_media( obj: nil, serializers: nil, not_acceptable_serializer: nil, **options ) do`
+#### `render_media( obj, serializers: nil, not_acceptable_serializer: nil, **options ) do`
 
 Serializes an object and renders it using the appropriate content type. Options are passed through to the controller `render` function. Allows you to specify different objects to different serializers using a block:
 
