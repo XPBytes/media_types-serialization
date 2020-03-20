@@ -59,20 +59,20 @@ module MediaTypes
 
     class UnbackedAliasDefinitionError < ConfigurationError
       def initialize(identifier, inout)
-        # TODO: do this:
-        # Move the output definition above the alias:
-        #
-        # class MySerializer < MediaTypes::Serialization::Base
-        # #...
-        # output do
-        #    # ...
-        # end
-        #
-        # output_alias 'text/html'
-        # # ^----- move here
-        # end
-
-        super("Serializer tried to define an #{inout}_alias that points to the media type identifier #{identifier} but no such #{inout} has been defined yet. Please move the #{inout} definition above the alias.")
+        super(
+          "Serializer tried to define an #{inout}_alias that points to the media type identifier #{identifier} but no such #{inout} has been defined yet. Please move the #{inout} definition above the alias.\n\n" +
+          "Move the output definition above the alias:\n" +
+          "\n" +
+          "class MySerializer < MediaTypes::Serialization::Base\n" +
+          "#...\n" +
+          "output do\n" +
+          "  # ...\n" +
+          "end\n" +
+          "\n" +
+          "output_alias 'text/html'\n" +
+          "# ^----- move here\n" +
+          "end"
+        )
       end
     end
 
@@ -97,6 +97,17 @@ module MediaTypes
     class UnmatchedSerializerError < ConfigurationError
       def initialize(serializer)
         super("Called render_media with a resolved serializer that was not specified in the do block. Please add a 'serializer #{serializer.class.name}, <value>' entry.")
+      end
+    end
+
+    class VersionsNotAnArrayError < ConfigurationError
+      def initialize
+        super("Tried to create an input or output with a versions: parameter that is set to something that is not an array. Please use the version: parameter or conver the current value to an array.")
+      end
+    end
+    class ViewsNotAnArrayError < ConfigurationError
+      def initialize
+        super("Tried to create an input or output with a views: parameter that is set to something that is not an array. Please use the view: parameter or conver the current value to an array.")
       end
     end
 

@@ -32,6 +32,7 @@ module MediaTypes
 
         def output(view: nil, version: nil, versions: nil, &block)
           versions = [version] if versions.nil?
+          raise VersionsNotAnArrayError unless versions.is_a? Array
 
           raise ValidatorNotSpecifiedError, :output if serializer_validator.nil?
 
@@ -45,6 +46,7 @@ module MediaTypes
 
         def output_raw(view: nil, version: nil, versions: nil, &block)
           versions = [version] if versions.nil?
+          raise VersionsNotAnArrayError unless versions.is_a? Array
 
           raise ValidatorNotSpecifiedError, :output if serializer_validator.nil?
 
@@ -71,6 +73,7 @@ module MediaTypes
 
         def input(view: nil, version: nil, versions: nil, &block)
           versions = [version] if versions.nil?
+          raise VersionsNotAnArrayError unless versions.is_a? Array
 
           raise ValidatorNotSpecifiedError, :input if serializer_validator.nil?
 
@@ -84,6 +87,7 @@ module MediaTypes
 
         def input_raw(view: nil, version: nil, versions: nil, &block)
           versions = [version] if versions.nil?
+          raise VersionsNotAnArrayError unless versions.is_a? Array
 
           raise ValidatorNotSpecifiedError, :input if serializer_validator.nil?
 

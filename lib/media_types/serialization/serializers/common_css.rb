@@ -2,6 +2,7 @@
 
 require 'erb'
 require 'base64'
+require 'active_support'
 
 module MediaTypes
   module Serialization

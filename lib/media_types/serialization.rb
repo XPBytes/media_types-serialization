@@ -123,6 +123,7 @@ module MediaTypes
         raise ArrayInViewParameterError, :allow_output_serializer if view.is_a? Array
 
         views = [view] if views.nil?
+        raise ViewsNotAnArrayError unless views.is_a? Array
 
         before_action do
           @serialization_available_serializers ||= {}
@@ -178,8 +179,10 @@ module MediaTypes
       # @param [(String | NilClass|)[]|NilClass] views the views it should serializer for. Use nil for no view
       #
       def allow_input_serializer(serializer, view: nil, views: nil, **filter_opts)
+        raise SerializersAlreadyFrozenError if defined? @serialization_frozen
         raise ArrayInViewParameterError, :allow_input_serializer if view.is_a? Array
         views = [view] if views.nil?
+        raise ViewsNotAnArrayError unless views.is_a? Array
         
         before_action do
           @serialization_available_serializers ||= {}
