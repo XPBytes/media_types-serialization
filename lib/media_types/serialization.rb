@@ -130,9 +130,9 @@ module MediaTypes
           actions = filter_opts[:only] || :all_actions
           actions = [actions] unless actions.kind_of?(Array)
           actions.each do |action|
-            @serialization_available_serializers[:output][action] ||= []
+            @serialization_available_serializers[:output][action.to_s] ||= []
             views.each do |v|
-              @serialization_available_serializers[:output][action].push({serializer: serializer, view: view})
+              @serialization_available_serializers[:output][action.to_s].push({serializer: serializer, view: view})
             end
           end
         end
@@ -155,7 +155,7 @@ module MediaTypes
           actions = filter_opts[:only] || :all_actions
           actions = [actions] unless actions.kind_of?(Array)
           actions.each do |action|
-            @serialization_api_viewer_enabled[action] = true
+            @serialization_api_viewer_enabled[action.to_s] = true
           end
         end
 
@@ -187,9 +187,9 @@ module MediaTypes
           actions = filter_opts[:only] || :all_actions
           actions = [actions] unless actions.kind_of?(Array)
           actions.each do |action|
-            @serialization_available_serializers[:input][action] ||= []
+            @serialization_available_serializers[:input][action.to_s] ||= []
             views.each do |v|
-              @serialization_available_serializers[:input][action].push({serializer: serializer, view: view})
+              @serialization_available_serializers[:input][action.to_s].push({serializer: serializer, view: view})
             end
           end
         end

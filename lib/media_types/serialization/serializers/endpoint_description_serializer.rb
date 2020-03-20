@@ -12,6 +12,17 @@ module MediaTypes
 
         disable_wildcards
 
+        def self.to_input_identifiers(serializers)
+          serializers.flat_map do |s|
+            s[:serializer].inputs_for(views: [s[:view]]).registrations.keys
+          end
+        end
+        def self.to_output_identifiers(serializers)
+          serializers.flat_map do |s|
+            s[:serializer].outputs_for(views: [s[:view]]).registrations.keys
+          end
+        end
+
         output version: 1 do |input, version, context|
           request_path = context.request.original_fullpath.split('?')[0]
 
@@ -33,11 +44,33 @@ module MediaTypes
             end
           end
 
-          {
-            methods: methods_available,
-            input: input,
-          }
+          input_definitions = input[:actions][:input] || {}
+          output_definitions = input[:actions][:output] || {}
+          viewer_definitions = input[:api_viewer] || {}
 
+          result = {}
+          global_in = input_definitions['all_actions'] || []
+          global_out = output_definitions['all_actions'] || []
+          global_viewer = viewer_definitions['all_actions'] || false
+
+          viewer_uri = URI.parse(context.request.original_url)
+          query_parts = viewer_uri.query&.split('&') || []
+          query_parts = query_parts.select { |q| !q.start_with? 'api_viewer=' }
+          viewer_uri.query = (query_parts + ["api_viewer=last"]).join('&')
+
+          methods_available.each do |method, action|
+            has_viewer = viewer_definitions[action] || global_viewer
+            input_serializers = global_in + (input_definitions[action] || [])
+            output_serializers = global_out + (output_definitions[action] || [])
+            result[method] = {
+              input: to_input_identifiers(input_serializers),
+              output: to_output_identifiers(output_serializers),
+            }
+
+            result[method][:api_viewer] = viewer_uri.to_s if has_viewer
+          end
+
+          result
         end
 
       end
