@@ -26,6 +26,10 @@ module MediaTypes
           self.serializer_output_registration = SerializationRegistration.new(:output)
         end
 
+        def disable_wildcards
+          self.serializer_disable_wildcards = true
+        end
+
         def output(view: nil, version: nil, versions: nil, &block)
           versions = [version] if versions.nil?
 
@@ -35,7 +39,7 @@ module MediaTypes
             validator = serializer_validator.view(view).version(v)
             validator.override_suffix(:json) unless serializer_validated
 
-            serializer_output_registration.register_block(self, validator, v, block, false)
+            serializer_output_registration.register_block(self, validator, v, block, false, wildcards: !self.serializer_disable_wildcards)
           end
         end
 
@@ -47,7 +51,7 @@ module MediaTypes
           versions.each do |v|
             validator = serializer_validator.view(view).version(v)
 
-            serializer_output_registration.register_block(self, validator, v, block, true)
+            serializer_output_registration.register_block(self, validator, v, block, true, wildcards: !self.serializer_disable_wildcards)
           end
         end
 
@@ -55,14 +59,14 @@ module MediaTypes
           validator = serializer_validator.view(view)
           victim_identifier = validator.identifier
 
-          serializer_output_registration.register_alias(self, media_type_identifier, victim_identifier, false)
+          serializer_output_registration.register_alias(self, media_type_identifier, victim_identifier, false, wildcards: !self.serializer_disable_wildcards)
         end
 
         def output_alias_optional(media_type_identifier, view: nil)
           validator = serializer_validator.view(view)
           victim_identifier = validator.identifier
 
-          serializer_output_registration.register_alias(self, media_type_identifier, victim_identifier, true)
+          serializer_output_registration.register_alias(self, media_type_identifier, victim_identifier, true, wildcards: !self.serializer_disable_wildcards)
         end
 
         def input(view: nil, version: nil, versions: nil, &block)
@@ -130,6 +134,7 @@ module MediaTypes
             attr_accessor :serializer_validator
             attr_accessor :serializer_input_registration
             attr_accessor :serializer_output_registration
+            attr_accessor :serializer_disable_wildcards
           end
         end
       end

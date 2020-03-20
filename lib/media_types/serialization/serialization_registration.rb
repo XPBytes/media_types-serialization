@@ -17,30 +17,30 @@ module MediaTypes
         registrations.key? identifier
       end
 
-      def register_block(serializer, validator, version, block, raw)
+      def register_block(serializer, validator, version, block, raw, wildcards: true)
         identifier = validator.identifier
 
         raise DuplicateDefinitionError.new(identifier, inout) if registrations.key? identifier
 
         raise ValidatorNotDefinedError.new(identifier, inout) unless raw || validator.validatable?
 
-        registration = SerializationBlockRegistration.new serializer, inout, validator, version, block, raw
+        registration = SerializationBlockRegistration.new serializer, inout, validator, identifier, version, block, raw
         registrations[identifier] = registration
 
-        register_wildcards(identifier, registration)
+        register_wildcards(identifier, registration) if wildcards
       end
 
-      def register_alias(serializer, alias_identifier, target_identifier, optional)
+      def register_alias(serializer, alias_identifier, target_identifier, optional, wildcards: true, display_identifier: nil)
         raise DuplicateDefinitionError.new(identifier, inout) if registrations.key? alias_identifier
 
         raise UnbackedAliasDefinitionError.new(target_identifier, inout) unless registrations.key? target_identifier
 
         target = registrations[target_identifier]
 
-        registration = SerializationAliasRegistration.new serializer, inout, target.validator, target, optional
+        registration = SerializationAliasRegistration.new serializer, inout, target.validator, alias_identifier, target, optional
         registrations[alias_identifier] = registration
 
-        register_wildcards(alias_identifier, registration)
+        register_wildcards(alias_identifier, registration) if wildcards
       end
 
       def merge(other)
@@ -80,6 +80,13 @@ module MediaTypes
         registration.call(victim, context, dsl: dsl, raw: raw)
       end
 
+      def identifier_for(input_identifier)
+        registration = registrations[input_identifier]
+        raise UnregisteredMediaTypeUsageError.new(media_type, registrations.keys) if registration.nil?
+
+        registration.display_identifier
+      end
+
       def filter(views:)
         result = SerializationRegistration.new inout
 
@@ -104,10 +111,11 @@ module MediaTypes
 
     # A registration in a SerializationRegistration collection
     class SerializationBaseRegistration
-      def initialize(serializer, inout, validator)
+      def initialize(serializer, inout, validator, display_identifier)
         self.serializer = serializer
         self.inout = inout
         self.validator = validator
+        self.display_identifier = display_identifier
       end
 
       def merge(_other)
@@ -121,16 +129,16 @@ module MediaTypes
         raise 'Assertion failed, call function called on base registration.'
       end
 
-      attr_accessor :serializer, :inout, :validator
+      attr_accessor :serializer, :inout, :validator, :display_identifier
     end
 
     # A registration with a block to be executed when called.
     class SerializationBlockRegistration < SerializationBaseRegistration
-      def initialize(serializer, inout, validator, version, block, raw)
+      def initialize(serializer, inout, validator, display_identifier, version, block, raw)
         self.version = version
         self.block = block
         self.raw = raw
-        super(serializer, inout, validator)
+        super(serializer, inout, validator, display_identifier)
       end
 
       def decode(victim, context)
@@ -175,10 +183,10 @@ module MediaTypes
 
     # A registration that calls another registration when called.
     class SerializationAliasRegistration < SerializationBaseRegistration
-      def initialize(serializer, inout, validator, target, optional)
+      def initialize(serializer, inout, validator, display_identifier, target, optional)
         self.target = target
         self.optional = optional
-        super(serializer, inout, validator)
+        super(serializer, inout, validator, display_identifier)
       end
 
       def merge(other)

@@ -1,6 +1,7 @@
 require 'media_types/serialization/version'
 require 'media_types/serialization/serializers/common_css'
 require 'media_types/serialization/serializers/fallback_not_acceptable_serializer'
+require 'media_types/serialization/serializers/endpoint_description_serializer'
 require 'media_types/serialization/serializers/api_viewer'
 
 require 'abstract_controller'
@@ -123,6 +124,14 @@ module MediaTypes
 
         views = [view] if views.nil?
 
+        @serialization_available_serializers ||= {}
+        @serialization_available_serializers[:output] ||= {}
+        action = filter_opts[:only] || :all_actions
+        @serialization_available_serializers[:output][action] ||= []
+        views.each do |v|
+          @serialization_available_serializers[:output][action].push({serializer: serializer, view: view})
+        end
+
         before_action(**filter_opts) do
           raise SerializersAlreadyFrozenError if defined? @serialization_frozen
 
@@ -136,6 +145,10 @@ module MediaTypes
       end
       
       def allow_api_viewer(serializer: MediaTypes::Serialization::Serializers::ApiViewer, **filter_opts)
+        @serialization_api_viewer_enabled ||= {}
+        action = filter_opts[:only] || :all_actions
+        @serialization_api_viewer_enabled[action] = true
+
         before_action(**filter_opts) do
           if request.query_parameters['api_viewer']
             @serialization_override_accept = request.query_parameters['api_viewer'].sub ' ', '+'
@@ -157,6 +170,14 @@ module MediaTypes
       def allow_input_serializer(serializer, view: nil, views: nil, **filter_opts)
         raise ArrayInViewParameterError, :allow_input_serializer if view.is_a? Array
         views = [view] if views.nil?
+        
+        @serialization_available_serializers ||= {}
+        @serialization_available_serializers[:output] ||= {}
+        action = filter_opts[:only] || :all_actions
+        @serialization_available_serializers[:output][action] ||= []
+        views.each do |v|
+          @serialization_available_serializers[:output][action].push({serializer: serializer, view: view})
+        end
 
         before_action(**filter_opts) do
           raise SerializersAlreadyFrozenError if defined? @serialization_frozen
@@ -194,6 +215,7 @@ module MediaTypes
 
           raise NoOutputSerializersDefinedError unless defined? @serialization_output_registrations
 
+          # Input content-type negotiation and validation
           all_allowed = false
           all_allowed ||= @serialization_input_allow_all if defined?(@serialization_input_allow_all)
 
@@ -211,6 +233,26 @@ module MediaTypes
             raise 'TODO: render with unacceptable input serializer'
           end
 
+          # Endpoint description media type
+          
+          description_serializer = MediaTypes::Serialization::Serializers::EndpointDescriptionSerializer
+
+          # All endpoints have endpoint description.
+          # Placed in front of the list to make sure the api viewer doesn't pick it.
+          @serialization_output_registrations = description_serializer.outputs_for(views: [nil]).merge(@serialization_output_registrations)
+
+          endpoint_matched_identifier = resolve_media_type(request, description_serializer.serializer_output_registration, allow_last: false)
+          if endpoint_matched_identifier
+            # We picked an endpoint description media type
+            input = {
+              api_viewer: @serialization_api_viewer_enabled,
+              actions: @serialization_available_serializers,
+            }
+
+            serialization_render_resolved obj: input, serializer: description_serializer, identifier: endpoint_matched_identifier, registrations: @serialization_output_registrations, options: {}
+          end
+
+          # Output content negotiation
           resolved_identifier = resolve_media_type(request, @serialization_output_registrations)
 
           not_acceptable_serializer = nil
@@ -305,9 +347,9 @@ module MediaTypes
 
     private
 
-    def resolve_media_type(request, registration)
+    def resolve_media_type(request, registration, allow_last: true)
       if defined? @serialization_override_accept
-        @serialization_override_accept = registration.registrations.keys.last if @serialization_override_accept == 'last'
+        @serialization_override_accept = registration.registrations.keys.last if allow_last && @serialization_override_accept == 'last'
         return nil unless registration.has? @serialization_override_accept
         return @serialization_override_accept
       end
@@ -363,7 +405,6 @@ module MediaTypes
         }
         wrapped = @serialization_wrapping_renderer.serialize input, '*/*', self
         render body: wrapped
-        # TODO: display identifiers
 
         response.content_type = 'text/html'
         return
@@ -371,8 +412,7 @@ module MediaTypes
 
       render body: result, **options
 
-      # TODO: fix display identifiers, don't output Content-Type: */*
-      response.content_type = identifier
+      response.content_type = registrations.identifier_for(identifier)
     end
   end
 end
