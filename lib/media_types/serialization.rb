@@ -371,7 +371,7 @@ module MediaTypes
           registrations: @serialization_input_registrations
         }
 
-        render_media input, serializers: [registrations]
+        render_media input, serializers: [registrations], status: :unsupported_media_type
         return
       end
 
