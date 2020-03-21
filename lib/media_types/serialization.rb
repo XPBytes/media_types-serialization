@@ -2,6 +2,7 @@ require 'media_types/serialization/version'
 require 'media_types/serialization/serializers/common_css'
 require 'media_types/serialization/serializers/fallback_not_acceptable_serializer'
 require 'media_types/serialization/serializers/fallback_unsupported_media_type_serializer'
+require 'media_types/serialization/serializers/input_validation_error_serializer'
 require 'media_types/serialization/serializers/endpoint_description_serializer'
 require 'media_types/serialization/serializers/api_viewer'
 
@@ -377,10 +378,23 @@ module MediaTypes
 
       if input_is_allowed && request.content_type
         begin
-          @serialization_decoded_input = @serialization_input_registrations.decode(request.body, request.content_type, self)
+          input_data = request.body.read
+          @serialization_decoded_input = @serialization_input_registrations.decode(input_data, request.content_type, self)
         rescue InputValidationFailedError => e
-          raise e
-          raise 'TODO: render with validation failed serializer'
+          serializers = @serialization_input_validation_failed_serializer || [MediaTypes::Serialization::Serializers::InputValidationErrorSerializer]
+          registrations = SerializationRegistration.new(:output)
+          serializers.each do |s|
+            registrations = registrations.merge(s.outputs_for(views: [nil]))
+          end
+
+          input = {
+            identifier: request.content_type,
+            input: input_data,
+            error: e,
+          }
+
+          render_media input, serializers: [registrations], status: :bad_request
+          return
         end
       end
 
