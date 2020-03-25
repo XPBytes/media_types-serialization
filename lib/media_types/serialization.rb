@@ -19,8 +19,6 @@ require 'media_types/serialization/base'
 require 'media_types/serialization/error'
 require 'media_types/serialization/serialization_dsl'
 
-require 'awesome_print'
-
 require 'delegate'
 
 class SerializationSelectorDsl < SimpleDelegator
