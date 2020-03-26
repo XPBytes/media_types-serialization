@@ -61,7 +61,9 @@ module MediaTypes
     else
       require 'json'
       self.json_encoder = JSON.method(:pretty_generate)
-      self.json_decoder = JSON.method(:parse)
+      self.json_decoder = ->(txt) {
+        JSON.parse(txt).with_indifferent_access
+      }
     end
 
     extend ActiveSupport::Concern
