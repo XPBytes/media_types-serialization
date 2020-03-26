@@ -212,12 +212,14 @@ module MediaTypes
 
       def allow_all_output(**filter_opts)
         before_action(**filter_opts) do
+          @serialization_output_registrations ||= SerializationRegistration.new(:output)
           @serialization_output_allow_all ||= true
         end
       end
 
       def allow_all_input(**filter_opts)
         before_action(**filter_opts) do
+          @serialization_input_registrations ||= SerializationRegistration.new(:input)
           @serialization_input_allow_all ||= true
         end
       end
