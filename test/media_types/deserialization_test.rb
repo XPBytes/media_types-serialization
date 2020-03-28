@@ -27,7 +27,7 @@ class MediaTypes::DeserializationTest < Minitest::Test
       'mydomain'
     end
 
-    use_name 'my_resource', defaults: { suffix: :json }
+    use_name 'my_resource'
 
     validations do
       view 'raw' do
