@@ -147,11 +147,20 @@ module MediaTypes
         raise CannotDecodeOutputError if inout != :input
 
         unless raw
-          begin
-            victim = MediaTypes::Serialization.json_decoder.call(victim)
-            validator.validate!(victim)
-          rescue MediaTypes::Scheme::ValidationError, Oj::ParseError, JSON::ParserError => inner
-            raise InputValidationFailedError, inner
+          if defined? Oj::ParseError
+            begin
+              victim = MediaTypes::Serialization.json_decoder.call(victim)
+              validator.validate!(victim)
+            rescue MediaTypes::Scheme::ValidationError, Oj::ParseError, JSON::ParserError => inner
+              raise InputValidationFailedError, inner
+            end
+          else
+            begin
+              victim = MediaTypes::Serialization.json_decoder.call(victim)
+              validator.validate!(victim)
+            rescue MediaTypes::Scheme::ValidationError, JSON::ParserError => inner
+              raise InputValidationFailedError, inner
+            end
           end
         end
 
