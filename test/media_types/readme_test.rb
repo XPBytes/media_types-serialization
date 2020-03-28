@@ -10,7 +10,6 @@ require 'action_dispatch/http/request'
 require 'action_dispatch/http/response'
 
 require 'media_types'
-require 'media_types/serialization/renderer/register'
 
 require 'http_headers/accept'
 
