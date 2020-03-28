@@ -36,6 +36,12 @@ module MediaTypes
       end
     end
 
+    class CollectionTypeError < RuntimeError
+      def initialize(type)
+        super("Unable to serialize the collection. Input was of type #{type} but I expected an Array.")
+      end
+    end
+
     class ConfigurationError < Error
     end
 

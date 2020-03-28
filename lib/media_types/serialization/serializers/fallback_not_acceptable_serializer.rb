@@ -11,7 +11,8 @@ module MediaTypes
 
         output_raw do |obj, version, context|
 
-
+        available_types = []
+        begin
           original_uri = URI.parse(context.request.original_url)
           stripped_original = original_uri.dup
           query_parts = stripped_original.query&.split('&') || []
@@ -24,6 +25,14 @@ module MediaTypes
               url: stripped_original.to_s,
             }
           end
+        rescue URI::InvalidURIError
+          available_types = obj[:registrations].registrations.keys.map do |identifier|
+            {
+              identifier: identifier,
+              url: context.request.original_url,
+            }
+          end
+        end
 
           input = OpenStruct.new(
             media_types: available_types,

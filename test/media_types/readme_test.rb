@@ -79,6 +79,7 @@ class MediaTypes::ReadmeTest < Minitest::Test
     validator BookValidator
 
     output version: 1 do |obj, version, context|
+      raise 'bad input' unless obj.is_a? Book
       {
         book: {
           title: obj.title
@@ -87,6 +88,7 @@ class MediaTypes::ReadmeTest < Minitest::Test
     end
 
     output versions: [2, 3] do  |obj, version, context|
+      raise 'bad input' unless obj.is_a? Book
       attribute :book do
         link :self, href: 'https://example.org' if version >= 3
 
@@ -96,6 +98,7 @@ class MediaTypes::ReadmeTest < Minitest::Test
     end
 
     output view: :index, version: 3 do |arr, version, context|
+      raise 'bad input' unless arr.is_a? Array
       attribute :books do
         link :self, href: 'https://example.org/1'
 
@@ -137,7 +140,7 @@ class MediaTypes::ReadmeTest < Minitest::Test
       book.title = 'Everything, abridged'
       book.description = 'Mu'
 
-      render_media obj: book
+      render_media book
     end
     
     def index
@@ -145,7 +148,7 @@ class MediaTypes::ReadmeTest < Minitest::Test
       book.title = 'Everything, abridged'
       book.description = 'Mu'
 
-      render_media obj: [book]
+      render_media [book]
     end
   end
 

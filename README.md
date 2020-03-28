@@ -116,7 +116,7 @@ class BookController < ActionController::API
     book = Book.new
     book.title = 'Everything, abridged'
 
-    render_media obj: book
+    render_media book
   end
 end
 ```

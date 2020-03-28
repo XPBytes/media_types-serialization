@@ -47,6 +47,8 @@ module MediaTypes
       end
 
       def index(array, serializer = __getobj__, version:, view: nil)
+        raise CollectionTypeError, array.class.name unless array.is_a? Array
+
         links = []
         identifier = serializer.serializer_validator.view(view).version(version).identifier
 
@@ -68,6 +70,8 @@ module MediaTypes
       end
 
       def collection(array, serializer = __getobj__, version:, view: nil)
+        raise CollectionTypeError, array.class.name unless array.is_a? Array
+
         identifier = serializer.serializer_validator.view(view).version(version).identifier
 
         rendered = []

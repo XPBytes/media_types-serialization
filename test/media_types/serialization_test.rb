@@ -48,6 +48,7 @@ class MediaTypes::SerializationTest < Minitest::Test
     validator MyResourceMediaType
 
     output version: 1 do |obj, version, context|
+      obj = obj[:obj]
       attribute :name, obj[:title]
       attribute :number, obj[:count]
       attribute :items, (obj[:data].map do |k, v|

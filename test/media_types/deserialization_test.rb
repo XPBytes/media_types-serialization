@@ -45,6 +45,10 @@ class MediaTypes::DeserializationTest < Minitest::Test
   class MyResourceSerializer < ::MediaTypes::Serialization::Base
     validator MyResourceMediaType
 
+    output version: 1 do |_obj, version, context|
+      {}
+    end
+
     input version: 1 do |obj, version, context|
       obj
     end
@@ -95,7 +99,7 @@ class MediaTypes::DeserializationTest < Minitest::Test
     Mime::Type.register(content_type, :my_special_symbol)
 
     request = ActionDispatch::Request.new({
-      Rack::RACK_INPUT => {},
+      Rack::RACK_INPUT => StringIO.new({}.to_json),
       'HTTP_ACCEPT' => "#{content_type}, text/html; q=0.1",
     })
     request.headers['Content-Type'] = content_type
@@ -110,7 +114,7 @@ class MediaTypes::DeserializationTest < Minitest::Test
     Mime::Type.register(content_type, :my_special_symbol)
 
     request = ActionDispatch::Request.new({
-      Rack::RACK_INPUT => {}.to_json,
+      Rack::RACK_INPUT => StringIO.new({}.to_json),
       'HTTP_ACCEPT' => "#{content_type}, text/html; q=0.1",
     })
     request.headers['Content-Type'] = content_type
