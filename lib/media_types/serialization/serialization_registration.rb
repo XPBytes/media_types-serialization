@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'media_types/serialization/error'
+require 'media_types'
 
 module MediaTypes
   module Serialization
