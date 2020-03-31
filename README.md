@@ -491,7 +491,10 @@ class BookSerializer < MediaTypes::Serialization::Base
   end
   
   output_raw view: :html do |obj, context|
-    '<html><head><title>Hello World</title></head><body>hi</body></html>'
+    render_view 'book/show', assigns: {
+      title: obj.title,
+      description: obj.description
+    }
   end
   
   output_alias 'text/html', view: :html
@@ -607,6 +610,10 @@ Returns the unmodified context.
 Can be added to the end of a block to fix up the return value to return the built up context so far.
 
 Returns the built up context so far.
+
+#### `render_view( view, context:, **args)`
+
+Can be used to render a view. You can set local variables in the view by assigning a hash to the `assigns:` parameter.
 
 ### Controller definition
 

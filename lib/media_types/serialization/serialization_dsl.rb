@@ -95,6 +95,10 @@ module MediaTypes
         serialization_dsl_result
       end
 
+      def render_view(name, context:, **args)
+        context.class.render(name, **args)
+      end
+
       def emit
         serialization_dsl_result
       end
