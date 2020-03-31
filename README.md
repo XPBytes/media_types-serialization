@@ -491,7 +491,7 @@ class BookSerializer < MediaTypes::Serialization::Base
   end
   
   output_raw view: :html do |obj, context|
-    render_view 'book/show', assigns: {
+    render_view 'book/show', context: context, assigns: {
       title: obj.title,
       description: obj.description
     }
