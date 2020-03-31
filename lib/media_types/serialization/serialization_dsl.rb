@@ -96,9 +96,7 @@ module MediaTypes
       end
 
       def render_view(name, context:, **args)
-        context.instance_eval do
-          context.class.render(name, **args)
-        end
+        context.render_to_string(name, **args)
       end
 
       def emit
