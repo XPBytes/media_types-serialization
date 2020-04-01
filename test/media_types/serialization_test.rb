@@ -74,10 +74,10 @@ class MediaTypes::SerializationTest < Minitest::Test
     freeze_io!
 
     def action
-      input = request.body || true
+      input = request.body
       raise 'input nil' if input.nil?
 
-      render_media input
+      render_media(input)
     end
   end
 
