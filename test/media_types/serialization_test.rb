@@ -74,7 +74,7 @@ class MediaTypes::SerializationTest < Minitest::Test
     freeze_io!
 
     def action
-      input = request.body
+      input = request.body || true
       raise 'input nil' if input.nil?
 
       render_media input
