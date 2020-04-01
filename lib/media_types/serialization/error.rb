@@ -102,7 +102,7 @@ module MediaTypes
 
     class UnmatchedSerializerError < ConfigurationError
       def initialize(serializer)
-        super("Called render_media with a resolved serializer that was not specified in the do block. Please add a 'serializer #{serializer.class.name}, <value>' entry.")
+        super("Called render_media with a resolved serializer that was not specified in the do block. Please add a 'serializer #{serializer.name}, <value>' entry.")
       end
     end
 
@@ -166,13 +166,13 @@ module MediaTypes
     end
 
     class AddedEmptyOutputSerializer < ConfigurationError
-      def initialize
-        super('A serializer was just added to the controller but it contained no output definitions. Usually this is due to using the wrong view parameter when adding it.')
+      def initialize(name)
+        super("A serializer with name '#{name}' was just added to the controller but it contained no output definitions. Usually this is due to using the wrong view parameter when adding it.")
       end
     end
     class AddedEmptyInputSerializer < ConfigurationError
-      def initialize
-        super('A serializer was just added to the controller but it contained no input definitions. Usually this is due to using the wrong view parameter when adding it.')
+      def initialize(name)
+        super("A serializer with name '#{name}' was just added to the controller but it contained no input definitions. Usually this is due to using the wrong view parameter when adding it.")
       end
     end
   end

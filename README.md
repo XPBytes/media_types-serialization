@@ -673,8 +673,8 @@ Serializes an object and renders it using the appropriate content type. Options 
 
 ```ruby
 render_media do
-  serialize BookSerializer book
-  serialize BooksSerializer do
+  serializer BookSerializer, book
+  serializer BooksSerializer do
     [ book ]
   end
 end
@@ -700,7 +700,11 @@ This method throws a `MediaTypes::Serialization::InputValidationFailedError` err
 
 #### `deserialize!( request )`
 
-#### `resolve_serializer`
+Does the same as `deserialize( request )` but gives the client an error page if no input was supplied.
+
+#### `resolve_serializer(request, identifier = nil, registration = @serialization_output_registration)`
+
+Returns the serializer class that will handle the given request.
 
 ## Customization
 The easiest way to customize the look and feel of the built in pages is to provide your own logo and background in an initializer:

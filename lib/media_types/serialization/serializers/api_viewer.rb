@@ -53,7 +53,7 @@ module MediaTypes
           end
 
 
-          escaped_output = original_output.split("\n").
+          escaped_output = original_output&.split("\n").
             map { |l| CGI::escapeHTML(l).gsub(/ (?= )/, '&nbsp;') }.
             map { |l| (l.gsub(/\bhttps?:\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;{}]*[-A-Z0-9+@#\/%=}~_|](?![a-z]*;)/i) do |m|
               converted = m

@@ -148,7 +148,7 @@ module MediaTypes
           @serialization_output_registrations ||= SerializationRegistration.new(:output)
 
           mergeable_outputs = serializer.outputs_for(views: views)
-          raise AddedEmptyOutputSerializer if mergeable_outputs.registrations.empty?
+          raise AddedEmptyOutputSerializer, serializer.name if mergeable_outputs.registrations.empty?
 
           @serialization_output_registrations = @serialization_output_registrations.merge(mergeable_outputs)
         end
@@ -206,7 +206,7 @@ module MediaTypes
           @serialization_input_registrations ||= SerializationRegistration.new(:input)
 
           mergeable_inputs = serializer.inputs_for(views: views)
-          raise AddedEmptyInputSerializer if mergeable_inputs.registrations.empty?
+          raise AddedEmptyInputSerializer, serializer.name if mergeable_inputs.registrations.empty?
 
           @serialization_input_registrations = @serialization_input_registrations.merge(mergeable_inputs)
         end
@@ -248,7 +248,14 @@ module MediaTypes
       context.instance_exec { @serialization_output_registrations.call(victim, media_type, context) }
     end
 
-    def render_media(obj, serializers: nil, not_acceptable_serializer: nil, **options, &block)
+    MEDIA_TYPES_SERIALIZATION_OBJ_IS_UNDEFINED = ::Object.new
+
+    def render_media(obj = MEDIA_TYPES_SERIALIZATION_OBJ_IS_UNDEFINED, serializers: nil, not_acceptable_serializer: nil, **options, &block)
+      if obj == MEDIA_TYPES_SERIALIZATION_OBJ_IS_UNDEFINED && block.nil?
+        raise 'render_media was called without an object. Please provide one or supply a block to match the serializer.'
+      end
+      obj = nil if obj == MEDIA_TYPES_SERIALIZATION_OBJ_IS_UNDEFINED
+
       raise SerializersNotFrozenError unless defined? @serialization_frozen
 
       not_acceptable_serializer ||= @serialization_not_acceptable_serializer if defined? @serialization_not_acceptable_serializer
@@ -275,7 +282,7 @@ module MediaTypes
         selector = SerializationSelectorDsl.new(self, serializer)
         selector.instance_exec(&block)
 
-        raise UnmatchedSerializerError(serializer) unless selector.matched
+        raise UnmatchedSerializerError, serializer unless selector.matched
         obj = selector.value
       end
 
