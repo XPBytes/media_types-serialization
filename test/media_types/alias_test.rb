@@ -86,7 +86,7 @@ class MediaTypes::AliasTest < Minitest::Test
     freeze_io!
 
     def show
-      render_media obj: nil
+      render_media nil
     end
   end
 
