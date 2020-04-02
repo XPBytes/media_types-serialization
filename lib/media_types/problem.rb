@@ -45,7 +45,7 @@ module MediaTypes
     def status_code(code)
       code = Rack::Utils::SYMBOL_TO_STATUS_CODE[code] if code.is_a? Symbol
 
-      self.custom_status_code = code
+      self.response_status_code = code
     end
 
     def instance

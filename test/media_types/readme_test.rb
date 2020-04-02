@@ -125,6 +125,7 @@ class MediaTypes::ReadmeTest < Minitest::Test
     include ActionController::MimeResponds
     include ActionController::Rendering
     include ActionController::Renderers
+    include ActiveSupport::Rescuable
 
     include MediaTypes::Serialization
   end
