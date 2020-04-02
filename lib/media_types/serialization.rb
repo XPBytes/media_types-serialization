@@ -467,7 +467,10 @@ module MediaTypes
       end
 
       if vary.any?
-        response.set_header('Vary', links.join(', '))
+        current_vary = (response.headers['Vary'] || "").split(',').map { |v| v.strip }.reject { |v| v.empty? }.sort
+        merged_vary = (vary.sort + current_vary).uniq
+
+        response.set_header('Vary', merged_vary.join(', '))
       end
 
       if defined? @serialization_wrapping_renderer
