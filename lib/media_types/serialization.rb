@@ -243,8 +243,8 @@ module MediaTypes
 
     protected
 
-    def serialize(victim, media_type, serializer: Object.new, links: [])
-      context = SerializationDSL.new(serializer, links, context: self)
+    def serialize(victim, media_type, serializer: Object.new, links: [], vary: ['Accept'])
+      context = SerializationDSL.new(serializer, links, vary, context: self)
       context.instance_exec { @serialization_output_registrations.call(victim, media_type, context) }
     end
 
@@ -453,7 +453,8 @@ module MediaTypes
 
     def serialization_render_resolved(obj:, identifier:, serializer:, registrations:, options:)
       links = []
-      context = SerializationDSL.new(serializer, links, context: self)
+      vary = []
+      context = SerializationDSL.new(serializer, links, vary, context: self)
       result = registrations.call(obj, identifier, self, dsl: context)
 
       if links.any?
@@ -463,6 +464,10 @@ module MediaTypes
           ([href_part] + tags).join('; ')
         end
         response.set_header('Link', items.join(', '))
+      end
+
+      if vary.any?
+        response.set_header('Vary', links.join(', '))
       end
 
       if defined? @serialization_wrapping_renderer

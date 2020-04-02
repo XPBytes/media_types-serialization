@@ -6,10 +6,11 @@ module MediaTypes
   module Serialization
     # Provides the serialization convenience methods
     class SerializationDSL < SimpleDelegator
-      def initialize(serializer, links = [], value = {}, context: nil)
+      def initialize(serializer, links = [], vary = ['Accept'], value = {}, context: nil)
         self.serialization_dsl_result = value
         @serialization_links = links
         @serialization_context = context
+        @serialization_vary = vary
         super(serializer)
       end
 
@@ -17,7 +18,7 @@ module MediaTypes
 
       def attribute(key, value = {}, &block)
         unless block.nil?
-          subcontext = SerializationDSL.new(__getobj__, @serialization_links, value, context: @serialization_context)
+          subcontext = SerializationDSL.new(__getobj__, @serialization_links, @serialization_vary, value, context: @serialization_context)
           value = subcontext.instance_exec(&block)
         end
 
@@ -77,7 +78,7 @@ module MediaTypes
         rendered = []
 
         array.each do |e|
-          context = SerializationDSL.new(__getobj__, context: @serialization_context)
+          context = SerializationDSL.new(__getobj__, [], @serialization_vary, context: @serialization_context)
           result = serializer.serialize(e, identifier, @serialization_context, dsl: context, raw: true)
 
           rendered.append(result)
