@@ -393,7 +393,7 @@ module MediaTypes
         serializers = @serialization_unsupported_media_type_serializer || [MediaTypes::Serialization::Serializers::FallbackUnsupportedMediaTypeSerializer, MediaTypes::Serialization::Serializers::ProblemSerializer]
         registrations = SerializationRegistration.new(:output)
         serializers.each do |s|
-          registrations = registrations.merge(s.outputs_for(views: [nil]))
+          registrations = registrations.merge(s.outputs_for(views: [nil, :html]))
         end
 
         input = {
