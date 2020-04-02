@@ -32,9 +32,6 @@ module MediaTypes
         end
         output_alias 'application/problem+json'
 
-        # Hack!
-        self.serializer_output_registration.registrations.delete('*/*')
-
         output_raw view: :html do |problem, _, context|
           # TODO: content-language selection
           
@@ -78,6 +75,10 @@ module MediaTypes
           TEMPLATE
           template.result(input.instance_eval { binding })
         end
+
+        # Hack: results in the alias being registered as */* wildcard
+        self.serializer_output_registration.registrations.delete('*/*')
+
         output_alias_optional 'text/html', view: :html
 
       end
