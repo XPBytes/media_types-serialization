@@ -247,7 +247,7 @@ module MediaTypes
           block.call(problem, error) unless block.nil?
 
           serializer = MediaTypes::Serialization::Serializers::ProblemSerializer
-          registrations = serializer.outputs_for(views: [:html, nil])
+          registrations = serializer.outputs_for(views: [nil]).merge(serializer.outputs_for(views: [:html]))
 
           render_media(problem, serializers: [registrations], status: problem.response_status_code)
         end
