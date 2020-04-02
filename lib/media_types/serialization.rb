@@ -421,7 +421,7 @@ module MediaTypes
           serializers = @serialization_input_validation_failed_serializer || [MediaTypes::Serialization::Serializers::ProblemSerializer, MediaTypes::Serialization::Serializers::InputValidationErrorSerializer]
           registrations = SerializationRegistration.new(:output)
           serializers.each do |s|
-            registrations = registrations.merge(s.outputs_for(views: [nil]))
+            registrations = registrations.merge(s.outputs_for(views: [nil, :html]))
           end
 
           input = {
