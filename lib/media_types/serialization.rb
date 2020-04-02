@@ -400,7 +400,7 @@ module MediaTypes
           registrations: @serialization_input_registrations
         }
 
-        render_media serializers: [registrations], status: :unsupported_media_type do
+        render_media nil, serializers: [registrations], status: :unsupported_media_type do
           serializer MediaTypes::Serialization::Serializers::FallbackUnsupportedMediaTypeSerializer, input
           serializer MediaTypes::Serialization::Serializers::ProblemSerializer do
             error = NotAcceptableError.new(input.registrations.keys)
