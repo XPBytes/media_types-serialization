@@ -322,7 +322,7 @@ module MediaTypes
 
     def deserialize!(request)
       raise SerializersNotFrozenError unless defined?(@serialization_frozen)
-      raise NoInputReceivedError unless request.content_type
+      raise NoInputReceivedError if request.content_type.blank?
       raise InputNotAcceptableError unless @serialization_input_registrations.has? request.content_type
       @serialization_input_registrations.call(@serialization_decoded_input, request.content_type, self)
     end
