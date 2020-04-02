@@ -403,9 +403,9 @@ module MediaTypes
         render_media nil, serializers: [registrations], status: :unsupported_media_type do
           serializer MediaTypes::Serialization::Serializers::FallbackUnsupportedMediaTypeSerializer, input
           serializer MediaTypes::Serialization::Serializers::ProblemSerializer do
-            error = NotAcceptableError.new(input[:registrations].registrations.keys)
+            error = UnsupportedMediaTypeError.new(input[:registrations].registrations.keys)
             problem = Problem.new(error)
-            problem.title 'Unable to provide requested media types', lang: 'en'
+            problem.title 'Unable to process your body Content-Type.', lang: 'en'
 
             problem
           end
