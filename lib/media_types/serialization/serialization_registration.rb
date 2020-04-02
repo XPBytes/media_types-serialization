@@ -143,6 +143,14 @@ module MediaTypes
         self.raw = raw
         super(serializer, inout, validator, display_identifier)
       end
+      
+      def merge(other)
+        return nil unless other.is_a?(SerializationAliasRegistration)
+
+        return self if other.optional
+
+        nil
+      end
 
       def decode(victim, _context)
         raise CannotDecodeOutputError if inout != :input
@@ -203,10 +211,10 @@ module MediaTypes
       end
 
       def merge(other)
-        return nil unless other.is_a?(SerializationAliasRegistration)
-
-        unless optional
-          return nil unless other.optional # two non-optional can't merge
+        if optional
+          return other unless other.is_a?(SerializationAliasRegistration)
+        else
+          return nil if other.is_a?(SerializationAliasRegistration) && !other.optional # two non-optional can't merge
           return self
         end
 
