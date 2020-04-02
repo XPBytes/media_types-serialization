@@ -375,6 +375,7 @@ module MediaTypes
     end
 
     def serializer_freeze_io_internal
+      # TODO: add Content-Type to vary if accepts input
       raise UnableToRefreezeError if defined? @serialization_frozen
 
       @serialization_frozen = true
@@ -413,7 +414,7 @@ module MediaTypes
         return
       end
 
-      if input_is_allowed && request.content_type
+      if input_is_allowed && !request.content_type.blank?
         begin
           input_data = request.body.read
           @serialization_decoded_input = @serialization_input_registrations.decode(input_data, request.content_type, self)
