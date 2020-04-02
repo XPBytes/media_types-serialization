@@ -10,9 +10,11 @@ module MediaTypes
         unvalidated 'application/vnd.delftsolutions.problem'
 
         output do |problem, _, context|
+          raise 'No translations defined, add at least one title' unless problem.translations.keys.any?
+
           # TODO: content-language selection
           
-          translation = problem.translations.first
+          translation = problem.translations[problem.translations.keys.first]
           title = translation[:title]
           detail = translation[:detail] || problem.error.message
 
