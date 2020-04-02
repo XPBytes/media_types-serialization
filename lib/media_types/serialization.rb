@@ -233,6 +233,12 @@ module MediaTypes
       #
       def freeze_io!
         before_action :serializer_freeze_io_internal
+
+        output_error MediaTypes::Serialization::NoInputReceivedError do |p, error|
+          p.title 'Providing input is mandatory. Please set a Content-Type', lang: 'en'
+
+          p.status_code :bad_request
+        end
       end
 
       def output_error(klazz, &block)
