@@ -4,7 +4,9 @@ require 'media_types/serialization/serializers/fallback_not_acceptable_serialize
 require 'media_types/serialization/serializers/fallback_unsupported_media_type_serializer'
 require 'media_types/serialization/serializers/input_validation_error_serializer'
 require 'media_types/serialization/serializers/endpoint_description_serializer'
+require 'media_types/serialization/serializers/problem_serializer'
 require 'media_types/serialization/serializers/api_viewer'
+require 'media_types/problem'
 
 require 'abstract_controller'
 require 'action_controller/metal/mime_responds'
@@ -233,6 +235,17 @@ module MediaTypes
         before_action :serializer_freeze_io_internal
       end
 
+      def output_error(klazz, &block)
+        rescue_from klazz do |error|
+          problem = Problem.new(error)
+          block.call(problem, error) unless block.nil?
+
+          serializer = MediaTypes::Serialization::Serializers::ProblemSerializer
+          registrations = serializer.outputs_for(views: [html, nil])
+
+          render_media(problem, serializers: [registrations], status: problem.response_status_code)
+        end
+      end
     end
     # rubocop:enable Metrics/BlockLength
 
@@ -377,7 +390,7 @@ module MediaTypes
       input_is_allowed = @serialization_input_registrations.has? request.content_type unless request.content_type.blank?
 
       unless input_is_allowed || all_allowed
-        serializers = @serialization_unsupported_media_type_serializer || [MediaTypes::Serialization::Serializers::FallbackUnsupportedMediaTypeSerializer]
+        serializers = @serialization_unsupported_media_type_serializer || [MediaTypes::Serialization::Serializers::FallbackUnsupportedMediaTypeSerializer, MediaTypes::Serialization::Serializers::ProblemSerializer]
         registrations = SerializationRegistration.new(:output)
         serializers.each do |s|
           registrations = registrations.merge(s.outputs_for(views: [nil]))
@@ -387,7 +400,16 @@ module MediaTypes
           registrations: @serialization_input_registrations
         }
 
-        render_media input, serializers: [registrations], status: :unsupported_media_type
+        render_media serializers: [registrations], status: :unsupported_media_type do
+          serializer MediaTypes::Serialization::Serializers::FallbackUnsupportedMediaTypeSerializer, input
+          serializer MediaTypes::Serialization::Serializers::ProblemSerializer do
+            error = NotAcceptableError.new(input.registrations.keys)
+            problem = Problem.new(error)
+            problem.title 'Unable to provide requested media types', lang: 'en'
+
+            problem
+          end
+        end
         return
       end
 

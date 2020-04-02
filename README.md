@@ -420,7 +420,6 @@ Sometimes you already have old clients using an `application/json` media type id
 class BookSerializer < MediaTypes::Serialization::Base
   validator BookValidator
 
-  output_alias 'application/json' # maps application/json to to applicaton/vnd.acme.book.v1+json
   output versions: [1, 2, 3] do |obj, version, context|
     attribute :book do
       link :self, href: context.book_url(obj) if version >= 3
@@ -428,8 +427,9 @@ class BookSerializer < MediaTypes::Serialization::Base
       attribute :title, obj.title
       attribute :description, obj.description if version >= 2
     end
+  end
+  output_alias 'application/json' # maps application/json to to applicaton/vnd.acme.book.v1+json
 
-  alias_input 'application/json', view: :create # maps application/json to to applicaton/vnd.acme.book.v1+json
   input view: :create, versions: [1, 2, 3] do |json, version, context|
     book = Book.new
     book.title = json['book']['title']
@@ -439,6 +439,7 @@ class BookSerializer < MediaTypes::Serialization::Base
     # Make sure not to save here but only save in the controller
     book
   end
+  input_alias 'application/json', view: :create # maps application/json to to applicaton/vnd.acme.book.v1+json
 ```
 
 Validation will be done using the remapped validator. Aliasses map to version `nil` if that is available or `1` otherwise. It is not possible to configure this version.
@@ -500,6 +501,34 @@ class BookSerializer < MediaTypes::Serialization::Base
   output_alias 'text/html', view: :html
 end
 ```
+
+#### Errors
+
+This library adds support for returning errors to clients using the [`application/problem+json`](https://tools.ietf.org/html/rfc7231) media type. You can catch and transform application errors by adding an `output_error` call before `freeze_io!`:
+
+```ruby
+class BookController < ActionController::API
+  include MediaTypes::Serialization
+
+  output_error CanCan::AccessDenied do |p, error|
+    p.title 'You do not have enough permissions to perform this action.', lang: 'en'
+    p.title 'Je hebt geen toestemming om deze actie uit te voeren.', lang: 'nl-NL'
+
+    p.status_code :forbidden
+  end
+
+  freeze_io!
+
+  # ...   
+end
+```
+
+The exception you specified will be rescued by the controller and will be displayed to the user along with a link to the shared wiki page for that error type. Feel free to add instructions there on how clients should solve this problem. You can find more information at: http://docs.delftsolutions.nl/wiki/Error
+If you want to override this url you can use the `p.url(href)` function.
+
+By default the `message` property of the error is used to fill the `details` field. You can override this by using the `p.override_details(description, lang:)` function.
+
+Custom attributes can be added using the `p.attribute(name, value)` function.
 
 ### Related
 

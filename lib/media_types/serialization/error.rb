@@ -42,6 +42,12 @@ module MediaTypes
       end
     end
 
+    class NotAcceptableError < RuntimeError
+      def initialize(available)
+        super('The controller was unable to give you any of the formats specified in your Accept header. Please add one of: [#{available.join(', ')}]')
+      end
+    end
+
     class ConfigurationError < Error
     end
 
