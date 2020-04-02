@@ -270,7 +270,7 @@ module MediaTypes
     MEDIA_TYPES_SERIALIZATION_OBJ_IS_UNDEFINED = ::Object.new
 
     def render_media(obj = MEDIA_TYPES_SERIALIZATION_OBJ_IS_UNDEFINED, serializers: nil, not_acceptable_serializer: nil, **options, &block)
-      if obj == MEDIA_TYPES_SERIALIZATION_OBJ_IS_UNDEFINED && !options.nil?
+      if obj == MEDIA_TYPES_SERIALIZATION_OBJ_IS_UNDEFINED && options.keys.any? && !block
         # options is too greedy :(
         obj = options
         options = {}
@@ -303,7 +303,7 @@ module MediaTypes
 
       serializer = resolve_serializer(request, identifier, registration)
 
-      if obj.nil? && !block.nil?
+      unless block.nil?
         selector = SerializationSelectorDsl.new(self, serializer)
         selector.instance_exec(&block)
 

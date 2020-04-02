@@ -719,6 +719,8 @@ This method throws a `MediaTypes::Serialization::OutputValidationFailedError` er
 
 If no acceptable Content-Type could be negotiated the response will be rendered using the serialized defined by the class `not_acceptable_serializer` function or by the `not_acceptable_serializer` property.
 
+Due to the way this gem is implemented it is not possible to use instance variables (`@variable`) in the `render_media` do block.
+
 #### `deserialize( request )`
 
 Deserializes the request body using the configured input serializers and returns the deserialized object.
