@@ -390,7 +390,7 @@ module MediaTypes
       input_is_allowed = @serialization_input_registrations.has? request.content_type unless request.content_type.blank?
 
       unless input_is_allowed || all_allowed
-        serializers = @serialization_unsupported_media_type_serializer || [MediaTypes::Serialization::Serializers::FallbackUnsupportedMediaTypeSerializer, MediaTypes::Serialization::Serializers::ProblemSerializer]
+        serializers = @serialization_unsupported_media_type_serializer || [MediaTypes::Serialization::Serializers::ProblemSerializer, MediaTypes::Serialization::Serializers::FallbackUnsupportedMediaTypeSerializer]
         registrations = SerializationRegistration.new(:output)
         serializers.each do |s|
           registrations = registrations.merge(s.outputs_for(views: [nil, :html]))
@@ -418,7 +418,7 @@ module MediaTypes
           input_data = request.body.read
           @serialization_decoded_input = @serialization_input_registrations.decode(input_data, request.content_type, self)
         rescue InputValidationFailedError => e
-          serializers = @serialization_input_validation_failed_serializer || [MediaTypes::Serialization::Serializers::InputValidationErrorSerializer]
+          serializers = @serialization_input_validation_failed_serializer || [MediaTypes::Serialization::Serializers::ProblemSerializer, MediaTypes::Serialization::Serializers::InputValidationErrorSerializer]
           registrations = SerializationRegistration.new(:output)
           serializers.each do |s|
             registrations = registrations.merge(s.outputs_for(views: [nil]))
@@ -430,7 +430,15 @@ module MediaTypes
             error: e,
           }
 
-          render_media input, serializers: [registrations], status: :bad_request
+          render_media nil, serializers: [registrations], status: :bad_request do
+            serializer MediaTypes::Serialization::Serializers::InputValidationErrorSerializer, input
+            serializer MediaTypes::Serialization::Serializers::ProblemSerializer do
+              problem = Problem.new(e)
+              problem.title 'Input failed to validate.', lang: 'en'
+
+              problem
+            end
+          end
           return
         end
       end
