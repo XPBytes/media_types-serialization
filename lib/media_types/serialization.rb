@@ -403,7 +403,7 @@ module MediaTypes
         render_media nil, serializers: [registrations], status: :unsupported_media_type do
           serializer MediaTypes::Serialization::Serializers::FallbackUnsupportedMediaTypeSerializer, input
           serializer MediaTypes::Serialization::Serializers::ProblemSerializer do
-            error = NotAcceptableError.new(input.registrations.keys)
+            error = NotAcceptableError.new(input[:registrations].keys)
             problem = Problem.new(error)
             problem.title 'Unable to provide requested media types', lang: 'en'
 
