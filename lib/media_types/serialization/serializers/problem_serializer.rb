@@ -32,6 +32,9 @@ module MediaTypes
         end
         output_alias 'application/problem+json'
 
+        # Hack!
+        self.serializer_output_registration.registrations.delete('*/*')
+
         output_raw view: :html do |problem, _, context|
           # TODO: content-language selection
           
