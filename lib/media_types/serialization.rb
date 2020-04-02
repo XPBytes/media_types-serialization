@@ -251,6 +251,12 @@ module MediaTypes
     MEDIA_TYPES_SERIALIZATION_OBJ_IS_UNDEFINED = ::Object.new
 
     def render_media(obj = MEDIA_TYPES_SERIALIZATION_OBJ_IS_UNDEFINED, serializers: nil, not_acceptable_serializer: nil, **options, &block)
+      if obj == MEDIA_TYPES_SERIALIZATION_OBJ_IS_UNDEFINED && !options.nil?
+        # options is too greedy :(
+        obj = options
+        options = {}
+      end
+
       if obj == MEDIA_TYPES_SERIALIZATION_OBJ_IS_UNDEFINED && block.nil?
         raise 'render_media was called without an object. Please provide one or supply a block to match the serializer.'
       end
