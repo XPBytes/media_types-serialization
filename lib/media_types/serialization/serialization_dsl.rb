@@ -103,6 +103,13 @@ module MediaTypes
       def emit
         serialization_dsl_result
       end
+      
+      def object(&block)
+        context = SerializationDSL.new(__getobj__, @serialization_links, @serialization_vary, context: @serialization_context)
+        context.instance_exec(&block)
+
+        context.serialization_dsl_result
+      end
     end
   end
 end

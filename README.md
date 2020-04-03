@@ -640,6 +640,10 @@ Can be added to the end of a block to fix up the return value to return the buil
 
 Returns the built up context so far.
 
+#### `object do`
+
+Runs a block in a new context and returns the result
+
 #### `render_view( view, context:, **args)`
 
 Can be used to render a view. You can set local variables in the view by assigning a hash to the `assigns:` parameter.
