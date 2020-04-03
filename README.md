@@ -616,15 +616,16 @@ If `emit_header` is `true` the link will also be emitted as a http header.
 
 Returns the built up context so far.
 
-#### `index( array, serializer, view: nil )`
+#### `index( array, serializer, version:, view: nil )`
 
 Adds an `_index` block to the current context. Uses the self links of the specified view to construct an index of urls to the child objects.
 
 Returns the built up context so far.
 
-#### `collection( array, serializer, view: nil )`
+#### `collection( array, serializer, version:, view: nil )`
 
 Adds an `_embedded` block to the current context. Uses the specified serializer to embed the child objects.
+Optionally a block can be used to modify the output from the child serializer.
 
 Returns the built up context so far.
 

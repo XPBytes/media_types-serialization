@@ -70,7 +70,7 @@ module MediaTypes
         serialization_dsl_result
       end
 
-      def collection(array, serializer = __getobj__, version:, view: nil)
+      def collection(array, serializer = __getobj__, version:, view: nil, &block)
         raise CollectionTypeError, array.class.name unless array.is_a? Array
 
         identifier = serializer.serializer_validator.view(view).version(version).identifier
@@ -80,6 +80,8 @@ module MediaTypes
         array.each do |e|
           context = SerializationDSL.new(__getobj__, [], @serialization_vary, context: @serialization_context)
           result = serializer.serialize(e, identifier, @serialization_context, dsl: context, raw: true)
+
+          result = block.call(result) unless block.nil?
 
           rendered.append(result)
         end
