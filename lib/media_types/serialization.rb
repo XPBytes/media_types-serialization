@@ -381,7 +381,6 @@ module MediaTypes
     end
 
     def serializer_freeze_io_internal
-      # TODO: add Content-Type to vary if accepts input
       raise UnableToRefreezeError if defined? @serialization_frozen
 
       @serialization_frozen = true

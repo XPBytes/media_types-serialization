@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.0.0
+
+- ✨ Add support for input deserialization.
+- ✨ Added serializer DSL to be more in line with validation gem.
+- ✨ Added ability to make a serializer without a validator.
+- ✨ Added error serializer that emits [`application/problem+json`](https://tools.ietf.org/html/rfc7231).
+- ✨ Reduced number of dependencies.
+- ✨ Validators no longer need to be registered to be used.
+- ✨ Added a [wiki where errors can be documented](https://docs.delftsolutions.nl). Feel free to make pages for your own namespaced errors.
+- 💔 Serializer definition API has backwards incompatible changes.
+- 💔 API viewer is now no longer registered as html but accessible with the `?api_viewer=last` query parameter.
+- 💔 Validators can no longer be registered for use in `format do`.
+
 ## 0.8.1
 
 - 🐛 Fix collection wrappers sometimes sending the wrong data to serializers
