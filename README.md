@@ -104,7 +104,6 @@ You can integrate the serialization system in rails, giving you automatic [Conte
 
 ```ruby
 require 'media_types/serialization'
-require 'media_types/serialization/renderer/register'
 
 class BookController < ActionController::API
   include MediaTypes::Serialization
