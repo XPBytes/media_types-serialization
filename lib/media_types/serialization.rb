@@ -1,4 +1,12 @@
 require 'media_types/serialization/version'
+require 'media_types/serialization/serializers/common_css'
+require 'media_types/serialization/serializers/fallback_not_acceptable_serializer'
+require 'media_types/serialization/serializers/fallback_unsupported_media_type_serializer'
+require 'media_types/serialization/serializers/input_validation_error_serializer'
+require 'media_types/serialization/serializers/endpoint_description_serializer'
+require 'media_types/serialization/serializers/problem_serializer'
+require 'media_types/serialization/serializers/api_viewer'
+require 'media_types/problem'
 
 require 'abstract_controller'
 require 'action_controller/metal/mime_responds'
@@ -9,137 +17,239 @@ require 'active_support/core_ext/object/blank'
 
 require 'http_headers/accept'
 
-require 'media_types/serialization/no_media_type_serializers'
-require 'media_types/serialization/no_serializer_for_content_type'
 require 'media_types/serialization/base'
-require 'media_types/serialization/wrapper/html_wrapper'
-
-require 'awesome_print'
+require 'media_types/serialization/error'
+require 'media_types/serialization/serialization_dsl'
 
 require 'delegate'
 
-class MediaTypeApiViewer < SimpleDelegator
-  def initialize(inner_media)
-    super inner_media
+class SerializationSelectorDsl < SimpleDelegator
+  def initialize(controller, selected_serializer)
+    @serializer = selected_serializer
+    self.value = nil
+    self.matched = false
+    super controller
   end
 
-  def to_s
-    'application/vnd.xpbytes.api-viewer.v1'
-  end
+  attr_accessor :value, :matched
 
-  def serialize_as
-    __getobj__
+  def serializer(klazz, obj = nil, &block)
+    return if klazz != @serializer
+
+    self.matched = true
+    self.value = block.nil? ? obj : yield
   end
 end
 
 module MediaTypes
   module Serialization
 
-    mattr_accessor :common_suffix, :collect_links_for_collection, :collect_links_for_index,
-                   :html_wrapper_layout, :api_viewer_layout
+    HEADER_ACCEPT = 'HTTP_ACCEPT'
+
+    mattr_accessor :json_encoder, :json_decoder
+    if defined?(::Oj)
+      self.json_encoder = ->(obj) {
+        Oj.dump(obj,
+          mode:       :compat,
+          indent:     '  ',
+          space:      ' ',
+          array_nl:   "\n",
+          object_nl:  "\n",
+          ascii_only: false,
+          allow_nan:  false,
+        )
+      }
+      self.json_decoder = Oj.method(:load)
+    else
+      require 'json'
+      self.json_encoder = JSON.method(:pretty_generate)
+      self.json_decoder = ->(txt) {
+        JSON.parse(txt).with_indifferent_access
+      }
+    end
 
     extend ActiveSupport::Concern
-
-    HEADER_ACCEPT         = 'HTTP_ACCEPT'
-
-    MEDIA_TYPE_HTML       = 'text/html'
-    MEDIA_TYPE_API_VIEWER = 'application/vnd.xpbytes.api-viewer.v1'
 
     # rubocop:disable Metrics/BlockLength
     class_methods do
 
-      ##
-      # Accept serialization using the passed in +serializer+ for the given +view+
-      #
-      # By default will also accept the first call to this as HTML
-      # By default will also accept the first call to this as Api Viewer
-      #
-      # @see #freeze_accepted_media!
-      #
-      # @param serializer the serializer to use for serialization. Needs to respond to #to_body, but may respond to
-      #   #to_json if the type accepted is ...+json, or #to_xml if the type accepted is ...+xml or #to_html if the type
-      #   accepted is text/html
-      # @param [(String | NilClass|)[]] view the views it should serializer for. Use nil for no view
-      # @param [Boolean] accept_api_viewer if true, accepts this serializer as base for the api viewer
-      # @param [Boolean] accept_html if true, accepts this serializer as the html fallback
-      #
-      def accept_serialization(serializer, view: [nil], accept_api_viewer: true, accept_html: accept_api_viewer, **filter_opts)
+      def not_acceptable_serializer(serializer, **filter_opts)
         before_action(**filter_opts) do
-          resolved_media_types(serializer, view: view) do |media_type, media_view, _, register|
-            opts = { media_type: media_type, media_view: media_view }
-            register.call(String(media_type), wrap_media(serializer, **opts))
-          end
-        end
+          raise SerializersAlreadyFrozenError if defined? @serialization_frozen
 
-        accept_html(serializer, view: view, overwrite: false, **filter_opts) if accept_html
-        accept_api_viewer(serializer, view: view, overwrite: false, **filter_opts) if accept_api_viewer
-      end
-
-      ##
-      # Accept serialization using the passed in +serializer+ for the given +view+ as text/html
-      #
-      # Always overwrites the current acceptor of text/html. The last call to this, for the giben +filter_opts+ will win
-      # the serialization.
-      #
-      def accept_html(serializer, view: [nil], overwrite: true, **filter_opts)
-        before_action(**filter_opts) do
-          resolved_media_types(serializer, view: view) do |media_type, media_view, registered, register|
-            break if registered.call(MEDIA_TYPE_HTML) && !overwrite
-            register.call(MEDIA_TYPE_HTML, wrap_html(serializer, media_view: media_view, media_type: media_type))
-          end
+          @serialization_not_acceptable_serializer = serializer
         end
       end
 
-      ##
-      # Same as +accept_html+ but then for Api Viewer
-      #
-      def accept_api_viewer(serializer, view: [nil], overwrite: true, **filter_opts)
+      def unsupported_media_type_serializer(serializer, **filter_opts)
         before_action(**filter_opts) do
-          fixate_content_type = (params[:api_viewer_media_type] || '').gsub(' ', '+')
-          resolved_media_types(serializer, view: view) do |media_type, media_view, registered, register|
-            break if registered.call(MEDIA_TYPE_API_VIEWER) && !overwrite
-            if fixate_content_type == '' || fixate_content_type == media_type.to_s
-              wrapped_media_type = MediaTypeApiViewer.new(fixate_content_type.presence || media_type)
-              register.call(MEDIA_TYPE_API_VIEWER, wrap_html(serializer, media_view: media_view, media_type: wrapped_media_type))
-              break
+          raise SerializersAlreadyFrozenError if defined? @serialization_frozen
+
+          @serialization_unsupported_media_type_serializer ||= []
+          @serialization_unsupported_media_type_serializer.append(serializer)
+        end
+      end
+
+      def clear_unsupported_media_type_serializer!(**filter_opts)
+        before_action(**filter_opts) do
+          raise SerializersAlreadyFrozenError if defined? @serialization_frozen
+
+          @serialization_unsupported_media_type_serializer = []
+        end
+      end
+
+      def input_validation_failed_serializer(serializer, **filter_opts)
+        before_action(**filter_opts) do
+          raise SerializersAlreadyFrozenError if defined? @serialization_frozen
+
+          @serialization_input_validation_failed_serializer ||= []
+          @serialization_input_validation_failed_serializer.append(serializer)
+        end
+      end
+
+      def clear_input_validation_failed_serializers!(**filter_opts)
+        before_action(**filter_opts) do
+          raise SerializersAlreadyFrozenError if defined? @serialization_frozen
+
+          @serialization_input_validation_failed_serializer = []
+        end
+      end
+
+      ##
+      # Allow output serialization using the passed in +serializer+ for the given +view+
+      #
+      # @see #freeze_io!
+      #
+      # @param serializer the serializer to use for serialization.
+      # @param [(String | NilClass|)] view the view it should use the serializer for. Use nil for no view
+      # @param [(String | NilClass|)[]|NilClass] views the views it should use the serializer for. Use nil for no view
+      #
+      def allow_output_serializer(serializer, view: nil, views: nil, **filter_opts)
+        raise SerializersAlreadyFrozenError if defined? @serialization_frozen
+        raise ArrayInViewParameterError, :allow_output_serializer if view.is_a? Array
+
+        views = [view] if views.nil?
+        raise ViewsNotAnArrayError unless views.is_a? Array
+
+        before_action do
+          @serialization_available_serializers ||= {}
+          @serialization_available_serializers[:output] ||= {}
+          actions = filter_opts[:only] || :all_actions
+          actions = [actions] unless actions.is_a?(Array)
+          actions.each do |action|
+            @serialization_available_serializers[:output][action.to_s] ||= []
+            views.each do |v|
+              @serialization_available_serializers[:output][action.to_s].push({serializer: serializer, view: v})
             end
           end
         end
+
+        before_action(**filter_opts) do
+          raise SerializersAlreadyFrozenError if defined? @serialization_frozen
+
+          @serialization_output_registrations ||= SerializationRegistration.new(:output)
+
+          mergeable_outputs = serializer.outputs_for(views: views)
+          raise AddedEmptyOutputSerializer, serializer.name if mergeable_outputs.registrations.empty?
+
+          @serialization_output_registrations = @serialization_output_registrations.merge(mergeable_outputs)
+        end
+      end
+      
+      def allow_api_viewer(serializer: MediaTypes::Serialization::Serializers::ApiViewer, **filter_opts)
+        before_action do
+          @serialization_api_viewer_enabled ||= {}
+          actions = filter_opts[:only] || :all_actions
+          actions = [actions] unless actions.kind_of?(Array)
+          actions.each do |action|
+            @serialization_api_viewer_enabled[action.to_s] = true
+          end
+        end
+
+        before_action(**filter_opts) do
+          if request.query_parameters['api_viewer']
+            @serialization_override_accept = request.query_parameters['api_viewer'].sub ' ', '+'
+            @serialization_wrapping_renderer = serializer
+          end
+        end
       end
 
       ##
-      # Register a mime type, but explicitly notify that it can't be serialized.
-      # This is done for file serving and redirects.
+      # Allow input serialization using the passed in +serializer+ for the given +view+
       #
-      # @param [Symbol] mimes takes a list of symbols that should resolve through Mime::Type
+      # @see #freeze_io!
       #
-      # @see #freeze_accepted_media!
+      # @param serializer the serializer to use for deserialization
+      # @param [(String | NilClass|)] view the view it should serializer for. Use nil for no view
+      # @param [(String | NilClass|)[]|NilClass] views the views it should serializer for. Use nil for no view
       #
-      # @example fingerpint binary format
-      #
-      #   no_serializer_for :fingerprint_bin, :fingerprint_deprecated_bin
-      #
-      def accept_without_serialization(*mimes, **filter_opts)
-        before_action(**filter_opts) do
-          self.serializers = Hash(serializers)
-          mimes.each do |mime|
-            media_type = Mime::Type.lookup_by_extension(mime) || mime
-            serializers[String(media_type)] = nil
+      def allow_input_serializer(serializer, view: nil, views: nil, **filter_opts)
+        raise SerializersAlreadyFrozenError if defined? @serialization_frozen
+        raise ArrayInViewParameterError, :allow_input_serializer if view.is_a? Array
+        views = [view] if views.nil?
+        raise ViewsNotAnArrayError unless views.is_a? Array
+        
+        before_action do
+          @serialization_available_serializers ||= {}
+          @serialization_available_serializers[:input] ||= {}
+          actions = filter_opts[:only] || :all_actions
+          actions = [actions] unless actions.is_a?(Array)
+          actions.each do |action|
+            @serialization_available_serializers[:input][action.to_s] ||= []
+            views.each do |v|
+              @serialization_available_serializers[:input][action.to_s].push({serializer: serializer, view: v})
+            end
           end
+        end
+
+        before_action(**filter_opts) do
+          raise SerializersAlreadyFrozenError if defined? @serialization_frozen
+
+          @serialization_input_registrations ||= SerializationRegistration.new(:input)
+
+          mergeable_inputs = serializer.inputs_for(views: views)
+          raise AddedEmptyInputSerializer, serializer.name if mergeable_inputs.registrations.empty?
+
+          @serialization_input_registrations = @serialization_input_registrations.merge(mergeable_inputs)
+        end
+      end
+
+      def allow_all_output(**filter_opts)
+        before_action(**filter_opts) do
+          @serialization_output_registrations ||= SerializationRegistration.new(:output)
+          @serialization_output_allow_all ||= true
+        end
+      end
+
+      def allow_all_input(**filter_opts)
+        before_action(**filter_opts) do
+          @serialization_input_registrations ||= SerializationRegistration.new(:input)
+          @serialization_input_allow_all ||= true
         end
       end
 
       ##
       # Freezes additions to the serializes and notifies the controller what it will be able to respond to.
       #
-      def freeze_accepted_media!
-        before_action do
-          # If the responders gem is available, this freezes what a controller can respond to
-          if self.class.respond_to?(:respond_to)
-            self.class.respond_to(*Hash(serializers).keys.map { |type| Mime::Type.lookup(type) })
-          end
+      def freeze_io!
+        before_action :serializer_freeze_io_internal
 
-          serializers.freeze
+        output_error MediaTypes::Serialization::NoInputReceivedError do |p, error|
+          p.title 'Providing input is mandatory. Please set a Content-Type', lang: 'en'
+
+          p.status_code :bad_request
+        end
+      end
+
+      def output_error(klazz, &block)
+        rescue_from klazz do |error|
+          problem = Problem.new(error)
+          block.call(problem, error) unless block.nil?
+
+          serializer = MediaTypes::Serialization::Serializers::ProblemSerializer
+          registrations = serializer.outputs_for(views: [:html, nil])
+
+          render_media(problem, serializers: [registrations], status: problem.response_status_code)
         end
       end
     end
@@ -148,139 +258,274 @@ module MediaTypes
     included do
       protected
 
-      attr_accessor :serializers
     end
 
     protected
 
-    def media_type_serializer
-      @media_type_serializer ||= resolve_media_type_serializer
+    def serialize(victim, media_type, serializer: Object.new, links: [], vary: ['Accept'])
+      context = SerializationDSL.new(serializer, links, vary, context: self)
+      context.instance_exec { @serialization_output_registrations.call(victim, media_type, context) }
     end
 
-    def serialize_media(media, serializer: media_type_serializer)
-      @last_serialize_media = media
-      @last_media_serializer = serializer.call(media, context: self)
-    end
+    MEDIA_TYPES_SERIALIZATION_OBJ_IS_UNDEFINED = ::Object.new
 
-    def media_type_json_root
-      String(request.format.symbol).sub(/_json$/, '')
-    end
+    def render_media(obj = MEDIA_TYPES_SERIALIZATION_OBJ_IS_UNDEFINED, serializers: nil, not_acceptable_serializer: nil, **options, &block)
+      if obj == MEDIA_TYPES_SERIALIZATION_OBJ_IS_UNDEFINED && options.keys.any? && !block
+        # options is too greedy :(
+        obj = options
+        options = {}
+      end
 
-    def respond_to_matching(matcher, &block)
-      respond_to do |format|
-        serializers.each_key do |mime|
-          next unless matcher.call(mime: mime, format: format)
-          format.custom(mime, &block)
+      if obj == MEDIA_TYPES_SERIALIZATION_OBJ_IS_UNDEFINED && block.nil?
+        raise 'render_media was called without an object. Please provide one or supply a block to match the serializer.'
+      end
+      obj = nil if obj == MEDIA_TYPES_SERIALIZATION_OBJ_IS_UNDEFINED
+
+      raise SerializersNotFrozenError unless defined? @serialization_frozen
+
+      not_acceptable_serializer ||= @serialization_not_acceptable_serializer if defined? @serialization_not_acceptable_serializer
+
+      @serialization_output_registrations ||= SerializationRegistration.new(:output)
+      registration = @serialization_output_registrations
+      unless serializers.nil?
+        registration = SerializationRegistration.new(:output)
+        serializers.each do |s|
+          registration = registration.merge(s)
         end
       end
-    end
 
-    def respond_to_accept(&block)
-      respond_to do |format|
-        serializers.each_key do |mime|
-          result = yield mime: mime, format: format
-          next unless result
-          format.custom(mime) do
-            result.call
-          end
-        end
+      identifier = resolve_media_type(request, registration)
 
-        format.any { raise_no_accept_serializer }
+      if identifier.nil?
+        serialization_render_not_acceptable(registration, not_acceptable_serializer)
+        return
       end
+
+      serializer = resolve_serializer(request, identifier, registration)
+
+      unless block.nil?
+        selector = SerializationSelectorDsl.new(self, serializer)
+        selector.instance_exec(&block)
+
+        raise UnmatchedSerializerError, serializer unless selector.matched
+        obj = selector.value
+      end
+
+      serialization_render_resolved(obj: obj, serializer: serializer, identifier: identifier, registrations: registration, options: options)
     end
 
-    # def respond_to_viewer(&block)
-    #  TODO: special collector that matches on api_viewer_content_type matches too
-    # end
+    def deserialize(request)
+      raise SerializersNotFrozenError unless defined?(@serialization_frozen)
 
-    def request_accept
-      @request_accept ||= HttpHeaders::Accept.new(request.get_header(HEADER_ACCEPT) || '')
+      result = nil
+      begin
+        result = deserialize!(request)
+      rescue NoInputReceivedError
+        return nil
+      end
+      result
     end
 
-    def raise_no_accept_serializer
-      raise NoSerializerForContentType.new(request_accept, serializers.keys)
+    def deserialize!(request)
+      raise SerializersNotFrozenError unless defined?(@serialization_frozen)
+      raise NoInputReceivedError if request.content_type.blank?
+      raise InputNotAcceptableError unless @serialization_input_registrations.has? request.content_type
+      @serialization_input_registrations.call(@serialization_decoded_input, request.content_type, self)
+    end
+
+    def resolve_serializer(request, identifier = nil, registration = @serialization_output_registrations)
+      identifier = resolve_media_type(request, registration) if identifier.nil?
+      return nil if identifier.nil?
+
+      registration = registration.registrations[identifier]
+      
+      raise 'Assertion failed, inconsistent answer from resolve_media_type' if registration.nil?
+      registration.serializer
     end
 
     private
 
-    def extract_synonym_version(synonym)
-      synonym.rpartition('.').last[1..-1]
-    end
-
-    def resolve_media_type_serializer
-      raise NoMediaTypeSerializers unless serializers
-
-      # Rails negotiation
-      #
-      # The problem with rails negotiation is that it has its own logic for some of the handling that is not
-      # spec compliant. If there is an exact match, that's fine and we leave it like this;
-      #
-      if serializers[request.format.to_s]
-        return serializers[request.format.to_s]
+    def resolve_media_type(request, registration, allow_last: true)
+      if defined? @serialization_override_accept
+        @serialization_override_accept = registration.registrations.keys.last if allow_last && @serialization_override_accept == 'last'
+        return nil unless registration.has? @serialization_override_accept
+        return @serialization_override_accept
       end
 
       # Ruby negotiation
       #
       # This is similar to the respond_to logic. It sorts the accept values and tries to match against each option.
-      # Currently does not allow for */* or type/*.
       #
-      # respond_to_accept do ... end
       #
-      request.accepts.each do |mime_type|
-        next unless serializers.key?(mime_type.to_s)
-        # Override Rails selected format
-        request.set_header("action_dispatch.request.formats", [mime_type])
-        return serializers[mime_type.to_s]
+
+      accept_header = HttpHeaders::Accept.new(request.get_header(HEADER_ACCEPT)) || ''
+      accept_header.each do |mime_type|
+        stripped = mime_type.to_s.split(';')[0]
+        next unless registration.has? stripped
+
+        return stripped
       end
 
-      raise_no_accept_serializer
+      nil
     end
 
-    def resolved_media_types(serializer, view:)
-      self.serializers = Hash(serializers)
+    def serialization_render_not_acceptable(registrations, override = nil)
+      serializer = override
+      serializer ||= MediaTypes::Serialization::Serializers::FallbackNotAcceptableSerializer
+      identifier = serializer.validator.identifier
+      obj = { request: request, registrations: registrations }
+      new_registrations = serializer.outputs_for(views: [nil])
+    
+      serialization_render_resolved(obj: obj, serializer: serializer, identifier: identifier, registrations: new_registrations, options: {})
+      response.status = :not_acceptable
+    end
 
-      registered = serializers.method(:key?)
-      register = serializers.method(:[]=)
+    def serializer_freeze_io_internal
+      raise UnableToRefreezeError if defined? @serialization_frozen
 
-      Array(view).each do |media_view|
-        media_view = String(media_view)
-        Array(serializer.media_type(view: media_view)).each do |media_type|
-          yield media_type, media_view, registered, register
+      @serialization_frozen = true
+      @serialization_input_registrations ||= SerializationRegistration.new(:input)
+
+      raise NoOutputSerializersDefinedError unless defined? @serialization_output_registrations
+
+      # Input content-type negotiation and validation
+      all_allowed = false
+      all_allowed ||= @serialization_input_allow_all if defined?(@serialization_input_allow_all)
+
+      input_is_allowed = true
+      input_is_allowed = @serialization_input_registrations.has? request.content_type unless request.content_type.blank?
+
+      unless input_is_allowed || all_allowed
+        serializers = @serialization_unsupported_media_type_serializer || [MediaTypes::Serialization::Serializers::ProblemSerializer, MediaTypes::Serialization::Serializers::FallbackUnsupportedMediaTypeSerializer]
+        registrations = SerializationRegistration.new(:output)
+        serializers.each do |s|
+          registrations = registrations.merge(s.outputs_for(views: [nil, :html]))
+        end
+
+        input = {
+          registrations: @serialization_input_registrations
+        }
+
+        render_media nil, serializers: [registrations], status: :unsupported_media_type do
+          serializer MediaTypes::Serialization::Serializers::FallbackUnsupportedMediaTypeSerializer, input
+          serializer MediaTypes::Serialization::Serializers::ProblemSerializer do
+            error = UnsupportedMediaTypeError.new(input[:registrations].registrations.keys)
+            problem = Problem.new(error)
+            problem.title 'Unable to process your body Content-Type.', lang: 'en'
+
+            problem
+          end
+        end
+        return
+      end
+
+      if input_is_allowed && !request.content_type.blank?
+        begin
+          input_data = request.body.read
+          @serialization_decoded_input = @serialization_input_registrations.decode(input_data, request.content_type, self)
+        rescue InputValidationFailedError => e
+          serializers = @serialization_input_validation_failed_serializer || [MediaTypes::Serialization::Serializers::ProblemSerializer, MediaTypes::Serialization::Serializers::InputValidationErrorSerializer]
+          registrations = SerializationRegistration.new(:output)
+          serializers.each do |s|
+            registrations = registrations.merge(s.outputs_for(views: [nil, :html]))
+          end
+
+          input = {
+            identifier: request.content_type,
+            input: input_data,
+            error: e,
+          }
+
+          render_media nil, serializers: [registrations], status: :unprocessable_entity do
+            serializer MediaTypes::Serialization::Serializers::InputValidationErrorSerializer, input
+            serializer MediaTypes::Serialization::Serializers::ProblemSerializer do
+              problem = Problem.new(e)
+              problem.title 'Input failed to validate.', lang: 'en'
+
+              problem
+            end
+          end
+          return
         end
       end
+
+      # Endpoint description media type
+
+      description_serializer = MediaTypes::Serialization::Serializers::EndpointDescriptionSerializer
+
+      # All endpoints have endpoint description.
+      # Placed in front of the list to make sure the api viewer doesn't pick it.
+      @serialization_output_registrations = description_serializer.outputs_for(views: [nil]).merge(@serialization_output_registrations)
+
+      endpoint_matched_identifier = resolve_media_type(request, description_serializer.serializer_output_registration, allow_last: false)
+      if endpoint_matched_identifier
+        # We picked an endpoint description media type
+        #
+        @serialization_available_serializers ||= {}
+        @serialization_available_serializers[:output] ||= {}
+        @serialization_api_viewer_enabled ||= {}
+
+        input = {
+          api_viewer: @serialization_api_viewer_enabled,
+          actions: @serialization_available_serializers,
+        }
+
+        serialization_render_resolved obj: input, serializer: description_serializer, identifier: endpoint_matched_identifier, registrations: @serialization_output_registrations, options: {}
+        return
+      end
+
+      # Output content negotiation
+      resolved_identifier = resolve_media_type(request, @serialization_output_registrations)
+
+      not_acceptable_serializer = nil
+      not_acceptable_serializer = @serialization_not_acceptable_serializer if defined? @serialization_not_acceptable_serializer
+      not_acceptable_serializer ||= MediaTypes::Serialization::Serializers::FallbackNotAcceptableSerializer
+
+      can_satisfy_allow = !resolved_identifier.nil?
+      can_satisfy_allow ||= @serialization_output_allow_all if defined?(@serialization_output_allow_all)
+
+      serialization_render_not_acceptable(@serialization_output_registrations, not_acceptable_serializer) unless can_satisfy_allow
     end
 
-    def wrap_media(serializer, media_view:, media_type:)
-      lambda do |*args, **opts|
-        serializer.wrap(
-          serializer.new(*args, media_type: media_type, view: media_view, **opts),
-          view: media_view
-        )
+    def serialization_render_resolved(obj:, identifier:, serializer:, registrations:, options:)
+      links = []
+      vary = []
+      context = SerializationDSL.new(serializer, links, vary, context: self)
+      result = registrations.call(obj, identifier, self, dsl: context)
+
+      if links.any?
+        items = links.map do |l|
+          href_part = "<#{l[:href]}>"
+          tags = l.to_a.select { |k,_| k != :href }.map { |k,v| "#{k}=#{v}" }
+          ([href_part] + tags).join('; ')
+        end
+        response.set_header('Link', items.join(', '))
       end
-    end
 
-    def wrap_html(serializer, media_view:, media_type:)
-      lambda do |*args, **opts|
-        inner_media_type = media_type.try(:serialize_as) || media_type
+      if vary.any?
+        current_vary = (response.headers['Vary'] || "").split(',').map { |v| v.strip }.reject { |v| v.empty? }.sort
+        merged_vary = (vary.sort + current_vary).uniq
 
-        media_serializer = wrap_media(
-          serializer,
-          media_view: media_view,
-          media_type: inner_media_type
-        ).call(*args, **opts)
-
-        override_mime_type = media_type.respond_to?(:serialize_as) ?
-          "#{media_type.to_s} (#{media_type.serialize_as})" :
-          media_type.to_s
-
-        Wrapper::HtmlWrapper.new(
-          media_serializer,
-          view: media_view,
-          mime_type: override_mime_type,
-          representations: serializers.keys,
-          url_context: request.original_fullpath.chomp(".#{request.format.symbol}")
-        )
+        response.set_header('Vary', merged_vary.join(', '))
       end
+
+      if defined? @serialization_wrapping_renderer
+        input = {
+          identifier: identifier,
+          registrations: registrations,
+          output: result,
+          links: links,
+        }
+        wrapped = @serialization_wrapping_renderer.serialize input, '*/*', self
+        render body: wrapped
+
+        response.content_type = 'text/html'
+        return
+      end
+
+      render body: result, **options
+
+      response.content_type = registrations.identifier_for(identifier)
     end
   end
 end
