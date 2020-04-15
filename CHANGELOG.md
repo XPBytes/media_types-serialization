@@ -1,6 +1,7 @@
 # Changelog
 
 ## 1.0.1
+
  - 🐛 Explicitly set all oj and json parameters to ensure correct behavior with changed defaults.
  - 🐛 Fix serializer not deserializing as symbols.
 
