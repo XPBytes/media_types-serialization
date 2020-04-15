@@ -57,6 +57,14 @@ module MediaTypes
           object_nl:  "\n",
           ascii_only: false,
           allow_nan:  false,
+          symbol_keys: true,
+          allow_nil: false,
+          allow_invalid_unicode: false,
+          array_class: ::Array,
+          create_additions: false,
+          hash_class: ::Hash,
+          nilnil: false,
+          quirks_mode: false
         )
       }
       self.json_decoder = Oj.method(:load)
@@ -64,7 +72,13 @@ module MediaTypes
       require 'json'
       self.json_encoder = JSON.method(:pretty_generate)
       self.json_decoder = ->(txt) {
-        JSON.parse(txt).with_indifferent_access
+        JSON.parse(txt, {
+          symbolize_names: true,
+          allow_nan: false,
+          create_additions: false,
+          object_class: ::Hash,
+          array_class: ::Array,
+        })
       }
     end
 
