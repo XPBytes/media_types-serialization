@@ -6,8 +6,8 @@ require 'media_types/serialization/version'
 Gem::Specification.new do |spec|
   spec.name          = 'media_types-serialization'
   spec.version       = MediaTypes::Serialization::VERSION
-  spec.authors       = ['Derk-Jan Karrenbeld']
-  spec.email         = ['derk-jan@xpbytes.com']
+  spec.authors       = ['Derk-Jan Karrenbeld', 'Max Maton']
+  spec.email         = ['derk-jan@xpbytes.com', 'max@delftsolutions.nl']
 
   spec.summary       = 'Add media types supported serialization using your favourite serializer'
   spec.homepage      = 'https://github.com/XPBytes/media_types-serialization'

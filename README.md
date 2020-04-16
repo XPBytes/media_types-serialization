@@ -4,7 +4,7 @@
 [![Gem Version](https://badge.fury.io/rb/media_types-serialization.svg)](https://badge.fury.io/rb/media_types-serialization)
 [![MIT license](http://img.shields.io/badge/license-MIT-brightgreen.svg)](http://opensource.org/licenses/MIT)
 
-`respond_to` on steroids. Add versioned serialization and deserialization to your rails projects.
+`respond_to` on steroids. Add versioned serialization and deserialization to your Rails projects.
 
 ## Installation
 
@@ -531,9 +531,7 @@ Custom attributes can be added using the `p.attribute(name, value)` function.
 
 ### Related
 
-- [`MediaTypes`](https://github.com/SleeplessByte/media-types-ruby): :gem: Library to create media type definitions, schemes and validations
-- [`MediaTypes::Deserialization`](https://github.com/XPBytes/media_types-deserialization): :cyclone: Add media types supported deserialization using your favourite parser, and media type validation.
-- [`MediaTypes::Validation`](https://github.com/XPBytes/media_types-validation): :heavy_exclamation_mark: Response validations according to a media-type
+- [`MediaTypes`](https://github.com/SleeplessByte/media-types-ruby): :gem: Library to create media type validators.
 
 ## API
 
