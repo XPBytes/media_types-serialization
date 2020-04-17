@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.3
+
+ - 🐛 Unvalidated serializers would put the view part of the identifier before the version. This was not in line with validated serializers.
+
 ## 1.0.2
 
  - 🐛 Explicitly set all oj parameters when decoding as well.
