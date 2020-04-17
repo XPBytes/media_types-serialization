@@ -27,8 +27,8 @@ class FakeValidator
   def identifier
     suffix = suffixes[[internal_view, internal_version]] || ''
     result = prefix
-    result += '.' + internal_view.to_s unless internal_view.nil?
     result += '.v' + internal_version.to_s unless internal_version.nil?
+    result += '.' + internal_view.to_s unless internal_view.nil?
     result += '+' + suffix.to_s unless suffix.empty?
 
     result

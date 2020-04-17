@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    media_types-serialization (1.0.1)
+    media_types-serialization (1.0.3)
       actionpack (>= 4.0.0)
       activesupport (>= 4.0.0)
       http_headers-accept (>= 0.2.2, < 1.0.0)
