@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.2
+
+ - 🐛 Explicitly set all oj parameters when decoding as well.
+
 ## 1.0.1
 
  - 🐛 Explicitly set all oj and json parameters to ensure correct behavior with changed defaults.

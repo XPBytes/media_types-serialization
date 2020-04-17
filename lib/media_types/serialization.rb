@@ -67,7 +67,21 @@ module MediaTypes
           quirks_mode: false
         )
       }
-      self.json_decoder = Oj.method(:load)
+      self.json_decoder = ->(obj) {
+        Oj.load(obj,
+          mode:       :compat,
+          ascii_only: false,
+          allow_nan:  false,
+          symbol_keys: true,
+          allow_nil: false,
+          allow_invalid_unicode: false,
+          array_class: ::Array,
+          create_additions: false,
+          hash_class: ::Hash,
+          nilnil: false,
+          quirks_mode: false
+        )
+      }
     else
       require 'json'
       self.json_encoder = JSON.method(:pretty_generate)
