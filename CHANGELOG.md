@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.4
+
+ - 🐛 Input validation error serializer would crash if the input contained urls.
+
 ## 1.0.3
 
  - 🐛 Unvalidated serializers would put the view part of the identifier before the version. This was not in line with validated serializers.

@@ -9,8 +9,20 @@ module MediaTypes
     module Serializers
       class InputValidationErrorSerializer < MediaTypes::Serialization::Base
         unvalidated 'text/html'
+        
+        def self.viewerify(uri, current_host, type: 'last')
+          viewer = URI.parse(uri)
 
-        def self.escape_text(text)
+          return uri unless viewer.host == current_host
+
+          query_parts = viewer.query&.split('&') || []
+          query_parts = query_parts.select { |p| !p.starts_with? 'api_viewer=' }
+          query_parts.append("api_viewer=#{type}")
+          viewer.query = query_parts.join('&')
+          viewer.to_s
+        end
+
+        def self.escape_text(text, context)
           text.split("\n").
             map { |l| CGI::escapeHTML(l).gsub(/ (?= )/, '&nbsp;') }.
             map { |l| (l.gsub(/\bhttps?:\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;{}]*[-A-Z0-9+@#\/%=}~_|](?![a-z]*;)/i) do |m|
@@ -33,8 +45,8 @@ module MediaTypes
           original_input = obj[:input]
           error = obj[:error]
 
-          escaped_error = escape_text(error.message)
-          escaped_input = escape_text(original_input)
+          escaped_error = escape_text(error.message, context)
+          escaped_input = escape_text(original_input, context)
 
           input = OpenStruct.new(
             original_identifier: input_identifier,
