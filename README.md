@@ -4,7 +4,7 @@
 [![Gem Version](https://badge.fury.io/rb/media_types-serialization.svg)](https://badge.fury.io/rb/media_types-serialization)
 [![MIT license](http://img.shields.io/badge/license-MIT-brightgreen.svg)](http://opensource.org/licenses/MIT)
 
-`respond_to` on steroids. Add versioned serialization and deserialization to your Rails projects.
+`respond_to` on steroids. Add [HATEOAS](https://docs.delftsolutions.nl/wiki/HATEOAS_API) compatible serialization and deserialization to your Rails projects.
 
 ## Installation
 
@@ -149,7 +149,7 @@ BookSerializer.serialize(book, BookValidator.version(2), context: nil)
 
 ### Links
 
-When making [HATEOAS](https://en.wikipedia.org/wiki/HATEOAS) compliant applications it's very useful to include `Link` headers in your response so clients can use a `HEAD` request instead of having to fetch the entire resource. Serializers have convenience methods to help with this:
+When making [HATEOAS](https://docs.delftsolutions.nl/wiki/HATEOAS_API) compliant applications it's very useful to include `Link` headers in your response so clients can use a `HEAD` request instead of having to fetch the entire resource. Serializers have convenience methods to help with this:
 
 ```ruby
 class BookSerializer < MediaTypes::Serialization::Base
