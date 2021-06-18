@@ -57,6 +57,59 @@ BookSerializer.serialize(book, 'vnd.acme.book.v1+json', context: nil)
 # => { "book": { "title": "Everything, abridged" } }
 ```
 
+### Controller integration
+
+You can integrate the serialization system in rails, giving you automatic [Content-Type negotiation](https://en.wikipedia.org/wiki/Content_negotiation) using the `Accept` header:
+
+```ruby
+require 'media_types/serialization'
+
+class BookController < ActionController::API
+  include MediaTypes::Serialization
+
+  allow_output_serializer(BookSerializer, only: %i[show])
+  freeze_io!
+      
+  def show 
+    book = Book.new
+    book.title = 'Everything, abridged'
+
+    render_media book
+  end
+end
+```
+
+While using the controller integration the context will always be set to the current controller. This allows you to construct urls.
+
+### Adding HATEOAS responses to existing routes
+
+When creating a mobile application it's often useful to allow the app to request a non-html representation of a specific url. If you have an existing route:
+
+```ruby
+class BookController < ApplicationController
+  def show
+    @book = Book.new
+    
+    # Use view corresponding to the controller
+  end
+end
+
+You can add a json representation as follows:
+
+```ruby
+class BookController < ApplicationController
+  allow_output_serializer(BookSerializer, only: %i[show])
+  allow_output_html
+  freeze_io!
+
+  def show
+    @book = Book.new
+
+    render_media @book
+  end
+end
+```
+
 ### Validations
 
 Right now the serializer does not validate incoming or outgoing information. This can cause issues when you accidentally emit non-conforming data that people start to depend on. To make sure you don't do that you can specify a [Media Type validator](https://github.com/SleeplessByte/media-types-ruby):
@@ -97,30 +150,6 @@ end
 ```
 
 For more information, see the [Media Types docs](https://github.com/SleeplessByte/media-types-ruby).
-
-### Controller integration
-
-You can integrate the serialization system in rails, giving you automatic [Content-Type negotiation](https://en.wikipedia.org/wiki/Content_negotiation) using the `Accept` header:
-
-```ruby
-require 'media_types/serialization'
-
-class BookController < ActionController::API
-  include MediaTypes::Serialization
-
-  allow_output_serializer(BookSerializer, only: %i[show])
-  freeze_io!
-      
-  def show 
-    book = Book.new
-    book.title = 'Everything, abridged'
-
-    render_media book
-  end
-end
-```
-
-While using the controller integration the context will always be set to the current controller. This allows you to construct urls.
 
 ### Versioning
 
