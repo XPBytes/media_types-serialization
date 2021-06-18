@@ -685,6 +685,14 @@ Configure the controller to allow the client to request responses emitted by the
 
 Accepts the same filters as `before_action`.
 
+#### `allow_output_html( as: nil, layout: nil, **filters )`
+
+Allows falling back to the default Rails view rendering when the client asks for the media type in the `as:` parameter or `text/html` if `as:` is unset.
+
+The `Content-Type` of the response will be `text/html` if the `as:` parameter is unset. If the `as:` parameter is set, it will include it in the variant parameter: `text/html; variant=application/vnd.xpbytes.borderless`.
+
+Accepts the same filters as `before_action`.
+
 #### `allow_input_serializer( serializer, views: nil, **filters )`
 
 Configure the controller to allow the client to send bodies with a `Content-Type` that can be deserialized using the specified serializer. Optionally allows you to specify which views to allow by passing an array in the views parameter.
