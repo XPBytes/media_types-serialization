@@ -82,7 +82,7 @@ GEM
     nokogiri (1.11.5)
       mini_portile2 (~> 2.5.0)
       racc (~> 1.4)
-    oj (3.11.6)
+    oj (3.11.7)
     racc (1.5.2)
     rack (2.2.3)
     rack-test (1.1.0)
