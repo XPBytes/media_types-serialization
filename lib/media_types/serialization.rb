@@ -197,13 +197,16 @@ module MediaTypes
           validator = FakeValidator.new(as.nil? ? 'text/html' : as)
           serializer = nil
           block = lambda { |_, _, controller|
-            controller.render_to_string(layout: layout)
+            if layout.nil?
+              controller.render_to_string
+            else
+              controller.render_to_string(layout: layout)
           }
 
           html_registration.register_block(serializer, validator, nil, block, true, wildcards: true)
-          html_registration[validator.identifier].display_identifier = output_identifier
+          html_registration.registrations[validator.identifier].display_identifier = output_identifier
           
-          @serialization_output_registrations = @serialization_output_registrations.merge(mergeable_outputs)
+          @serialization_output_registrations = @serialization_output_registrations.merge(html_registration)
         end
       end
       
