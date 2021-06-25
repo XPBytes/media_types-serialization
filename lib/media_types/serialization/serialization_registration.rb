@@ -34,7 +34,13 @@ module MediaTypes
       def register_alias(serializer, alias_identifier, target_identifier, optional, hide_variant, wildcards: true)
         raise DuplicateDefinitionError.new(identifier, inout) if registrations.key? alias_identifier
 
-        raise UnbackedAliasDefinitionError.new(target_identifier, inout) unless registrations.key? target_identifier
+        unless registrations.key? target_identifier
+          potential_match = registrations.keys.find do |k|
+            k.starts_with? target_identifier
+          end
+          raise VersionedAliasDefinitionError.new(target_identifier, inout, potential_match) unless potential_match.nil?
+          raise UnbackedAliasDefinitionError.new(target_identifier, inout)
+        end
 
         target = registrations[target_identifier]
 
