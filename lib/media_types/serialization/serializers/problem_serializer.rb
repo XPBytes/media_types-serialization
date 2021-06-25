@@ -9,6 +9,7 @@ module MediaTypes
       class ProblemSerializer < MediaTypes::Serialization::Base
 
         unvalidated 'application/vnd.delftsolutions.problem'
+        disable_wildcards
 
         output do |problem, _, context|
           raise 'No translations defined, add at least one title' unless problem.translations.keys.any?
@@ -76,8 +77,7 @@ module MediaTypes
           template.result(input.instance_eval { binding })
         end
 
-        # Hack: results in the alias being registered as */* wildcard
-        self.serializer_output_registration.registrations.delete('*/*')
+        enable_wildcards
 
         output_alias_optional 'text/html', view: :html
 

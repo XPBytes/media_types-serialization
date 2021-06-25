@@ -29,6 +29,9 @@ module MediaTypes
         def disable_wildcards
           self.serializer_disable_wildcards = true
         end
+        def enable_wildcards
+          self.serializer_disable_wildcards = false
+        end
 
         def output(view: nil, version: nil, versions: nil, &block)
           versions = [version] if versions.nil?

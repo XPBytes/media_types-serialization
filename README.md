@@ -552,7 +552,7 @@ class BookController < ActionController::API
 end
 ```
 
-The exception you specified will be rescued by the controller and will be displayed to the user along with a link to the shared wiki page for that error type. Feel free to add instructions there on how clients should solve this problem. You can find more information at: http://docs.delftsolutions.nl/wiki/Error
+The exception you specified will be rescued by the controller and will be displayed to the user along with a link to the shared wiki page for that error type. Feel free to add instructions there on how clients should solve this problem. You can find more information at: https://docs.delftsolutions.nl/wiki/Error
 If you want to override this url you can use the `p.url(href)` function.
 
 By default the `message` property of the error is used to fill the `details` field. You can override this by using the `p.override_details(description, lang:)` function.
