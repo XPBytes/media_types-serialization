@@ -4,8 +4,6 @@ PATH
     media_types-serialization (1.0.3)
       actionpack (>= 4.0.0)
       activesupport (>= 4.0.0)
-      http_headers-accept (>= 0.2.2, < 1.0.0)
-      http_headers-link (< 1.0.0)
       media_types (>= 2.0.0, < 3.0.0)
 
 GEM
@@ -55,19 +53,14 @@ GEM
     arel (9.0.0)
     awesome_print (1.9.2)
     builder (3.2.4)
-    concurrent-ruby (1.1.8)
+    concurrent-ruby (1.1.9)
     crass (1.0.6)
     erubi (1.10.0)
     globalid (0.4.2)
       activesupport (>= 4.2.0)
-    http_headers-accept (0.2.2)
-      http_headers-utils (>= 0.2.0, < 1.0.0)
-    http_headers-link (0.2.1)
-      http_headers-utils (>= 0.2.0, < 1.0.0)
-    http_headers-utils (0.2.0)
     i18n (1.8.10)
       concurrent-ruby (~> 1.0)
-    loofah (2.9.1)
+    loofah (2.10.0)
       crass (~> 1.0.2)
       nokogiri (>= 1.5.9)
     mail (2.7.1)
@@ -76,13 +69,11 @@ GEM
     media_types (2.0.1)
     method_source (1.0.0)
     mini_mime (1.1.0)
-    mini_portile2 (2.5.1)
     minitest (5.14.4)
     nio4r (2.5.7)
-    nokogiri (1.11.5)
-      mini_portile2 (~> 2.5.0)
+    nokogiri (1.11.7-x86_64-linux)
       racc (~> 1.4)
-    oj (3.11.6)
+    oj (3.11.7)
     racc (1.5.2)
     rack (2.2.3)
     rack-test (1.1.0)
@@ -123,12 +114,12 @@ GEM
     thread_safe (0.3.6)
     tzinfo (1.2.9)
       thread_safe (~> 0.1)
-    websocket-driver (0.7.3)
+    websocket-driver (0.7.5)
       websocket-extensions (>= 0.1.0)
     websocket-extensions (0.1.5)
 
 PLATFORMS
-  ruby
+  x86_64-linux
 
 DEPENDENCIES
   awesome_print
@@ -140,4 +131,4 @@ DEPENDENCIES
   rake (~> 13.0)
 
 BUNDLED WITH
-   1.17.3
+   2.2.5

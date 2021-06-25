@@ -15,8 +15,7 @@ require 'active_support/concern'
 require 'active_support/core_ext/module/attribute_accessors'
 require 'active_support/core_ext/object/blank'
 
-require 'http_headers/accept'
-
+require 'media_types/serialization/utils/accept_header'
 require 'media_types/serialization/base'
 require 'media_types/serialization/error'
 require 'media_types/serialization/serialization_dsl'
@@ -45,6 +44,7 @@ module MediaTypes
   module Serialization
 
     HEADER_ACCEPT = 'HTTP_ACCEPT'
+    HEADER_ACCEPT_LANGUAGE = 'HTTP_ACCEPT_LANGUAGE'
 
     mattr_accessor :json_encoder, :json_decoder
     if defined?(::Oj)
@@ -230,8 +230,10 @@ module MediaTypes
           docs_registration.registrations['text/vnd.delftsolutions.docs'].display_identifier = 'text/plain; charset=utf-8'
           docs_registration.registrations['text/*'].display_identifier = 'text/plain; charset=utf-8'
           docs_registration.registrations['*/*'].display_identifier = 'text/plain; charset=utf-8'
+          puts docs_registration.registrations.keys
           
           @serialization_output_registrations = @serialization_output_registrations.merge(docs_registration)
+          puts docs_registration.registrations.keys.map {|k| @serialization_output_registrations.identifier_for(k) }
         end
       end
       
@@ -437,7 +439,7 @@ module MediaTypes
       #
       #
 
-      accept_header = HttpHeaders::Accept.new(request.get_header(HEADER_ACCEPT)) || ''
+      accept_header = Utils::AcceptHeader.new(request.get_header(HEADER_ACCEPT)) || ''
       accept_header.each do |mime_type|
         stripped = mime_type.to_s.split(';')[0]
         next unless registration.has? stripped
