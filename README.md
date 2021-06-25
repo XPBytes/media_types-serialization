@@ -484,8 +484,6 @@ class BookController < ActionController::API
   include MediaTypes::Serialization
 
   allow_api_viewer
-  
-  allow_output_serializer(MediaTypes::ApiViewer)
 
   allow_output_serializer(BookSerializer, only: %i[show])
   allow_input_serializer(BookSerializer, only: %i[create])
@@ -698,6 +696,12 @@ The `Content-Type` of the response will be `text/html` if the `as:` parameter is
 
 Accepts the same filters as `before_action`.
 
+#### `allow_output_docs( description, **filters )`
+
+Outputs the specified description as help information.
+
+Accepts the same filters as `before_action`.
+
 #### `allow_input_serializer( serializer, views: nil, **filters )`
 
 Configure the controller to allow the client to send bodies with a `Content-Type` that can be deserialized using the specified serializer. Optionally allows you to specify which views to allow by passing an array in the views parameter.
@@ -732,7 +736,7 @@ Clears the list of serializers used to render the error when the client supplies
 
 Enables rendering the api viewer when adding the `api_viewer=last` query parameter to the url.
 
-#### `freeze_io!`
+#### `freeze_io!(**filter_opts)`
 
 Registers serialization and deserialization in the controller. This function must be called before using the controller.
 

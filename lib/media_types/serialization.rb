@@ -195,7 +195,7 @@ module MediaTypes
           output_identifier += "; variant=#{as}" unless as.nil?
           
           validator = FakeValidator.new(as.nil? ? 'text/html' : as)
-          serializer = nil
+
           block = lambda { |_, _, controller|
             if layout.nil?
               controller.render_to_string
@@ -204,10 +204,34 @@ module MediaTypes
             end
           }
 
-          html_registration.register_block(serializer, validator, nil, block, true, wildcards: true)
+          html_registration.register_block(nil, validator, nil, block, true, wildcards: true)
           html_registration.registrations[validator.identifier].display_identifier = output_identifier
+          html_registration.registrations["#{validator.identifier.split('/')[0]}/*"].display_identifier = output_identifier
+          html_registration.registrations['*/*'].display_identifier = output_identifier
           
           @serialization_output_registrations = @serialization_output_registrations.merge(html_registration)
+        end
+      end
+      
+      def allow_output_docs(description, **filter_opts)
+        before_action(**filter_opts) do
+          raise SerializersAlreadyFrozenError if defined? @serialization_frozen
+
+          @serialization_output_registrations ||= SerializationRegistration.new(:output)
+        
+          docs_registration = SerializationRegistration.new(:output)
+          validator = FakeValidator.new('text/vnd.delftsolutions.docs')
+          
+          block = lambda { |_, _, controller|
+            description
+          }
+
+          docs_registration.register_block(nil, validator, nil, block, true, wildcards: true)
+          docs_registration.registrations['text/vnd.delftsolutions.docs'].display_identifier = 'text/plain; charset=utf-8'
+          docs_registration.registrations['text/*'].display_identifier = 'text/plain; charset=utf-8'
+          docs_registration.registrations['*/*'].display_identifier = 'text/plain; charset=utf-8'
+          
+          @serialization_output_registrations = @serialization_output_registrations.merge(docs_registration)
         end
       end
       

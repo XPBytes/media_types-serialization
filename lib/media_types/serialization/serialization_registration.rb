@@ -169,14 +169,14 @@ module MediaTypes
             begin
               victim = MediaTypes::Serialization.json_decoder.call(victim)
               validator.validate!(victim)
-            rescue MediaTypes::Scheme::ValidationError, Oj::ParseError, JSON::ParserError => inner
+            rescue MediaTypes::Scheme::ValidationError, Oj::ParseError, JSON::ParserError, EncodingError => inner
               raise InputValidationFailedError, inner
             end
           else
             begin
               victim = MediaTypes::Serialization.json_decoder.call(victim)
               validator.validate!(victim)
-            rescue MediaTypes::Scheme::ValidationError, JSON::ParserError => inner
+            rescue MediaTypes::Scheme::ValidationError, JSON::ParserError, EncodingError => inner
               raise InputValidationFailedError, inner
             end
           end
