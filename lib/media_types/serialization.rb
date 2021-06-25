@@ -43,8 +43,8 @@ end
 module MediaTypes
   module Serialization
 
-    HEADER_ACCEPT = 'HTTP_ACCEPT'
-    HEADER_ACCEPT_LANGUAGE = 'HTTP_ACCEPT_LANGUAGE'
+    HEADER_ACCEPT = 'HTTP_ACCEPT'.freeze
+    HEADER_ACCEPT_LANGUAGE = 'HTTP_ACCEPT_LANGUAGE'.freeze
 
     mattr_accessor :json_encoder, :json_decoder
     if defined?(::Oj)
@@ -230,10 +230,8 @@ module MediaTypes
           docs_registration.registrations['text/vnd.delftsolutions.docs'].display_identifier = 'text/plain; charset=utf-8'
           docs_registration.registrations['text/*'].display_identifier = 'text/plain; charset=utf-8'
           docs_registration.registrations['*/*'].display_identifier = 'text/plain; charset=utf-8'
-          puts docs_registration.registrations.keys
           
           @serialization_output_registrations = @serialization_output_registrations.merge(docs_registration)
-          puts docs_registration.registrations.keys.map {|k| @serialization_output_registrations.identifier_for(k) }
         end
       end
       

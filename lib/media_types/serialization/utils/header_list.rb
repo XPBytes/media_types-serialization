@@ -25,7 +25,6 @@ THE SOFTWARE.
 module MediaTypes
   module Serialization
     module Utils
-
       ##
       # @example Accept values
       #
