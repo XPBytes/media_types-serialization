@@ -592,13 +592,17 @@ The block should return an object to convert into JSON.
 
 This has the same behavior as `output` but should return a string instead of an object. Output is not validated.
 
-#### `output_alias( media_type_identifier, view: )`
+#### `output_alias( media_type_identifier, view:, hide_variant: false )`
 
-Defines a legacy mapping. This will make the deserializer parse the media type `media_type_identifier` as if it was version 1 of the specified view. If view is undefined it will use the output serializer without a view defined.
+Defines a legacy mapping. This will make the deserializer parse the media type `media_type_identifier` as if it was version `nil` of the specified view. If view is undefined it will use the output serializer without a view defined.
 
-#### `output_alias_optional( media_type_identifier, view: )`
+Response will have a content type equal to `[media_type_identifyer]; variant=[mapped_media_type_identifier]`. If `hide_variant:` is true, the content type emitted will only be `[media_type_identifier]`.
+
+#### `output_alias_optional( media_type_identifier, view:, hide_variant: false )`
 
 Has the same behavior as `output_alias` but can be used by multiple serializers. The serializer that is loaded last in the controller 'wins' control over this media type identifier. If any of the serializers have an `output_alias` defined with the same media type identifier that one will win instead.
+
+Response will have a content type equal to `[media_type_identifyer]; variant=[mapped_media_type_identifier]`. If `hide_variant:` is true, the content type emitted will only be `[media_type_identifier]`.
 
 #### `input( view:, version:, versions: ) do |obj, version, context|`
 
