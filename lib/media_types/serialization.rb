@@ -222,7 +222,7 @@ module MediaTypes
           docs_registration = SerializationRegistration.new(:output)
           validator = FakeValidator.new('text/vnd.delftsolutions.docs')
           
-          block = lambda { |_, _, controller|
+          block = lambda { |_, _, _|
             description
           }
 
