@@ -93,6 +93,7 @@ class BookController < ApplicationController
     # Use view corresponding to the controller
   end
 end
+```
 
 You can add a json representation as follows:
 
