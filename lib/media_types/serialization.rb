@@ -185,6 +185,7 @@ module MediaTypes
       end
 
       def allow_output_html(as: nil, layout: nil, **filter_opts)
+        before_action(**filter_opts) do
           raise SerializersAlreadyFrozenError if defined? @serialization_frozen
 
           @serialization_output_registrations ||= SerializationRegistration.new(:output)
@@ -192,10 +193,10 @@ module MediaTypes
           html_registration = SerializationRegistration.new(:output)
           output_identifier = 'text/html'
           output_identifier += "; variant=#{as}" unless as.nil?
-
+          
           validator = FakeValidator.new(as.nil? ? 'text/html' : as)
           serializer = nil
-          block = lambda { |_,_,controller|
+          block = lambda { |_, _, controller|
             controller.render_to_string(layout: layout)
           }
 
@@ -203,6 +204,7 @@ module MediaTypes
           html_registration[validator.identifier].display_identifier = output_identifier
           
           @serialization_output_registrations = @serialization_output_registrations.merge(mergeable_outputs)
+        end
       end
       
       def allow_api_viewer(serializer: MediaTypes::Serialization::Serializers::ApiViewer, **filter_opts)

@@ -87,7 +87,7 @@ module MediaTypes
         )
       end
     end
-    
+
     class VersionedAliasDefinitionError < ConfigurationError
       def initialize(identifier, inout, prefix_match)
         super(
