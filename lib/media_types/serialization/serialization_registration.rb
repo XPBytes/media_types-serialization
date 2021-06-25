@@ -32,7 +32,7 @@ module MediaTypes
       end
 
       def register_alias(serializer, alias_identifier, target_identifier, optional, hide_variant, wildcards: true)
-        raise DuplicateDefinitionError.new(identifier, inout) if registrations.key? alias_identifier
+        raise DuplicateDefinitionError.new(alias_identifier, inout) if registrations.key? alias_identifier
 
         unless registrations.key? target_identifier
           potential_match = registrations.keys.find do |k|
