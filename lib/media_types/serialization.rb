@@ -201,6 +201,7 @@ module MediaTypes
               controller.render_to_string
             else
               controller.render_to_string(layout: layout)
+            end
           }
 
           html_registration.register_block(serializer, validator, nil, block, true, wildcards: true)
@@ -285,8 +286,8 @@ module MediaTypes
       ##
       # Freezes additions to the serializes and notifies the controller what it will be able to respond to.
       #
-      def freeze_io!
-        before_action :serializer_freeze_io_internal
+      def freeze_io!(**filter_opts)
+        before_action :serializer_freeze_io_internal, **filter_opts
 
         output_error MediaTypes::Serialization::NoInputReceivedError do |p, error|
           p.title 'Providing input is mandatory. Please set a Content-Type', lang: 'en'
