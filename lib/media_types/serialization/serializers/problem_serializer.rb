@@ -50,6 +50,8 @@ module MediaTypes
           title = translation[:title]
           detail = translation[:detail] || problem.error.message
 
+          detail_lang = translation[:detail].nil? ? 'en' : translation_entry
+
           input = OpenStruct.new(
             title: title,
             detail: detail,
@@ -72,11 +74,11 @@ module MediaTypes
                 </header>
                 <section id="content">
                   <nav>
-                    <section id="description">
+                    <section id="description" lang="#{translation_entry}">
                       <h2><a href="<%= help_url %>"><%= CGI::escapeHTML(title) %></a></h2>
                     </section>
                   </nav>
-                  <main>
+                  <main lang="#{detail_lang}">
                     <p><%= detail %>
                   </main>
                 </section>
