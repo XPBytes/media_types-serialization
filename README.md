@@ -550,7 +550,7 @@ class BookController < ActionController::API
 end
 ```
 
-The exception you specified will be rescued by the controller and will be displayed to the user along with a link to the shared wiki page for that error type. Feel free to add instructions there on how clients should solve this problem. You can find more information at: https://docs.delftsolutions.nl/wiki/Error
+The exception you specified will be rescued by the controller and will be displayed to the user along with a link to the shared wiki page for that error type. Feel free to add instructions there on how clients should solve this problem. You can find more information at: [https://docs.delftsolutions.nl/wiki/Error](https://docs.delftsolutions.nl/wiki/Error)
 If you want to override this url you can use the `p.url(href)` function.
 
 By default the `message` property of the error is used to fill the `details` field. You can override this by using the `p.override_details(description, lang:)` function.
@@ -595,13 +595,13 @@ This has the same behavior as `output` but should return a string instead of an 
 
 Defines a legacy mapping. This will make the deserializer parse the media type `media_type_identifier` as if it was version `nil` of the specified view. If view is undefined it will use the output serializer without a view defined.
 
-Response will have a content type equal to `[media_type_identifyer]; variant=[mapped_media_type_identifier]`. If `hide_variant:` is true, the content type emitted will only be `[media_type_identifier]`.
+Response will have a content type equal to `[media_type_identifier]; variant=[mapped_media_type_identifier]`. If `hide_variant:` is true, the content type emitted will only be `[media_type_identifier]`.
 
 #### `output_alias_optional( media_type_identifier, view:, hide_variant: false )`
 
 Has the same behavior as `output_alias` but can be used by multiple serializers. The serializer that is loaded last in the controller 'wins' control over this media type identifier. If any of the serializers have an `output_alias` defined with the same media type identifier that one will win instead.
 
-Response will have a content type equal to `[media_type_identifyer]; variant=[mapped_media_type_identifier]`. If `hide_variant:` is true, the content type emitted will only be `[media_type_identifier]`.
+Response will have a content type equal to `[media_type_identifier]; variant=[mapped_media_type_identifier]`. If `hide_variant:` is true, the content type emitted will only be `[media_type_identifier]`.
 
 #### `input( view:, version:, versions: ) do |obj, version, context|`
 

@@ -14,7 +14,7 @@ module MediaTypes
         output do |problem, _, context|
           raise 'No translations defined, add at least one title' unless problem.translations.keys.any?
 
-          accept_language_header = Utils::AcceptHeader.new(context.request.get_header(HEADER_ACCEPT_LANGUAGE) || '')
+          accept_language_header = Utils::AcceptLanguageHeader.new(context.request.get_header(HEADER_ACCEPT_LANGUAGE) || '')
           translation_entry = accept_language_header.map do |locale|
             problem.translations.keys.find do |l|
               l.starts_with? locale.media_type
@@ -39,7 +39,7 @@ module MediaTypes
         output_alias 'application/problem+json'
 
         output_raw view: :html do |problem, _, context|
-          accept_language_header = Utils::AcceptHeader.new(context.request.get_header(HEADER_ACCEPT_LANGUAGE) || '')
+          accept_language_header = Utils::AcceptLanguageHeader.new(context.request.get_header(HEADER_ACCEPT_LANGUAGE) || '')
           translation_entry = accept_language_header.map do |locale|
             problem.translations.keys.find do |l|
               l.starts_with? locale.media_type
