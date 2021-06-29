@@ -2,6 +2,7 @@
 
 require 'erb'
 require 'media_types/serialization/base'
+require 'media_types/serialization/utils/accept_language_header'
 
 module MediaTypes
   module Serialization
@@ -17,7 +18,7 @@ module MediaTypes
           accept_language_header = Utils::AcceptLanguageHeader.new(context.request.get_header(HEADER_ACCEPT_LANGUAGE) || '')
           translation_entry = accept_language_header.map do |locale|
             problem.translations.keys.find do |l|
-              l.starts_with? locale.media_type
+              l.start_with? locale.locale
             end
           end.compact.first || problem.translations.keys.first
           translation = problem.translations[translation_entry]
@@ -42,11 +43,11 @@ module MediaTypes
           accept_language_header = Utils::AcceptLanguageHeader.new(context.request.get_header(HEADER_ACCEPT_LANGUAGE) || '')
           translation_entry = accept_language_header.map do |locale|
             problem.translations.keys.find do |l|
-              l.starts_with? locale.media_type
+              l.starts_with? locale.locale
             end
           end.compact.first || problem.translations.keys.first
           translation = problem.translations[translation_entry]
-          
+
           title = translation[:title]
           detail = translation[:detail] || problem.error.message
 

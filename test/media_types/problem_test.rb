@@ -84,7 +84,7 @@ class MediaTypes::ProblemTest < Minitest::Test
     })
 
     @controller.dispatch(:docs, request, @response)
-    assert_equal 'text/plain', @response.content_type
+    assert_equal 'text/plain', @response.content_type.split(';').first
     assert_equal 'utf-8', @response.charset
 
     assert_equal( 'dummy resource', @response.body )
