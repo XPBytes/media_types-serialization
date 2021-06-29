@@ -1,27 +1,39 @@
 # Changelog
 
+## 1.1.0
+
+- ✨ Add _allow_output_html_: Fallback to rails rendering.
+- ✨ Add _allow_output_docs_: Useful to add a documentation description to endpoints that you can normally only POST to.
+- ✨ Add _output_error_: Implements missing content-language support.
+- ✨ Add _scoped freeze_io! support_: Useful for gradual adoption of mediatypes on existing routes.
+- ✨ Add _alias variant reporting_: Allows reporting what the original matched media type was even when impersonating a different media type.
+- ✨ Improve README: small improvements to make it easier to adopt and upgrade existing codebase.
+- ✨ Reduce number of (external) dependencies
+- 🐛 Fix incorrect output on encoding errors.
+- 🐛 Fix message in various alias error messages.
+
 ## 1.0.3
 
- - 🐛 Unvalidated serializers would put the view part of the identifier before the version. This was not in line with validated serializers.
+- 🐛 Unvalidated serializers would put the view part of the identifier before the version. This was not in line with validated serializers.
 
 ## 1.0.2
 
- - 🐛 Explicitly set all oj parameters when decoding as well.
+- 🐛 Explicitly set all oj parameters when decoding as well.
 
 ## 1.0.1
 
- - 🐛 Explicitly set all oj and json parameters to ensure correct behavior with changed defaults.
- - 🐛 Fix serializer not deserializing as symbols.
+- 🐛 Explicitly set all oj and json parameters to ensure correct behavior with changed defaults.
+- 🐛 Fix serializer not deserializing as symbols.
 
 ## 1.0.0
 
 - ✨ Add support for input deserialization.
-- ✨ Added serializer DSL to be more in line with validation gem.
-- ✨ Added ability to make a serializer without a validator.
-- ✨ Added error serializer that emits [`application/problem+json`](https://tools.ietf.org/html/rfc7231).
-- ✨ Reduced number of dependencies.
+- ✨ Add serializer DSL to be more in line with validation gem.
+- ✨ Add ability to make a serializer without a validator.
+- ✨ Add error serializer that emits [`application/problem+json`](https://tools.ietf.org/html/rfc7231).
+- ✨ Reduce number of dependencies.
 - ✨ Validators no longer need to be registered to be used.
-- ✨ Added a [wiki where errors can be documented](https://docs.delftsolutions.nl). Feel free to make pages for your own namespaced errors.
+- ✨ Add a [wiki where errors can be documented](https://docs.delftsolutions.nl). Feel free to make pages for your own namespaced errors.
 - 💔 Serializer definition API has backwards incompatible changes.
 - 💔 API viewer is now no longer registered as html but accessible with the `?api_viewer=last` query parameter.
 - 💔 Validators can no longer be registered for use in `format do`.

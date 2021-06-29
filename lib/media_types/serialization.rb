@@ -15,8 +15,7 @@ require 'active_support/concern'
 require 'active_support/core_ext/module/attribute_accessors'
 require 'active_support/core_ext/object/blank'
 
-require 'http_headers/accept'
-
+require 'media_types/serialization/utils/accept_header'
 require 'media_types/serialization/base'
 require 'media_types/serialization/error'
 require 'media_types/serialization/serialization_dsl'
@@ -44,7 +43,8 @@ end
 module MediaTypes
   module Serialization
 
-    HEADER_ACCEPT = 'HTTP_ACCEPT'
+    HEADER_ACCEPT = 'HTTP_ACCEPT'.freeze
+    HEADER_ACCEPT_LANGUAGE = 'HTTP_ACCEPT_LANGUAGE'.freeze
 
     mattr_accessor :json_encoder, :json_decoder
     if defined?(::Oj)
@@ -183,7 +183,58 @@ module MediaTypes
           @serialization_output_registrations = @serialization_output_registrations.merge(mergeable_outputs)
         end
       end
-      
+
+      def allow_output_html(as: nil, layout: nil, **filter_opts)
+        before_action(**filter_opts) do
+          raise SerializersAlreadyFrozenError if defined? @serialization_frozen
+
+          @serialization_output_registrations ||= SerializationRegistration.new(:output)
+
+          html_registration = SerializationRegistration.new(:output)
+          output_identifier = 'text/html'
+          output_identifier += "; variant=#{as}" unless as.nil?
+
+          validator = FakeValidator.new(as.nil? ? 'text/html' : as)
+
+          block = lambda { |_, _, controller|
+            if layout.nil?
+              controller.render_to_string
+            else
+              controller.render_to_string(layout: layout)
+            end
+          }
+
+          html_registration.register_block(nil, validator, nil, block, true, wildcards: true)
+          html_registration.registrations[validator.identifier].display_identifier = output_identifier
+          html_registration.registrations["#{validator.identifier.split('/')[0]}/*"].display_identifier = output_identifier
+          html_registration.registrations['*/*'].display_identifier = output_identifier
+
+          @serialization_output_registrations = @serialization_output_registrations.merge(html_registration)
+        end
+      end
+
+      def allow_output_docs(description, **filter_opts)
+        before_action(**filter_opts) do
+          raise SerializersAlreadyFrozenError if defined? @serialization_frozen
+
+          @serialization_output_registrations ||= SerializationRegistration.new(:output)
+
+          docs_registration = SerializationRegistration.new(:output)
+          validator = FakeValidator.new('text/vnd.delftsolutions.docs')
+
+          block = lambda { |_, _, _|
+            description
+          }
+
+          docs_registration.register_block(nil, validator, nil, block, true, wildcards: true)
+          docs_registration.registrations['text/vnd.delftsolutions.docs'].display_identifier = 'text/plain; charset=utf-8'
+          docs_registration.registrations['text/*'].display_identifier = 'text/plain; charset=utf-8'
+          docs_registration.registrations['*/*'].display_identifier = 'text/plain; charset=utf-8'
+
+          @serialization_output_registrations = @serialization_output_registrations.merge(docs_registration)
+        end
+      end
+
       def allow_api_viewer(serializer: MediaTypes::Serialization::Serializers::ApiViewer, **filter_opts)
         before_action do
           @serialization_api_viewer_enabled ||= {}
@@ -216,7 +267,7 @@ module MediaTypes
         raise ArrayInViewParameterError, :allow_input_serializer if view.is_a? Array
         views = [view] if views.nil?
         raise ViewsNotAnArrayError unless views.is_a? Array
-        
+
         before_action do
           @serialization_available_serializers ||= {}
           @serialization_available_serializers[:input] ||= {}
@@ -259,8 +310,8 @@ module MediaTypes
       ##
       # Freezes additions to the serializes and notifies the controller what it will be able to respond to.
       #
-      def freeze_io!
-        before_action :serializer_freeze_io_internal
+      def freeze_io!(**filter_opts)
+        before_action :serializer_freeze_io_internal, **filter_opts
 
         output_error MediaTypes::Serialization::NoInputReceivedError do |p, error|
           p.title 'Providing input is mandatory. Please set a Content-Type', lang: 'en'
@@ -366,7 +417,7 @@ module MediaTypes
       return nil if identifier.nil?
 
       registration = registration.registrations[identifier]
-      
+
       raise 'Assertion failed, inconsistent answer from resolve_media_type' if registration.nil?
       registration.serializer
     end
@@ -386,7 +437,7 @@ module MediaTypes
       #
       #
 
-      accept_header = HttpHeaders::Accept.new(request.get_header(HEADER_ACCEPT)) || ''
+      accept_header = Utils::AcceptHeader.new(request.get_header(HEADER_ACCEPT)) || ''
       accept_header.each do |mime_type|
         stripped = mime_type.to_s.split(';')[0]
         next unless registration.has? stripped
@@ -403,7 +454,7 @@ module MediaTypes
       identifier = serializer.validator.identifier
       obj = { request: request, registrations: registrations }
       new_registrations = serializer.outputs_for(views: [nil])
-    
+
       serialization_render_resolved(obj: obj, serializer: serializer, identifier: identifier, registrations: new_registrations, options: {})
       response.status = :not_acceptable
     end

@@ -73,17 +73,25 @@ module MediaTypes
       def initialize(identifier, inout)
         super(
             "Serializer tried to define an #{inout}_alias that points to the media type identifier #{identifier} but no such #{inout} has been defined yet. Please move the #{inout} definition above the alias.\n\n" \
-            "Move the output definition above the alias:\n" \
+            "Move the #{inout} definition above the alias:\n" \
             "\n" \
             "class MySerializer < MediaTypes::Serialization::Base\n" \
             "#...\n" \
-            "output do\n" \
+            "#{inout} do\n" \
             "  # ...\n" \
             "end\n" \
             "\n" \
-            "output_alias 'text/html'\n" \
+            "#{inout}_alias 'text/html'\n" \
             "# ^----- move here\n" \
             'end'
+        )
+      end
+    end
+
+    class VersionedAliasDefinitionError < ConfigurationError
+      def initialize(identifier, inout, prefix_match)
+        super(
+          "Serializer tried to define an #{inout}_alias that points to the media type identifier #{identifier} but no such #{inout} has been defined yet. An #{inout} named #{prefix_match} was found. Often this can be fixed by providing an #{inout} with a nil version."
         )
       end
     end

@@ -16,8 +16,6 @@ require 'action_dispatch/http/response'
 
 require 'media_types'
 
-require 'http_headers/accept'
-
 require 'oj'
 
 class MediaTypes::AliasTest < Minitest::Test
@@ -106,7 +104,7 @@ class MediaTypes::AliasTest < Minitest::Test
 
     @controller.dispatch(:show, request, @response)
     assert_equal content_type, @response.content_type.split(';').first
-
+    assert @response.content_type.include?('variant=application/vnd.soundersmusic.configuration.html+json'), "'#{content_type}' does not contain variant"
   end
 end
 

@@ -57,6 +57,60 @@ BookSerializer.serialize(book, 'vnd.acme.book.v1+json', context: nil)
 # => { "book": { "title": "Everything, abridged" } }
 ```
 
+### Controller integration
+
+You can integrate the serialization system in rails, giving you automatic [Content-Type negotiation](https://en.wikipedia.org/wiki/Content_negotiation) using the `Accept` header:
+
+```ruby
+require 'media_types/serialization'
+
+class BookController < ActionController::API
+  include MediaTypes::Serialization
+
+  allow_output_serializer(BookSerializer, only: %i[show])
+  freeze_io!
+
+  def show
+    book = Book.new
+    book.title = 'Everything, abridged'
+
+    render_media book
+  end
+end
+```
+
+While using the controller integration the context will always be set to the current controller. This allows you to construct urls.
+
+### Adding HATEOAS responses to existing routes
+
+When creating a mobile application it's often useful to allow the app to request a non-html representation of a specific url. If you have an existing route:
+
+```ruby
+class BookController < ApplicationController
+  def show
+    @book = Book.new
+
+    # Use view corresponding to the controller
+  end
+end
+```
+
+You can add a json representation as follows:
+
+```ruby
+class BookController < ApplicationController
+  allow_output_serializer(BookSerializer, only: %i[show])
+  allow_output_html
+  freeze_io!
+
+  def show
+    @book = Book.new
+
+    render_media @book
+  end
+end
+```
+
 ### Validations
 
 Right now the serializer does not validate incoming or outgoing information. This can cause issues when you accidentally emit non-conforming data that people start to depend on. To make sure you don't do that you can specify a [Media Type validator](https://github.com/SleeplessByte/media-types-ruby):
@@ -97,30 +151,6 @@ end
 ```
 
 For more information, see the [Media Types docs](https://github.com/SleeplessByte/media-types-ruby).
-
-### Controller integration
-
-You can integrate the serialization system in rails, giving you automatic [Content-Type negotiation](https://en.wikipedia.org/wiki/Content_negotiation) using the `Accept` header:
-
-```ruby
-require 'media_types/serialization'
-
-class BookController < ActionController::API
-  include MediaTypes::Serialization
-
-  allow_output_serializer(BookSerializer, only: %i[show])
-  freeze_io!
-      
-  def show 
-    book = Book.new
-    book.title = 'Everything, abridged'
-
-    render_media book
-  end
-end
-```
-
-While using the controller integration the context will always be set to the current controller. This allows you to construct urls.
 
 ### Versioning
 
@@ -206,7 +236,7 @@ class BookSerializer < MediaTypes::Serialization::Base
   output view: :index, version: 3 do |arr, version, context|
     attribute :books do
       link :self, href: context.book_index_url
-      
+
       index arr, version: version
     end
   end
@@ -248,15 +278,15 @@ class BookSerializer < MediaTypes::Serialization::Base
   output view: :index, version: 3 do |arr, version, context|
     attribute :books do
       link :self, href: context.book_index_url
-      
+
       index arr, version: version
     end
   end
-  
+
   output view: :collection, version: 3 do |arr, version, context|
     attribute :books do
       link :self, href: context.book_collection_url
-      
+
       collection arr, version: version
     end
   end
@@ -309,8 +339,8 @@ class BookController < ActionController::API
   allow_output_serializer(BookSerializer, only: %i[show])
   allow_input_serializer(BookSerializer, only: %i[create])
   freeze_io!
-      
-  def show 
+
+  def show
     book = Book.new
     book.title = 'Everything, abridged'
 
@@ -355,8 +385,8 @@ class BookController < ActionController::API
   allow_output_serializer(BookSerializer, only: %i[show])
   allow_input_serializer(BookSerializer, only: %i[create])
   freeze_io!
-      
-  def show 
+
+  def show
     book = Book.new
     book.title = 'Everything, abridged'
 
@@ -385,7 +415,7 @@ class BookSerializer < MediaTypes::Serialization::Base
   output_raw view: :raw, version: 3 do |obj, version, context|
     hidden do
       # Make sure links are only set in the headers, not in the body.
-      
+
       link :self, href: context.book_url(obj)
     end
 
@@ -454,14 +484,12 @@ class BookController < ActionController::API
   include MediaTypes::Serialization
 
   allow_api_viewer
-  
-  allow_output_serializer(MediaTypes::ApiViewer)
 
   allow_output_serializer(BookSerializer, only: %i[show])
   allow_input_serializer(BookSerializer, only: %i[create])
   freeze_io!
-      
-  def show 
+
+  def show
     book = Book.new
     book.title = 'Everything, abridged'
 
@@ -489,14 +517,14 @@ class BookSerializer < MediaTypes::Serialization::Base
       attribute :description, obj.description if version >= 2
     end
   end
-  
+
   output_raw view: :html do |obj, context|
     render_view 'book/show', context: context, assigns: {
       title: obj.title,
       description: obj.description
     }
   end
-  
+
   output_alias 'text/html', view: :html
 end
 ```
@@ -518,11 +546,11 @@ class BookController < ActionController::API
 
   freeze_io!
 
-  # ...   
+  # ...
 end
 ```
 
-The exception you specified will be rescued by the controller and will be displayed to the user along with a link to the shared wiki page for that error type. Feel free to add instructions there on how clients should solve this problem. You can find more information at: http://docs.delftsolutions.nl/wiki/Error
+The exception you specified will be rescued by the controller and will be displayed to the user along with a link to the shared wiki page for that error type. Feel free to add instructions there on how clients should solve this problem. You can find more information at: [https://docs.delftsolutions.nl/wiki/Error](https://docs.delftsolutions.nl/wiki/Error)
 If you want to override this url you can use the `p.url(href)` function.
 
 By default the `message` property of the error is used to fill the `details` field. You can override this by using the `p.override_details(description, lang:)` function.
@@ -563,13 +591,17 @@ The block should return an object to convert into JSON.
 
 This has the same behavior as `output` but should return a string instead of an object. Output is not validated.
 
-#### `output_alias( media_type_identifier, view: )`
+#### `output_alias( media_type_identifier, view:, hide_variant: false )`
 
-Defines a legacy mapping. This will make the deserializer parse the media type `media_type_identifier` as if it was version 1 of the specified view. If view is undefined it will use the output serializer without a view defined.
+Defines a legacy mapping. This will make the deserializer parse the media type `media_type_identifier` as if it was version `nil` of the specified view. If view is undefined it will use the output serializer without a view defined.
 
-#### `output_alias_optional( media_type_identifier, view: )`
+Response will have a content type equal to `[media_type_identifier]; variant=[mapped_media_type_identifier]`. If `hide_variant:` is true, the content type emitted will only be `[media_type_identifier]`.
+
+#### `output_alias_optional( media_type_identifier, view:, hide_variant: false )`
 
 Has the same behavior as `output_alias` but can be used by multiple serializers. The serializer that is loaded last in the controller 'wins' control over this media type identifier. If any of the serializers have an `output_alias` defined with the same media type identifier that one will win instead.
+
+Response will have a content type equal to `[media_type_identifier]; variant=[mapped_media_type_identifier]`. If `hide_variant:` is true, the content type emitted will only be `[media_type_identifier]`.
 
 #### `input( view:, version:, versions: ) do |obj, version, context|`
 
@@ -656,6 +688,20 @@ Configure the controller to allow the client to request responses emitted by the
 
 Accepts the same filters as `before_action`.
 
+#### `allow_output_html( as: nil, layout: nil, **filters )`
+
+Allows falling back to the default Rails view rendering when the client asks for the media type in the `as:` parameter or `text/html` if `as:` is unset.
+
+The `Content-Type` of the response will be `text/html` if the `as:` parameter is unset. If the `as:` parameter is set, it will include it in the variant parameter: `text/html; variant=application/vnd.xpbytes.borderless`.
+
+Accepts the same filters as `before_action`.
+
+#### `allow_output_docs( description, **filters )`
+
+Outputs the specified description as help information.
+
+Accepts the same filters as `before_action`.
+
 #### `allow_input_serializer( serializer, views: nil, **filters )`
 
 Configure the controller to allow the client to send bodies with a `Content-Type` that can be deserialized using the specified serializer. Optionally allows you to specify which views to allow by passing an array in the views parameter.
@@ -690,7 +736,7 @@ Clears the list of serializers used to render the error when the client supplies
 
 Enables rendering the api viewer when adding the `api_viewer=last` query parameter to the url.
 
-#### `freeze_io!`
+#### `freeze_io!(**filter_opts)`
 
 Registers serialization and deserialization in the controller. This function must be called before using the controller.
 
@@ -740,6 +786,7 @@ Does the same as `deserialize( request )` but gives the client an error page if 
 Returns the serializer class that will handle the given request.
 
 ## Customization
+
 The easiest way to customize the look and feel of the built in pages is to provide your own logo and background in an initializer:
 
 ```ruby

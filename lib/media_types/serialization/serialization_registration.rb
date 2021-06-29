@@ -31,14 +31,23 @@ module MediaTypes
         register_wildcards(identifier, registration) if wildcards && inout == :output
       end
 
-      def register_alias(serializer, alias_identifier, target_identifier, optional, wildcards: true)
-        raise DuplicateDefinitionError.new(identifier, inout) if registrations.key? alias_identifier
+      def register_alias(serializer, alias_identifier, target_identifier, optional, hide_variant, wildcards: true)
+        raise DuplicateDefinitionError.new(alias_identifier, inout) if registrations.key? alias_identifier
 
-        raise UnbackedAliasDefinitionError.new(target_identifier, inout) unless registrations.key? target_identifier
+        unless registrations.key? target_identifier
+          potential_match = registrations.keys.find do |k|
+            k.starts_with? target_identifier
+          end
+          raise VersionedAliasDefinitionError.new(target_identifier, inout, potential_match) unless potential_match.nil?
+          raise UnbackedAliasDefinitionError.new(target_identifier, inout)
+        end
 
         target = registrations[target_identifier]
 
-        registration = SerializationAliasRegistration.new serializer, inout, target.validator, alias_identifier, target, optional
+        result_content_type = alias_identifier
+        result_content_type += "; variant=#{target_identifier}" unless hide_variant
+
+        registration = SerializationAliasRegistration.new serializer, inout, target.validator, result_content_type, target, optional, hide_variant
         registrations[alias_identifier] = registration
 
         register_wildcards(alias_identifier, registration) if wildcards && inout == :output
@@ -103,7 +112,7 @@ module MediaTypes
       private
 
       def register_wildcards(identifier, registration)
-        new_alias = SerializationAliasRegistration.new registration.serializer, registration.inout, registration.validator, identifier, registration, true
+        new_alias = SerializationAliasRegistration.new registration.serializer, registration.inout, registration.validator, identifier, registration, true, true
 
         registrations['*/*'] = new_alias unless has? '*/*'
 
@@ -160,14 +169,14 @@ module MediaTypes
             begin
               victim = MediaTypes::Serialization.json_decoder.call(victim)
               validator.validate!(victim)
-            rescue MediaTypes::Scheme::ValidationError, Oj::ParseError, JSON::ParserError => inner
+            rescue MediaTypes::Scheme::ValidationError, Oj::ParseError, JSON::ParserError, EncodingError => inner
               raise InputValidationFailedError, inner
             end
           else
             begin
               victim = MediaTypes::Serialization.json_decoder.call(victim)
               validator.validate!(victim)
-            rescue MediaTypes::Scheme::ValidationError, JSON::ParserError => inner
+            rescue MediaTypes::Scheme::ValidationError, JSON::ParserError, EncodingError => inner
               raise InputValidationFailedError, inner
             end
           end
@@ -204,9 +213,10 @@ module MediaTypes
 
     # A registration that calls another registration when called.
     class SerializationAliasRegistration < SerializationBaseRegistration
-      def initialize(serializer, inout, validator, display_identifier, target, optional)
+      def initialize(serializer, inout, validator, display_identifier, target, optional, hide_variant)
         self.target = target
         self.optional = optional
+        self.hide_variant = hide_variant
         super(serializer, inout, validator, display_identifier)
       end
 
@@ -229,7 +239,7 @@ module MediaTypes
         target.call(victim, context, dsl: dsl, raw: raw)
       end
 
-      attr_accessor :target, :optional
+      attr_accessor :target, :optional, :hide_variant
     end
   end
 end

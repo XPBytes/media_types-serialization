@@ -15,8 +15,6 @@ require 'action_dispatch/http/response'
 
 require 'media_types'
 
-require 'http_headers/accept'
-
 require 'oj'
 
 class MediaTypes::DeserializationTest < Minitest::Test

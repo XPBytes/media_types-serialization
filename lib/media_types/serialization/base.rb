@@ -30,6 +30,10 @@ module MediaTypes
           self.serializer_disable_wildcards = true
         end
 
+        def enable_wildcards
+          self.serializer_disable_wildcards = false
+        end
+
         def output(view: nil, version: nil, versions: nil, &block)
           versions = [version] if versions.nil?
           raise VersionsNotAnArrayError unless versions.is_a? Array
@@ -57,18 +61,18 @@ module MediaTypes
           end
         end
 
-        def output_alias(media_type_identifier, view: nil)
+        def output_alias(media_type_identifier, view: nil, hide_variant: false)
           validator = serializer_validator.view(view)
           victim_identifier = validator.identifier
 
-          serializer_output_registration.register_alias(self, media_type_identifier, victim_identifier, false, wildcards: !self.serializer_disable_wildcards)
+          serializer_output_registration.register_alias(self, media_type_identifier, victim_identifier, false, hide_variant, wildcards: !self.serializer_disable_wildcards)
         end
 
-        def output_alias_optional(media_type_identifier, view: nil)
+        def output_alias_optional(media_type_identifier, view: nil, hide_variant: false)
           validator = serializer_validator.view(view)
           victim_identifier = validator.identifier
 
-          serializer_output_registration.register_alias(self, media_type_identifier, victim_identifier, true, wildcards: !self.serializer_disable_wildcards)
+          serializer_output_registration.register_alias(self, media_type_identifier, victim_identifier, true, hide_variant, wildcards: !self.serializer_disable_wildcards)
         end
 
         def input(view: nil, version: nil, versions: nil, &block)
