@@ -189,11 +189,11 @@ module MediaTypes
           raise SerializersAlreadyFrozenError if defined? @serialization_frozen
 
           @serialization_output_registrations ||= SerializationRegistration.new(:output)
-        
+
           html_registration = SerializationRegistration.new(:output)
           output_identifier = 'text/html'
           output_identifier += "; variant=#{as}" unless as.nil?
-          
+
           validator = FakeValidator.new(as.nil? ? 'text/html' : as)
 
           block = lambda { |_, _, controller|
@@ -208,20 +208,20 @@ module MediaTypes
           html_registration.registrations[validator.identifier].display_identifier = output_identifier
           html_registration.registrations["#{validator.identifier.split('/')[0]}/*"].display_identifier = output_identifier
           html_registration.registrations['*/*'].display_identifier = output_identifier
-          
+
           @serialization_output_registrations = @serialization_output_registrations.merge(html_registration)
         end
       end
-      
+
       def allow_output_docs(description, **filter_opts)
         before_action(**filter_opts) do
           raise SerializersAlreadyFrozenError if defined? @serialization_frozen
 
           @serialization_output_registrations ||= SerializationRegistration.new(:output)
-        
+
           docs_registration = SerializationRegistration.new(:output)
           validator = FakeValidator.new('text/vnd.delftsolutions.docs')
-          
+
           block = lambda { |_, _, _|
             description
           }
@@ -230,11 +230,11 @@ module MediaTypes
           docs_registration.registrations['text/vnd.delftsolutions.docs'].display_identifier = 'text/plain; charset=utf-8'
           docs_registration.registrations['text/*'].display_identifier = 'text/plain; charset=utf-8'
           docs_registration.registrations['*/*'].display_identifier = 'text/plain; charset=utf-8'
-          
+
           @serialization_output_registrations = @serialization_output_registrations.merge(docs_registration)
         end
       end
-      
+
       def allow_api_viewer(serializer: MediaTypes::Serialization::Serializers::ApiViewer, **filter_opts)
         before_action do
           @serialization_api_viewer_enabled ||= {}
@@ -267,7 +267,7 @@ module MediaTypes
         raise ArrayInViewParameterError, :allow_input_serializer if view.is_a? Array
         views = [view] if views.nil?
         raise ViewsNotAnArrayError unless views.is_a? Array
-        
+
         before_action do
           @serialization_available_serializers ||= {}
           @serialization_available_serializers[:input] ||= {}
@@ -417,7 +417,7 @@ module MediaTypes
       return nil if identifier.nil?
 
       registration = registration.registrations[identifier]
-      
+
       raise 'Assertion failed, inconsistent answer from resolve_media_type' if registration.nil?
       registration.serializer
     end
@@ -454,7 +454,7 @@ module MediaTypes
       identifier = serializer.validator.identifier
       obj = { request: request, registrations: registrations }
       new_registrations = serializer.outputs_for(views: [nil])
-    
+
       serialization_render_resolved(obj: obj, serializer: serializer, identifier: identifier, registrations: new_registrations, options: {})
       response.status = :not_acceptable
     end

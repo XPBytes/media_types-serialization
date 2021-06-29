@@ -69,8 +69,8 @@ class BookController < ActionController::API
 
   allow_output_serializer(BookSerializer, only: %i[show])
   freeze_io!
-      
-  def show 
+
+  def show
     book = Book.new
     book.title = 'Everything, abridged'
 
@@ -89,7 +89,7 @@ When creating a mobile application it's often useful to allow the app to request
 class BookController < ApplicationController
   def show
     @book = Book.new
-    
+
     # Use view corresponding to the controller
   end
 end
@@ -236,7 +236,7 @@ class BookSerializer < MediaTypes::Serialization::Base
   output view: :index, version: 3 do |arr, version, context|
     attribute :books do
       link :self, href: context.book_index_url
-      
+
       index arr, version: version
     end
   end
@@ -278,15 +278,15 @@ class BookSerializer < MediaTypes::Serialization::Base
   output view: :index, version: 3 do |arr, version, context|
     attribute :books do
       link :self, href: context.book_index_url
-      
+
       index arr, version: version
     end
   end
-  
+
   output view: :collection, version: 3 do |arr, version, context|
     attribute :books do
       link :self, href: context.book_collection_url
-      
+
       collection arr, version: version
     end
   end
@@ -339,8 +339,8 @@ class BookController < ActionController::API
   allow_output_serializer(BookSerializer, only: %i[show])
   allow_input_serializer(BookSerializer, only: %i[create])
   freeze_io!
-      
-  def show 
+
+  def show
     book = Book.new
     book.title = 'Everything, abridged'
 
@@ -385,8 +385,8 @@ class BookController < ActionController::API
   allow_output_serializer(BookSerializer, only: %i[show])
   allow_input_serializer(BookSerializer, only: %i[create])
   freeze_io!
-      
-  def show 
+
+  def show
     book = Book.new
     book.title = 'Everything, abridged'
 
@@ -415,7 +415,7 @@ class BookSerializer < MediaTypes::Serialization::Base
   output_raw view: :raw, version: 3 do |obj, version, context|
     hidden do
       # Make sure links are only set in the headers, not in the body.
-      
+
       link :self, href: context.book_url(obj)
     end
 
@@ -488,8 +488,8 @@ class BookController < ActionController::API
   allow_output_serializer(BookSerializer, only: %i[show])
   allow_input_serializer(BookSerializer, only: %i[create])
   freeze_io!
-      
-  def show 
+
+  def show
     book = Book.new
     book.title = 'Everything, abridged'
 
@@ -517,14 +517,14 @@ class BookSerializer < MediaTypes::Serialization::Base
       attribute :description, obj.description if version >= 2
     end
   end
-  
+
   output_raw view: :html do |obj, context|
     render_view 'book/show', context: context, assigns: {
       title: obj.title,
       description: obj.description
     }
   end
-  
+
   output_alias 'text/html', view: :html
 end
 ```
@@ -546,7 +546,7 @@ class BookController < ActionController::API
 
   freeze_io!
 
-  # ...   
+  # ...
 end
 ```
 
@@ -786,6 +786,7 @@ Does the same as `deserialize( request )` but gives the client an error page if 
 Returns the serializer class that will handle the given request.
 
 ## Customization
+
 The easiest way to customize the look and feel of the built in pages is to provide your own logo and background in an initializer:
 
 ```ruby

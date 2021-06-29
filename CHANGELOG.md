@@ -2,28 +2,28 @@
 
 ## 1.1.0
 
- - ✨ Add *allow_output_html*: Fallback to rails rendering.
- - ✨ Add *allow_output_docs*: Useful to add a documentation description to endpoints that you can normally only POST to.
- - ✨ Add *output_error*: Implements missing content-language support.
- - ✨ Add *scoped freeze_io! support*: Useful for gradual adoption of mediatypes on existing routes.
- - ✨ Add *alias variant reporting*: Allows reporting what the original matched media type was even when impersonating a different media type.
- - ✨ Improve README: small improvements to make it easier to adopt and upgrade existing codebase.
- - ✨ Reduce number of (external) dependencies
- - 🐛 Fix incorrect output on encoding errors.
- - 🐛 Fix message in various alias error messages.
+- ✨ Add _allow_output_html_: Fallback to rails rendering.
+- ✨ Add _allow_output_docs_: Useful to add a documentation description to endpoints that you can normally only POST to.
+- ✨ Add _output_error_: Implements missing content-language support.
+- ✨ Add _scoped freeze_io! support_: Useful for gradual adoption of mediatypes on existing routes.
+- ✨ Add _alias variant reporting_: Allows reporting what the original matched media type was even when impersonating a different media type.
+- ✨ Improve README: small improvements to make it easier to adopt and upgrade existing codebase.
+- ✨ Reduce number of (external) dependencies
+- 🐛 Fix incorrect output on encoding errors.
+- 🐛 Fix message in various alias error messages.
 
 ## 1.0.3
 
- - 🐛 Unvalidated serializers would put the view part of the identifier before the version. This was not in line with validated serializers.
+- 🐛 Unvalidated serializers would put the view part of the identifier before the version. This was not in line with validated serializers.
 
 ## 1.0.2
 
- - 🐛 Explicitly set all oj parameters when decoding as well.
+- 🐛 Explicitly set all oj parameters when decoding as well.
 
 ## 1.0.1
 
- - 🐛 Explicitly set all oj and json parameters to ensure correct behavior with changed defaults.
- - 🐛 Fix serializer not deserializing as symbols.
+- 🐛 Explicitly set all oj and json parameters to ensure correct behavior with changed defaults.
+- 🐛 Fix serializer not deserializing as symbols.
 
 ## 1.0.0
 
