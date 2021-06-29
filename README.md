@@ -348,7 +348,7 @@ class BookController < ActionController::API
   end
 
   def create
-    json = deserialize(request, context: self) # does validation for us
+    json = deserialize(request) # does validation for us
     puts json
   end
 end
@@ -394,7 +394,7 @@ class BookController < ActionController::API
   end
 
   def create
-    book = deserialize(request, context: self)
+    book = deserialize(request)
     book.save!
 
     render media: serialize_media(book), content_type request.format.to_s
@@ -497,7 +497,7 @@ class BookController < ActionController::API
   end
 
   def create
-    json = deserialize(request, context: self) # does validation for us
+    json = deserialize(request) # does validation for us
     puts json
   end
 end
