@@ -184,7 +184,7 @@ module MediaTypes
         end
       end
 
-      def allow_output_html(as: nil, layout: nil, **filter_opts)
+      def allow_output_html(as: nil, layout: nil, variants: [], **filter_opts)
         before_action(**filter_opts) do
           raise SerializersAlreadyFrozenError if defined? @serialization_frozen
 
@@ -198,9 +198,9 @@ module MediaTypes
 
           block = lambda { |_, _, controller|
             if layout.nil?
-              controller.render_to_string
+              controller.render_to_string(variants: variants)
             else
-              controller.render_to_string(layout: layout)
+              controller.render_to_string(layout: layout, variants: variants)
             end
           }
 

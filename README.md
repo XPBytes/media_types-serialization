@@ -688,7 +688,7 @@ Configure the controller to allow the client to request responses emitted by the
 
 Accepts the same filters as `before_action`.
 
-#### `allow_output_html( as: nil, layout: nil, **filters )`
+#### `allow_output_html( as: nil, layout: nil, variants: [], **filters )`
 
 Allows falling back to the default Rails view rendering when the client asks for the media type in the `as:` parameter or `text/html` if `as:` is unset.
 
