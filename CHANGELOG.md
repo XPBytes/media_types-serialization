@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.0
+
+- ✨ Add `view:` to `output_html` which renders a specific rails view.
+
 ## 1.1.0
 
 - ✨ Add _allow_output_html_: Fallback to rails rendering.
