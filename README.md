@@ -329,6 +329,7 @@ class BookSerializer < MediaTypes::Serialization::Base
       attribute :title, obj.title
       attribute :description, obj.description if version >= 2
     end
+  end
 
   input version: 3
 end
