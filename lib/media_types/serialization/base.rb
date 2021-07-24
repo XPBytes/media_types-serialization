@@ -102,18 +102,18 @@ module MediaTypes
           end
         end
 
-        def input_alias(media_type_identifier, view: nil, hide_variant: false)
+        def input_alias(media_type_identifier, view: nil)
           validator = serializer_validator.view(view)
           victim_identifier = validator.identifier
 
-          serializer_input_registration.register_alias(self, media_type_identifier, victim_identifier, false, hide_variant, wildcards: !self.serializer_disable_wildcards)
+          serializer_input_registration.register_alias(self, media_type_identifier, victim_identifier, false, true, wildcards: false)
         end
 
-        def input_alias_optional(media_type_identifier, view: nil, hide_variant: false)
+        def input_alias_optional(media_type_identifier, view: nil)
           validator = serializer_validator.view(view)
           victim_identifier = validator.identifier
 
-          serializer_input_registration.register_alias(self, media_type_identifier, victim_identifier, true, hide_variant, wildcards: !self.serializer_disable_wildcards)
+          serializer_input_registration.register_alias(self, media_type_identifier, victim_identifier, true, true, wildcards: false)
         end
 
         def serialize(victim, media_type_identifier, context, dsl: nil, raw: nil)
