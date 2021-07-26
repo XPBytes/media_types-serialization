@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    media_types-serialization (1.1.0)
+    media_types-serialization (1.2.0)
       actionpack (>= 4.0.0)
       activesupport (>= 4.0.0)
       media_types (>= 2.0.0, < 3.0.0)
@@ -75,7 +75,7 @@ GEM
       racc (~> 1.4)
     nokogiri (1.11.7-x86_64-linux)
       racc (~> 1.4)
-    oj (3.12.1)
+    oj (3.12.2)
     racc (1.5.2)
     rack (2.2.3)
     rack-test (1.1.0)
