@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.0
+
+- ✨ Add `formats:` to `output_html` and default it to `[:html]`, so rails behaves
+- 🐛 Fix stale references to `render media:`
+- 🐛 Fix inconsistent `context:` passing for `Serializer.serialize`
+
 ## 1.2.0
 
 - ✨ Add `view:` to `output_html` which renders a specific rails view.

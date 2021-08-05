@@ -79,11 +79,13 @@ class BookController < ActionController::API
 end
 ```
 
-While using the controller integration the context will always be set to the current controller. This allows you to construct urls.
+While using the controller integration the context will always be set to the current controller.
+This allows you to construct urls.
 
 ### Adding HATEOAS responses to existing routes
 
-When creating a mobile application it's often useful to allow the app to request a non-html representation of a specific url. If you have an existing route:
+When creating a mobile application it's often useful to allow the app to request a non-html representation of a specific url.
+If you have an existing route:
 
 ```ruby
 class BookController < ApplicationController
@@ -113,7 +115,9 @@ end
 
 ### Validations
 
-Right now the serializer does not validate incoming or outgoing information. This can cause issues when you accidentally emit non-conforming data that people start to depend on. To make sure you don't do that you can specify a [Media Type validator](https://github.com/SleeplessByte/media-types-ruby):
+Right now the serializer does not validate incoming or outgoing information.
+This can cause issues when you accidentally emit non-conforming data that people start to depend on.
+To make sure you don't do that you can specify a [Media Type validator](https://github.com/SleeplessByte/media-types-ruby):
 
 ```ruby
 require 'media_types'
@@ -179,7 +183,8 @@ BookSerializer.serialize(book, BookValidator.version(2), context: nil)
 
 ### Links
 
-When making [HATEOAS](https://docs.delftsolutions.nl/wiki/HATEOAS_API) compliant applications it's very useful to include `Link` headers in your response so clients can use a `HEAD` request instead of having to fetch the entire resource. Serializers have convenience methods to help with this:
+When making [HATEOAS](https://docs.delftsolutions.nl/wiki/HATEOAS_API) compliant applications it's very useful to include `Link` headers in your response so clients can use a `HEAD` request instead of having to fetch the entire resource.
+Serializers have convenience methods to help with this:
 
 ```ruby
 class BookSerializer < MediaTypes::Serialization::Base
@@ -218,7 +223,8 @@ There are convenience methods for serializing arrays of objects based on a templ
 
 #### Indexes
 
-An index is a collection of urls that point to members of the array. The index method automatically generates it based on the self links defined in the default view of the same version.
+An index is a collection of urls that point to members of the array.
+The index method automatically generates it based on the self links defined in the default view of the same version.
 
 ```ruby
 class BookSerializer < MediaTypes::Serialization::Base
@@ -260,7 +266,8 @@ BookSerializer.serialize([book], BookValidator.view(:index).version(3), context:
 
 #### Collections
 
-A collection inlines the member objects. The collection method automatically generates it based on the default view of the same version.
+A collection inlines the member objects.
+The collection method automatically generates it based on the default view of the same version.
 
 ```ruby
 class BookSerializer < MediaTypes::Serialization::Base
@@ -345,7 +352,7 @@ class BookController < ActionController::API
     book = Book.new
     book.title = 'Everything, abridged'
 
-    render media: serialize_media(book), content_type: request.format.to_s
+    render_media serialize_media(book)
   end
 
   def create
@@ -391,14 +398,14 @@ class BookController < ActionController::API
     book = Book.new
     book.title = 'Everything, abridged'
 
-    render media: serialize_media(book), content_type: request.format.to_s
+    render_media serialize_media(book)
   end
 
   def create
     book = deserialize(request)
     book.save!
 
-    render media: serialize_media(book), content_type request.format.to_s
+    render_media serialize_media(book)
   end
 end
 ```
@@ -407,7 +414,9 @@ If you don't want to apply any input validation or deserialization you can use t
 
 ### Raw output
 
-Sometimes you need to output raw data. This cannot be validated. You do this as follows:
+Sometimes you need to output raw data.
+This cannot be validated.
+You do this as follows:
 
 ```ruby
 class BookSerializer < MediaTypes::Serialization::Base
@@ -444,7 +453,8 @@ end
 
 ### Remapping media type identifiers
 
-Sometimes you already have old clients using an `application/json` media type identifier when they do requests. While this is not a good practise as this makes it hard to add new fields or remove old ones, this library has support for migrating away:
+Sometimes you already have old clients using an `application/json` media type identifier when they do requests.
+While this is not a good practise as this makes it hard to add new fields or remove old ones, this library has support for migrating away:
 
 ```ruby
 class BookSerializer < MediaTypes::Serialization::Base
@@ -476,7 +486,8 @@ Validation will be done using the remapped validator. Aliasses map to version `n
 
 ### HTML
 
-This library has a built in API viewer. The viewer can be accessed by by appending a `?api_viewer=last` query parameter to the URL.
+This library has a built in API viewer.
+The viewer can be accessed by by appending a `?api_viewer=last` query parameter to the URL.
 
 To enable the API viewer, use: `allow_api_viewer` in the controller.
 
@@ -494,7 +505,7 @@ class BookController < ActionController::API
     book = Book.new
     book.title = 'Everything, abridged'
 
-    render media: serialize_media(book), content_type: request.format.to_s
+    render_media serialize_media(book)
   end
 
   def create
@@ -532,17 +543,18 @@ end
 
 #### Errors
 
-This library adds support for returning errors to clients using the [`application/problem+json`](https://tools.ietf.org/html/rfc7231) media type. You can catch and transform application errors by adding an `output_error` call before `freeze_io!`:
+This library adds support for returning errors to clients using the [`application/problem+json`](https://tools.ietf.org/html/rfc7231) media type.
+You can catch and transform application errors by adding an `output_error` call before `freeze_io!`:
 
 ```ruby
 class BookController < ActionController::API
   include MediaTypes::Serialization
 
-  output_error CanCan::AccessDenied do |p, error|
-    p.title 'You do not have enough permissions to perform this action.', lang: 'en'
-    p.title 'Je hebt geen toestemming om deze actie uit te voeren.', lang: 'nl-NL'
+  output_error CanCan::AccessDenied do |problem_output, error|
+    problem_output.title 'You do not have enough permissions to perform this action.', lang: 'en'
+    problem_output.title 'Je hebt geen toestemming om deze actie uit te voeren.', lang: 'nl-NL'
 
-    p.status_code :forbidden
+    problem_output.status_code :forbidden
   end
 
   freeze_io!
@@ -551,12 +563,14 @@ class BookController < ActionController::API
 end
 ```
 
-The exception you specified will be rescued by the controller and will be displayed to the user along with a link to the shared wiki page for that error type. Feel free to add instructions there on how clients should solve this problem. You can find more information at: [https://docs.delftsolutions.nl/wiki/Error](https://docs.delftsolutions.nl/wiki/Error)
-If you want to override this url you can use the `p.url(href)` function.
+The exception you specified will be rescued by the controller and will be displayed to the user along with a link to the shared wiki page for that error type. Feel free to add instructions there on how clients should solve this problem.
+You can find more information at: [https://docs.delftsolutions.nl/wiki/Error](https://docs.delftsolutions.nl/wiki/Error)
+If you want to override this url you can use the `problem_output.url(href)` function.
 
-By default the `message` property of the error is used to fill the `details` field. You can override this by using the `p.override_details(description, lang:)` function.
+By default the `message` property of the error is used to fill the `details` field.
+You can override this by using the `problem_output.override_details(description, lang:)` function.
 
-Custom attributes can be added using the `p.attribute(name, value)` function.
+Custom attributes can be added using the `problem_output.attribute(name, value)` function.
 
 ### Related
 
@@ -582,35 +596,47 @@ Either validator or unvalidated must be used while defining a serializer.
 
 #### `output( view:, version:, versions: ) do |obj, version, context|`
 
-Defines a serialization block. Either version or versions can be set. View should be a symbol or unset.
+Defines a serialization block. Either version or versions can be set.
+View should be a symbol or unset.
 
-Obj is the object to be serialized, version is the negotiated version and context is the context passed in from the serialize function. When using the controller integration, context is the current controller.
+Obj is the object to be serialized, version is the negotiated version and context is the context passed in from the serialize function.
+When using the controller integration, context is the current controller.
 
 The block should return an object to convert into JSON.
 
 #### `output_raw( view:, version:, versions: ) do |obj, version, context|`
 
-This has the same behavior as `output` but should return a string instead of an object. Output is not validated.
+This has the same behavior as `output` but should return a string instead of an object.
+Output is not validated.
 
 #### `output_alias( media_type_identifier, view:, hide_variant: false )`
 
-Defines a legacy mapping. This will make the deserializer parse the media type `media_type_identifier` as if it was version `nil` of the specified view. If view is undefined it will use the output serializer without a view defined.
+Defines a legacy mapping. This will make the deserializer parse the media type `media_type_identifier` as if it was version `nil` of the specified view.
+If `view` is undefined it will use the output serializer without a view defined.
 
-Response will have a content type equal to `[media_type_identifier]; variant=[mapped_media_type_identifier]`. If `hide_variant:` is true, the content type emitted will only be `[media_type_identifier]`.
+Response will have a content type equal to `[media_type_identifier]; variant=[mapped_media_type_identifier]`.
+If `hide_variant:` is true, the content type emitted will only be `[media_type_identifier]`.
+
+> You cannot alias a _versioned_ media type, otherwise it would be easy to later break the definition by changing the version it aliases.
 
 #### `output_alias_optional( media_type_identifier, view:, hide_variant: false )`
 
-Has the same behavior as `output_alias` but can be used by multiple serializers. The serializer that is loaded last in the controller 'wins' control over this media type identifier. If any of the serializers have an `output_alias` defined with the same media type identifier that one will win instead.
+Has the same behavior as `output_alias` but can be used by multiple serializers.
+The serializer that is loaded last in the controller 'wins' control over this media type identifier.
+If any of the serializers have an `output_alias` defined with the same media type identifier that one will win instead.
 
 Response will have a content type equal to `[media_type_identifier]; variant=[mapped_media_type_identifier]`. If `hide_variant:` is true, the content type emitted will only be `[media_type_identifier]`.
 
 #### `input( view:, version:, versions: ) do |obj, version, context|`
 
-Defines a deserialization block. Either version or versions can be set. View should be a symbol or unset.
+Defines a deserialization block. Either version or versions can be set.
+View should be a symbol or unset.
 
-Obj is the object to be serialized, version is the negotiated version and context is the context passed in from the serialize function. When using the controller integration, context is the current controller.
+Obj is the object to be serialized, version is the negotiated version and context is the context passed in from the serialize function.
+When using the controller integration, context is the current controller.
 
-The block should return the internal representation of the object. Best practise is to make sure not to change state in this function but to leave that up to the controller.
+The block should return the internal representation of the object.
+Best practise is to make sure not to change state in this function but to leave that up to the controller.
 
 #### `input_raw( view:, version:, versions: ) do |bytes, version, context|`
 
@@ -618,11 +644,17 @@ This has the same behavior as `input` but takes in raw data. Input is not valida
 
 #### `input_alias( media_type_identifier, view: )`
 
-Defines a legacy mapping. This will make the serializer parse the media type `media_type_identifier` as if it was version 1 of the specified view. If view is undefined it will use the input serializer without a view defined.
+Defines a legacy mapping.
+This will make the serializer parse the media type `media_type_identifier` as if it was version `nil` of the specified view.
+If view is undefined it will use the input serializer without a view defined.
+
+> You cannot alias a _versioned_ media type, otherwise it would be easy to later break the definition by changing the version it aliases.
 
 #### `input_alias_optional( media_type_identifier, view: )`
 
-Has the same behavior as `input_alias` but can be used by multiple serializers. The serializer that is loaded last in the controller 'wins' control over this media type identifier. If any of the serializers have an `input_alias` defined with the same media type identifier that one will win instead.
+Has the same behavior as `input_alias` but can be used by multiple serializers.
+The serializer that is loaded last in the controller 'wins' control over this media type identifier.
+If any of the serializers have an `input_alias` defined with the same media type identifier that one will win instead.
 
 #### `disable_wildcards`
 
@@ -634,13 +666,15 @@ The following methods are available within an `output ... do` block.
 
 #### `attribute( key, value = {} ) do`
 
-Sets a value for the given key. If a block is given, any `attribute`, `link`, `collection` and `index` statements are run in context of `value`.
+Sets a value for the given key.
+If a block is given, any `attribute`, `link`, `collection` and `index` statements are run in context of `value`.
 
 Returns the built up context so far.
 
 #### `link( rel, href:, emit_header: true, **attributes )`
 
-Adds a `_link` block to the current context. Also adds the specified link to the HTTP Link header. `attributes` allows passing in custom attributes.
+Adds a `_link` block to the current context. Also adds the specified link to the HTTP Link header.
+`attributes` allows passing in custom attributes.
 
 If `emit_header` is `true` the link will also be emitted as a http header.
 
@@ -661,7 +695,9 @@ Returns the built up context so far.
 
 #### `hidden do`
 
-Sometimes you want to add links without actually modifying the object. Calls to `attribute`, `link`, `index`, `collection` made inside this block won't modify the context. Any calls to link will only set the HTTP Link header.
+Sometimes you want to add links without actually modifying the object.
+Calls to `attribute`, `link`, `index`, `collection` made inside this block won't modify the context.
+Any calls to link will only set the HTTP Link header.
 
 Returns the unmodified context.
 
@@ -685,7 +721,8 @@ These functions are available during the controller definition if you add `inclu
 
 #### `allow_output_serializer( serializer, views: nil, **filters )`
 
-Configure the controller to allow the client to request responses emitted by the specified serializer. Optionally allows you to specify which views to allow by passing an array in the views parameter.
+Configure the controller to allow the client to request responses emitted by the specified serializer.
+Optionally allows you to specify which views to allow by passing an array in the views parameter.
 
 Accepts the same filters as `before_action`.
 
@@ -693,9 +730,11 @@ Accepts the same filters as `before_action`.
 
 Allows falling back to the default Rails view rendering when the client asks for the media type in the `as:` parameter or `text/html` if `as:` is unset.
 
-The `Content-Type` of the response will be `text/html` if the `as:` parameter is unset. If the `as:` parameter is set, it will include it in the variant parameter: `text/html; variant=application/vnd.xpbytes.borderless`.
+The `Content-Type` of the response will be `text/html` if the `as:` parameter is unset.
+If the `as:` parameter is set, it will include it in the variant parameter: `text/html; variant=application/vnd.xpbytes.borderless`.
 
-Accepts the same filters as `before_action`. You can set the template to use using the `view:` parameter.
+Accepts the same filters as `before_action`.
+You can set the template to use using the `view:` parameter.
 
 #### `allow_output_docs( description, **filters )`
 
@@ -705,7 +744,8 @@ Accepts the same filters as `before_action`.
 
 #### `allow_input_serializer( serializer, views: nil, **filters )`
 
-Configure the controller to allow the client to send bodies with a `Content-Type` that can be deserialized using the specified serializer. Optionally allows you to specify which views to allow by passing an array in the views parameter.
+Configure the controller to allow the client to send bodies with a `Content-Type` that can be deserialized using the specified serializer.
+Optionally allows you to specify which views to allow by passing an array in the views parameter.
 
 Accepts the same filters as `before_action`.
 
@@ -739,7 +779,8 @@ Enables rendering the api viewer when adding the `api_viewer=last` query paramet
 
 #### `freeze_io!(**filter_opts)`
 
-Registers serialization and deserialization in the controller. This function must be called before using the controller.
+Registers serialization and deserialization in the controller.
+This function must be called before using the controller.
 
 ### Controller usage
 
@@ -747,7 +788,8 @@ These functions are available during method execution in the controller.
 
 #### `render_media( obj, serializers: nil, not_acceptable_serializer: nil, **options ) do`
 
-Serializes an object and renders it using the appropriate content type. Options are passed through to the controller `render` function. Allows you to specify different objects to different serializers using a block:
+Serializes an object and renders it using the appropriate content type.
+Options are passed through to the controller `render` function. Allows you to specify different objects to different serializers using a block:
 
 ```ruby
 render_media do
@@ -758,13 +800,15 @@ render_media do
 end
 ```
 
-Warning: this block can be called multiple times when used together with recursive serializers like the API viewer. Try to avoid changing state in this block.
+**Warning**: this block can be called multiple times when used together with recursive serializers like the API viewer.
+Try to _avoid changing state_ in this block.
 
 If you want to render with different serializers than defined in the controller you can pass an array of serializers in the `serializers` property.
 
 If you want to override the serializer that is used to render the response when no acceptable Content-Type could be negotiated you can pass the desired serializer in the `not_acceptable_serializer` property.
 
-This method throws a `MediaTypes::Serialization::OutputValidationFailedError` error if the output does not conform to the format defined by the configured validator. Best practise is to return a 500 error to the client.
+This method throws a `MediaTypes::Serialization::OutputValidationFailedError` error if the output does not conform to the format defined by the configured validator.
+Best practise is to return a 500 error to the client.
 
 If no acceptable Content-Type could be negotiated the response will be rendered using the serialized defined by the class `not_acceptable_serializer` function or by the `not_acceptable_serializer` property.
 
@@ -806,12 +850,11 @@ HERE
 
 ## Development
 
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake test` to run the tests. You can
-also run `bin/console` for an interactive prompt that will allow you to experiment.
+After checking out the repo, run `bin/setup` to install dependencies.
+Then, run `rake test` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
 
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the
-version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version,
-push git commits and tags, and push the `.gem` file to [rubygems.org](https://rubygems.org).
+To install this gem onto your local machine, run `bundle exec rake install`.
+To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and tags, and push the `.gem` file to [rubygems.org](https://rubygems.org).
 
 ## Contributing
 

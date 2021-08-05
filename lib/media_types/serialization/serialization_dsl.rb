@@ -56,7 +56,7 @@ module MediaTypes
         array.each do |e|
           child_links = []
           context = SerializationDSL.new(__getobj__, child_links, context: @serialization_context)
-          serializer.serialize(e, identifier, @serialization_context, dsl: context)
+          serializer.serialize(e, identifier, context: @serialization_context, dsl: context)
 
           self_links = child_links.select { |l| l[:rel] == :self }
           raise NoSelfLinkProvidedError, identifier unless self_links.any?
@@ -79,7 +79,7 @@ module MediaTypes
 
         array.each do |e|
           context = SerializationDSL.new(__getobj__, [], @serialization_vary, context: @serialization_context)
-          result = serializer.serialize(e, identifier, @serialization_context, dsl: context, raw: true)
+          result = serializer.serialize(e, identifier, context: @serialization_context, dsl: context, raw: true)
 
           result = block.call(result) unless block.nil?
 
@@ -105,7 +105,7 @@ module MediaTypes
       def emit
         serialization_dsl_result
       end
-      
+
       def object(&block)
         context = SerializationDSL.new(__getobj__, @serialization_links, @serialization_vary, context: @serialization_context)
         context.instance_exec(&block)

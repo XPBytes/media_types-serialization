@@ -184,7 +184,7 @@ module MediaTypes
         end
       end
 
-      def allow_output_html(as: nil, view: nil, layout: nil, **filter_opts)
+      def allow_output_html(as: nil, view: nil, layout: nil, formats: [:html], variants: nil, **filter_opts)
         before_action(**filter_opts) do
           raise SerializersAlreadyFrozenError if defined? @serialization_frozen
 
@@ -197,19 +197,13 @@ module MediaTypes
           validator = FakeValidator.new(as.nil? ? 'text/html' : as)
 
           block = lambda { |_, _, controller|
-            if layout.nil?
-              if view.nil?
-                controller.render_to_string
-              else
-                controller.render_to_string(template: view)
-              end
-            else
-              if view.nil?
-                controller.render_to_string(layout: layout)
-              else
-                controller.render_to_string(template: view, layout: layout)
-              end
-            end
+            options = {}
+            options[:layout] = layout unless layout.nil?
+            options[:template] = view unless view.nil?
+            options[:formats] = formats unless formats.nil?
+            options[:variants] = variants unless variants.nil?
+
+            controller.render_to_string(**options)
           }
 
           html_registration.register_block(nil, validator, nil, block, true, wildcards: true)
@@ -342,11 +336,6 @@ module MediaTypes
     end
     # rubocop:enable Metrics/BlockLength
 
-    included do
-      protected
-
-    end
-
     protected
 
     def serialize(victim, media_type, serializer: Object.new, links: [], vary: ['Accept'])
@@ -366,6 +355,7 @@ module MediaTypes
       if obj == MEDIA_TYPES_SERIALIZATION_OBJ_IS_UNDEFINED && block.nil?
         raise 'render_media was called without an object. Please provide one or supply a block to match the serializer.'
       end
+
       obj = nil if obj == MEDIA_TYPES_SERIALIZATION_OBJ_IS_UNDEFINED
 
       raise SerializersNotFrozenError unless defined? @serialization_frozen
@@ -395,10 +385,17 @@ module MediaTypes
         selector.instance_exec(&block)
 
         raise UnmatchedSerializerError, serializer unless selector.matched
+
         obj = selector.value
       end
 
-      serialization_render_resolved(obj: obj, serializer: serializer, identifier: identifier, registrations: registration, options: options)
+      serialization_render_resolved(
+        obj: obj,
+        serializer: serializer,
+        identifier: identifier,
+        registrations: registration,
+        options: options
+      )
     end
 
     def deserialize(request)
@@ -417,6 +414,7 @@ module MediaTypes
       raise SerializersNotFrozenError unless defined?(@serialization_frozen)
       raise NoInputReceivedError if request.content_type.blank?
       raise InputNotAcceptableError unless @serialization_input_registrations.has? request.content_type
+
       @serialization_input_registrations.call(@serialization_decoded_input, request.content_type, self)
     end
 
@@ -427,6 +425,7 @@ module MediaTypes
       registration = registration.registrations[identifier]
 
       raise 'Assertion failed, inconsistent answer from resolve_media_type' if registration.nil?
+
       registration.serializer
     end
 
@@ -434,8 +433,12 @@ module MediaTypes
 
     def resolve_media_type(request, registration, allow_last: true)
       if defined? @serialization_override_accept
-        @serialization_override_accept = registration.registrations.keys.last if allow_last && @serialization_override_accept == 'last'
+        if allow_last && @serialization_override_accept == 'last'
+          @serialization_override_accept = registration.registrations.keys.last
+        end
+
         return nil unless registration.has? @serialization_override_accept
+
         return @serialization_override_accept
       end
 
@@ -483,7 +486,10 @@ module MediaTypes
       input_is_allowed = @serialization_input_registrations.has? request.content_type unless request.content_type.blank?
 
       unless input_is_allowed || all_allowed
-        serializers = @serialization_unsupported_media_type_serializer || [MediaTypes::Serialization::Serializers::ProblemSerializer, MediaTypes::Serialization::Serializers::FallbackUnsupportedMediaTypeSerializer]
+        serializers = @serialization_unsupported_media_type_serializer || [
+          MediaTypes::Serialization::Serializers::ProblemSerializer,
+          MediaTypes::Serialization::Serializers::FallbackUnsupportedMediaTypeSerializer
+        ]
         registrations = SerializationRegistration.new(:output)
         serializers.each do |s|
           registrations = registrations.merge(s.outputs_for(views: [nil, :html]))
@@ -511,7 +517,10 @@ module MediaTypes
           input_data = request.body.read
           @serialization_decoded_input = @serialization_input_registrations.decode(input_data, request.content_type, self)
         rescue InputValidationFailedError => e
-          serializers = @serialization_input_validation_failed_serializer || [MediaTypes::Serialization::Serializers::ProblemSerializer, MediaTypes::Serialization::Serializers::InputValidationErrorSerializer]
+          serializers = @serialization_input_validation_failed_serializer || [
+            MediaTypes::Serialization::Serializers::ProblemSerializer,
+            MediaTypes::Serialization::Serializers::InputValidationErrorSerializer
+          ]
           registrations = SerializationRegistration.new(:output)
           serializers.each do |s|
             registrations = registrations.merge(s.outputs_for(views: [nil, :html]))
@@ -557,7 +566,13 @@ module MediaTypes
           actions: @serialization_available_serializers,
         }
 
-        serialization_render_resolved obj: input, serializer: description_serializer, identifier: endpoint_matched_identifier, registrations: @serialization_output_registrations, options: {}
+        serialization_render_resolved(
+          obj: input,
+          serializer: description_serializer,
+          identifier: endpoint_matched_identifier,
+          registrations: @serialization_output_registrations,
+          options: {}
+        )
         return
       end
 

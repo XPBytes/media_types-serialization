@@ -53,7 +53,7 @@ class MediaTypes::AliasTest < Minitest::Test
         ConfigurationValidator.version(1),
 				context: context
 			)
-			
+
 			"<html lang='en'>\n" \
 		  " <head>\n" \
 			"   <title>My simple api viewer</title>\n" \
