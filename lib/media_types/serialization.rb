@@ -618,7 +618,7 @@ module MediaTypes
           output: result,
           links: links,
         }
-        wrapped = @serialization_wrapping_renderer.serialize input, '*/*', self
+        wrapped = @serialization_wrapping_renderer.serialize input, '*/*', context: self
         render body: wrapped
 
         response.content_type = 'text/html'
