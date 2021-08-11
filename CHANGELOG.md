@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.2
+
+- 🐛 Fix override suffix not returning self or new
+
 ## 1.3.1
 
 - 🐛 Fix api viewer

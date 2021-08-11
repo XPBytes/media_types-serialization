@@ -22,6 +22,7 @@ class FakeValidator
 
   def override_suffix(suffix)
     suffixes[[internal_view, internal_version]] = suffix
+    FakeValidator.new(prefix, internal_view, version, suffixes)
   end
 
   def identifier
