@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.1
+
+- 🐛 Fix api viewer
+- 🐛 Fix `output_raw` suffix (`+json` needs to be `''`)
+
 ## 1.3.0
 
 - ✨ Add `formats:` to `output_html` and default it to `[:html]`, so rails behaves

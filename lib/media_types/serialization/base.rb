@@ -55,7 +55,7 @@ module MediaTypes
           raise ValidatorNotSpecifiedError, :output if serializer_validator.nil?
 
           versions.each do |v|
-            validator = serializer_validator.view(view).version(v)
+            validator = serializer_validator.view(view).version(v).override_suffix('')
 
             serializer_output_registration.register_block(self, validator, v, block, true, wildcards: !self.serializer_disable_wildcards)
           end
