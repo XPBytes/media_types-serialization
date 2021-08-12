@@ -36,7 +36,7 @@ module MediaTypes
 
         unless registrations.key? target_identifier
           potential_match = registrations.keys.find do |k|
-            k.starts_with? target_identifier
+            k.start_with? target_identifier
           end
           raise VersionedAliasDefinitionError.new(target_identifier, inout, potential_match) unless potential_match.nil?
           raise UnbackedAliasDefinitionError.new(target_identifier, inout)
@@ -152,7 +152,7 @@ module MediaTypes
         self.raw = raw
         super(serializer, inout, validator, display_identifier)
       end
-      
+
       def merge(other)
         return nil unless other.is_a?(SerializationAliasRegistration)
 

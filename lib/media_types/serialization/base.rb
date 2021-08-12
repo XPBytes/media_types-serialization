@@ -44,35 +44,76 @@ module MediaTypes
             validator = serializer_validator.view(view).version(v)
             validator.override_suffix(:json) unless serializer_validated
 
-            serializer_output_registration.register_block(self, validator, v, block, false, wildcards: !self.serializer_disable_wildcards)
+            serializer_output_registration.register_block(
+              self,
+              validator,
+              v,
+              block,
+              false,
+              wildcards:
+              !serializer_disable_wildcards
+            )
           end
         end
 
-        def output_raw(view: nil, version: nil, versions: nil, &block)
+        def output_raw(view: nil, version: nil, versions: nil, suffix: nil, &block)
           versions = [version] if versions.nil?
           raise VersionsNotAnArrayError unless versions.is_a? Array
 
           raise ValidatorNotSpecifiedError, :output if serializer_validator.nil?
 
           versions.each do |v|
-            validator = serializer_validator.view(view).version(v).override_suffix('')
+            validator = serializer_validator.view(view)
+                                            .version(v)
+                                            .override_suffix(suffix)
 
-            serializer_output_registration.register_block(self, validator, v, block, true, wildcards: !self.serializer_disable_wildcards)
+            serializer_output_registration.register_block(
+              self,
+              validator,
+              v,
+              block,
+              true,
+              wildcards: !serializer_disable_wildcards
+            )
           end
         end
 
-        def output_alias(media_type_identifier, view: nil, hide_variant: false)
-          validator = serializer_validator.view(view)
+        def output_alias(
+          media_type_identifier,
+          view: nil,
+          suffix: media_type_identifier == 'application/json' || media_type_identifier.end_with?('+json') ? :json : nil,
+          hide_variant: false
+        )
+          validator = serializer_validator.view(view).override_suffix(suffix)
           victim_identifier = validator.identifier
 
-          serializer_output_registration.register_alias(self, media_type_identifier, victim_identifier, false, hide_variant, wildcards: !self.serializer_disable_wildcards)
+          serializer_output_registration.register_alias(
+            self,
+            media_type_identifier,
+            victim_identifier,
+            false,
+            hide_variant,
+            wildcards: !serializer_disable_wildcards
+          )
         end
 
-        def output_alias_optional(media_type_identifier, view: nil, hide_variant: false)
-          validator = serializer_validator.view(view)
+        def output_alias_optional(
+          media_type_identifier,
+          view: nil,
+          suffix: media_type_identifier == 'application/json' || media_type_identifier.end_with?('+json') ? :json : nil,
+          hide_variant: false
+        )
+          validator = serializer_validator.view(view).override_suffix(suffix)
           victim_identifier = validator.identifier
 
-          serializer_output_registration.register_alias(self, media_type_identifier, victim_identifier, true, hide_variant, wildcards: !self.serializer_disable_wildcards)
+          serializer_output_registration.register_alias(
+            self,
+            media_type_identifier,
+            victim_identifier,
+            true,
+            hide_variant,
+            wildcards: !serializer_disable_wildcards
+          )
         end
 
         def input(view: nil, version: nil, versions: nil, &block)
@@ -89,31 +130,53 @@ module MediaTypes
           end
         end
 
-        def input_raw(view: nil, version: nil, versions: nil, &block)
+        def input_raw(view: nil, version: nil, versions: nil, suffix: nil, &block)
           versions = [version] if versions.nil?
           raise VersionsNotAnArrayError unless versions.is_a? Array
 
           raise ValidatorNotSpecifiedError, :input if serializer_validator.nil?
 
           versions.each do |v|
-            validator = serializer_validator.view(view).version(v)
+            validator = serializer_validator.view(view).version(v).override_suffix(suffix)
 
             serializer_input_registration.register_block(self, validator, v, block, true)
           end
         end
 
-        def input_alias(media_type_identifier, view: nil)
-          validator = serializer_validator.view(view)
+        def input_alias(
+          media_type_identifier,
+          view: nil,
+          suffix: media_type_identifier == 'application/json' || media_type_identifier.end_with?('+json') ? :json : nil
+        )
+          validator = serializer_validator.view(view).override_suffix(suffix)
           victim_identifier = validator.identifier
 
-          serializer_input_registration.register_alias(self, media_type_identifier, victim_identifier, false, true, wildcards: false)
+          serializer_input_registration.register_alias(
+            self,
+            media_type_identifier,
+            victim_identifier,
+            false,
+            true,
+            wildcards: false
+          )
         end
 
-        def input_alias_optional(media_type_identifier, view: nil)
-          validator = serializer_validator.view(view)
+        def input_alias_optional(
+          media_type_identifier,
+          view: nil,
+          suffix: media_type_identifier == 'application/json' || media_type_identifier.end_with?('+json') ? :json : nil
+        )
+          validator = serializer_validator.view(view).override_suffix(suffix)
           victim_identifier = validator.identifier
 
-          serializer_input_registration.register_alias(self, media_type_identifier, victim_identifier, true, true, wildcards: false)
+          serializer_input_registration.register_alias(
+            self,
+            media_type_identifier,
+            victim_identifier,
+            true,
+            true,
+            wildcards: false
+          )
         end
 
         def serialize(victim, media_type_identifier, context:, dsl: nil, raw: nil)
@@ -135,6 +198,8 @@ module MediaTypes
       end
 
       def self.inherited(subclass)
+        super
+
         subclass.extend(ClassMethods)
         subclass.instance_eval do
           class << self

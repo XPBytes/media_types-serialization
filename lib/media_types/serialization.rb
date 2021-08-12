@@ -345,7 +345,10 @@ module MediaTypes
 
     MEDIA_TYPES_SERIALIZATION_OBJ_IS_UNDEFINED = ::Object.new
 
-    def render_media(obj = MEDIA_TYPES_SERIALIZATION_OBJ_IS_UNDEFINED, serializers: nil, not_acceptable_serializer: nil, **options, &block)
+    def render_media(obj = MEDIA_TYPES_SERIALIZATION_OBJ_IS_UNDEFINED, **options, &block)
+      serializers = options.delete(:serializers)
+      not_acceptable_serializer = options.delete(:not_acceptable_serializer)
+
       if obj == MEDIA_TYPES_SERIALIZATION_OBJ_IS_UNDEFINED && options.keys.any? && !block
         # options is too greedy :(
         obj = options

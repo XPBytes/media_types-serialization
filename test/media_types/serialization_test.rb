@@ -75,7 +75,7 @@ class MediaTypes::SerializationTest < Minitest::Test
       input = request.body
       raise 'input nil' if input.nil?
 
-      render_media input
+      render_media(input, serializers: nil)
     end
   end
 

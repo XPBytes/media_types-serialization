@@ -578,7 +578,7 @@ Custom attributes can be added using the `problem_output.attribute(name, value)`
 
 ## API
 
-### Serializer definition
+### Serializer class definition
 
 These methods become available during class definition if you inherit from `MediaTypes::Serialization::Base`.
 
@@ -597,6 +597,7 @@ Either validator or unvalidated must be used while defining a serializer.
 #### `output( view:, version:, versions: ) do |obj, version, context|`
 
 Defines a serialization block. Either version or versions can be set.
+`nil` is allowed for unversioned.
 View should be a symbol or unset.
 
 Obj is the object to be serialized, version is the negotiated version and context is the context passed in from the serialize function.
@@ -604,26 +605,30 @@ When using the controller integration, context is the current controller.
 
 The block should return an object to convert into JSON.
 
-#### `output_raw( view:, version:, versions: ) do |obj, version, context|`
+#### `output_raw( view:, version:, versions:, suffix: ) do |obj, version, context|`
 
 This has the same behavior as `output` but should return a string instead of an object.
 Output is not validated.
+By default, `input_raw` is expected to _not_ be JSON.
+Override `suffix` with `:json` if it _is_ JSON.
 
-#### `output_alias( media_type_identifier, view:, hide_variant: false )`
+#### `output_alias( media_type_identifier, view:, hide_variant: false, suffix: '~' )`
 
 Defines a legacy mapping. This will make the deserializer parse the media type `media_type_identifier` as if it was version `nil` of the specified view.
 If `view` is undefined it will use the output serializer without a view defined.
+By default, suffix is `:json` if `media_type_identifier` is a JSON type.
 
 Response will have a content type equal to `[media_type_identifier]; variant=[mapped_media_type_identifier]`.
 If `hide_variant:` is true, the content type emitted will only be `[media_type_identifier]`.
 
 > You cannot alias a _versioned_ media type, otherwise it would be easy to later break the definition by changing the version it aliases.
 
-#### `output_alias_optional( media_type_identifier, view:, hide_variant: false )`
+#### `output_alias_optional( media_type_identifier, view:, hide_variant: false, suffix: '~' )`
 
 Has the same behavior as `output_alias` but can be used by multiple serializers.
 The serializer that is loaded last in the controller 'wins' control over this media type identifier.
 If any of the serializers have an `output_alias` defined with the same media type identifier that one will win instead.
+By default, suffix is `:json` if `media_type_identifier` is a JSON type.
 
 Response will have a content type equal to `[media_type_identifier]; variant=[mapped_media_type_identifier]`. If `hide_variant:` is true, the content type emitted will only be `[media_type_identifier]`.
 
@@ -638,29 +643,34 @@ When using the controller integration, context is the current controller.
 The block should return the internal representation of the object.
 Best practise is to make sure not to change state in this function but to leave that up to the controller.
 
-#### `input_raw( view:, version:, versions: ) do |bytes, version, context|`
+#### `input_raw( view:, version:, versions:, suffix: nil ) do |bytes, version, context|`
 
-This has the same behavior as `input` but takes in raw data. Input is not validated.
+This has the same behavior as `input` but takes in raw data.
+Input is not validated.
+By default, `input_raw` is expected to _not_ be JSON.
+Override `suffix` with `:json` if it _is_ JSON.
 
-#### `input_alias( media_type_identifier, view: )`
+#### `input_alias( media_type_identifier, view:, suffix: '~' )`
 
 Defines a legacy mapping.
 This will make the serializer parse the media type `media_type_identifier` as if it was version `nil` of the specified view.
 If view is undefined it will use the input serializer without a view defined.
+By default, suffix is `:json` if `media_type_identifier` is a JSON type.
 
 > You cannot alias a _versioned_ media type, otherwise it would be easy to later break the definition by changing the version it aliases.
 
-#### `input_alias_optional( media_type_identifier, view: )`
+#### `input_alias_optional( media_type_identifier, view:, suffix: '~' )`
 
 Has the same behavior as `input_alias` but can be used by multiple serializers.
 The serializer that is loaded last in the controller 'wins' control over this media type identifier.
 If any of the serializers have an `input_alias` defined with the same media type identifier that one will win instead.
+By default, suffix is `:json` if `media_type_identifier` is a JSON type.
 
 #### `disable_wildcards`
 
 Disables registering wildcard media types.
 
-### Serializer definition
+### Serializer output definition
 
 The following methods are available within an `output ... do` block.
 
@@ -682,11 +692,15 @@ Returns the built up context so far.
 
 #### `index( array, serializer, version:, view: nil )`
 
+> Not the same as a validator `collection`.
+
 Adds an `_index` block to the current context. Uses the self links of the specified view to construct an index of urls to the child objects.
 
 Returns the built up context so far.
 
 #### `collection( array, serializer, version:, view: nil )`
+
+> Not the same as a validator `collection`.
 
 Adds an `_embedded` block to the current context. Uses the specified serializer to embed the child objects.
 Optionally a block can be used to modify the output from the child serializer.
@@ -711,9 +725,25 @@ Returns the built up context so far.
 
 Runs a block in a new context and returns the result
 
+> Most common use-case is emitting from an enumerable.
+>
+> ```ruby
+> results = [item, item, item].map do |current_item|
+>   object do
+>     attribute :foo, current_item.bar
+>   end
+> end
+>
+> attribute :items, results
+> ```
+
 #### `render_view( view, context:, **args)`
 
-Can be used to render a view. You can set local variables in the view by assigning a hash to the `assigns:` parameter.
+Can be used to render a view.
+You can set local variables in the view by assigning a hash to the `assigns:` parameter.
+Returns a `string`
+
+> When possible, prefer `output_raw` with `context.class.render(params)`
 
 ### Controller definition
 

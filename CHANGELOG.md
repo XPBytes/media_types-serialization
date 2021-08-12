@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.3.3
+
+- 🐛 Fix override suffix not being picked up correctly
+- 🐛 Fix inability to override suffix for aliases
+- 🐛 Fix inability to override suffix for raw
+- 🐛 Fix default suffix for raw
+
 ## 1.3.2
 
 - 🐛 Fix override suffix not returning self or new

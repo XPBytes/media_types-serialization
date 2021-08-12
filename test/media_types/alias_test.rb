@@ -34,38 +34,47 @@ class MediaTypes::AliasTest < Minitest::Test
           link :self
         end
       end
+
+      view :legacy do
+        attribute :legacy, TrueClass
+      end
     end
   end
 
-	class ConfigurationSerializer < ::MediaTypes::Serialization::Base
-		validator ConfigurationValidator
+  class ConfigurationSerializer < ::MediaTypes::Serialization::Base
+    validator ConfigurationValidator
 
-		# outputs with a Content-Type of application/vnd.soundersmusic.configuration.v1+json
-		output version: 1 do |obj, version, context|
-			attribute :configuration do
+    # outputs with a Content-Type of application/vnd.soundersmusic.configuration.v1+json
+    output version: 1 do |_, __, ___|
+      attribute :configuration do
         link :self, href: 'https://example.org'
-			end
-		end
+      end
+    end
 
-		output_raw view: :html do |obj, context|
-			json = ConfigurationSerializer.serialize(
-				obj,
+    # outputs with a Content-Type of application/vnd.soundersmusic.configuration.legacy+json
+    output view: :legacy do |obj, _, __|
+      attribute :legacy, true
+    end
+    output_alias 'application/json', view: :legacy
+
+    output_raw view: :html do |obj, context|
+      json = ConfigurationSerializer.serialize(
+        obj,
         ConfigurationValidator.version(1),
-				context: context
-			)
+        context: context
+      )
 
-			"<html lang='en'>\n" \
-		  " <head>\n" \
-			"   <title>My simple api viewer</title>\n" \
-			" </head>\n" \
-			" <body>\n" \
-			"   <pre><code>#{json}</code></pre>\n" \
-			" </body>\n" \
-			"</html>\n"
-		end
-
-		output_alias 'text/html', view: :html
-	end
+      "<html lang='en'>\n" \
+      " <head>\n" \
+      "   <title>My simple api viewer</title>\n" \
+      " </head>\n" \
+      " <body>\n" \
+      "   <pre><code>#{json}</code></pre>\n" \
+      " </body>\n" \
+      "</html>\n"
+    end
+    output_alias 'text/html', view: :html
+  end
 
 
   class BaseController < ActionController::Metal
@@ -80,7 +89,7 @@ class MediaTypes::AliasTest < Minitest::Test
   end
 
   class FakeController < BaseController
-    allow_output_serializer(ConfigurationSerializer, view: :html, only: %i[show])
+    allow_output_serializer(ConfigurationSerializer, views: %i[html legacy], only: %i[show])
     allow_output_serializer(ConfigurationSerializer, only: %i[show])
     freeze_io!
 
@@ -94,7 +103,35 @@ class MediaTypes::AliasTest < Minitest::Test
     @response = ActionDispatch::Response.new
   end
 
-  def test_alias
+  def test_json_unaliased
+    content_type = 'application/vnd.soundersmusic.configuration.legacy+json'
+
+    request = ActionDispatch::Request.new({
+      Rack::RACK_INPUT => '',
+      'HTTP_ACCEPT' => content_type
+    })
+
+    @controller.dispatch(:show, request, @response)
+    assert_equal content_type, @response.content_type.split(';').first
+    assert !@response.content_type.include?('variant'),
+           "'#{@response.content_type}' should not contain variant"
+  end
+
+  def test_json_alias
+    content_type = 'application/json'
+
+    request = ActionDispatch::Request.new({
+      Rack::RACK_INPUT => '',
+      'HTTP_ACCEPT' => content_type
+    })
+
+    @controller.dispatch(:show, request, @response)
+    assert_equal content_type, @response.content_type.split(';').first
+    assert @response.content_type.include?('variant=application/vnd.soundersmusic.configuration.legacy+json'),
+           "'#{content_type}' does not contain variant"
+  end
+
+  def test_raw_alias
     content_type = 'text/html'
 
     request = ActionDispatch::Request.new({
@@ -104,7 +141,8 @@ class MediaTypes::AliasTest < Minitest::Test
 
     @controller.dispatch(:show, request, @response)
     assert_equal content_type, @response.content_type.split(';').first
-    assert @response.content_type.include?('variant=application/vnd.soundersmusic.configuration.html+json'), "'#{content_type}' does not contain variant"
+    assert @response.content_type.include?('variant=application/vnd.soundersmusic.configuration.html'),
+           "'#{content_type}' does not contain variant"
   end
 end
 
