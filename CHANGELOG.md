@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.4
+
+- Same as `1.3.3`
+
 ## 1.3.3
 
 - 🐛 Fix override suffix not being picked up correctly
