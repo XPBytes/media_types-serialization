@@ -460,6 +460,9 @@ While this is not a good practise as this makes it hard to add new fields or rem
 class BookSerializer < MediaTypes::Serialization::Base
   validator BookValidator
 
+  # applicaton/vnd.acme.book.v3+json
+  # applicaton/vnd.acme.book.v2+json
+  # applicaton/vnd.acme.book.v1+json
   output versions: [1, 2, 3] do |obj, version, context|
     attribute :book do
       link :self, href: context.book_url(obj) if version >= 3
@@ -468,8 +471,18 @@ class BookSerializer < MediaTypes::Serialization::Base
       attribute :description, obj.description if version >= 2
     end
   end
-  output_alias 'application/json' # maps application/json to to applicaton/vnd.acme.book.v1+json
+  
+  # applicaton/vnd.acme.book+json
+  output version: nil do |obj, version, context|
+    attribute :book do
+      attribute :title, obj.title
+    end
+  end
+  output_alias 'application/json' # maps application/json to to applicaton/vnd.acme.book+json
 
+  # applicaton/vnd.acme.book.v3.create+json
+  # applicaton/vnd.acme.book.v2.create+json
+  # applicaton/vnd.acme.book.v1.create+json
   input view: :create, versions: [1, 2, 3] do |json, version, context|
     book = Book.new
     book.title = json['book']['title']
@@ -479,10 +492,20 @@ class BookSerializer < MediaTypes::Serialization::Base
     # Make sure not to save here but only save in the controller
     book
   end
-  input_alias 'application/json', view: :create # maps application/json to to applicaton/vnd.acme.book.v1+json
+  
+  # applicaton/vnd.acme.book.create+json
+  input view: :create, version: nil do |json, version, context|
+    book = Book.new
+    book.title = json['book']['title']
+    book.description = 'Not available'
+
+    # Make sure not to save here but only save in the controller
+    book
+  end
+  input_alias 'application/json', view: :create # maps application/json to to applicaton/vnd.acme.book.create+json
 ```
 
-Validation will be done using the remapped validator. Aliasses map to version `nil` if that is available or `1` otherwise. It is not possible to configure this version.
+Validation will be done using the remapped validator. Aliasses map to version `nil`. It is not possible to configure this version.
 
 ### HTML
 
