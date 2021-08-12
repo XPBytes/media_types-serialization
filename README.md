@@ -224,7 +224,7 @@ There are convenience methods for serializing arrays of objects based on a templ
 #### Indexes
 
 An index is a collection of urls that point to members of the array.
-The index method automatically generates it based on the self links defined in the default view of the same version.
+The index method automatically generates it based on the `self` links defined in the default view (`view: nil`) of the given version.
 
 ```ruby
 class BookSerializer < MediaTypes::Serialization::Base
@@ -262,6 +262,88 @@ BookSerializer.serialize([book], BookValidator.view(:index).version(3), context:
 #        ]
 #      }
 #    }
+```
+
+##### How to validate?
+
+The `index` dsl does _not_ exist in the validation gem. This is how you validate indices:
+
+```ruby
+class BookValidator
+  include MediaTypes::Dsl
+
+  def self.organisation
+    'acme'
+  end
+
+  use_name 'book'
+
+  validations do
+    view :index do
+      version 3 do
+        attribute :books do
+          link :self
+          
+          collection :_index, allow_empty: true do
+            attribute :href, String
+          end
+        end
+      end
+    end
+  end
+end
+```
+
+If the `:self` link contains _more attributes_, they will show up here too.
+
+```ruby
+class BookSerializer < MediaTypes::Serialization::Base
+  validator BookValidator
+
+  output versions: [1, 2, 3] do |obj, version, context|
+    attribute :book do
+      link :self, href: context.book_url(obj), isbn: obj.isbn if version >= 3
+
+      attribute :title, obj.title
+      attribute :description, obj.description if version >= 2
+    end
+  end
+
+  output view: :index, version: 3 do |arr, version, context|
+    attribute :books do
+      link :self, href: context.book_index_url
+
+      index arr, version: version
+    end
+  end
+end
+```
+
+```ruby
+class BookValidator
+  include MediaTypes::Dsl
+
+  def self.organisation
+    'acme'
+  end
+
+  use_name 'book'
+
+  validations do
+    view :index do
+      version 3 do
+        attribute :books do
+          link :self
+          
+          collection :_index, allow_empty: true do
+            attribute :href, String
+            attribute :isbn, AllowNil(String)
+          end
+        end
+      end
+    end
+  end
+end
 ```
 
 #### Collections
@@ -319,6 +401,37 @@ BookSerializer.serialize([book], BookValidator.view(:collection).version(3), con
 #        ]
 #      }
 #    }
+```
+
+The `collection` dsl is _not_ the same as the one in the validation gem. This is how you could validate collections:
+
+```ruby
+class BookValidator
+  include MediaTypes::Dsl
+
+  def self.organisation
+    'acme'
+  end
+
+  use_name 'book'
+
+  validations do
+    view :collection do
+      version 3 do
+        attribute :books do
+          link :self
+          
+          collection :_embedded, allow_empty: true do
+            link :self
+
+            attribute :title, String
+            attribute :description, AllowNil(String)
+          end
+        end
+      end
+    end
+  end
+end
 ```
 
 ### Input deserialization
