@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.5
+
+- 🐛 Upgrade media-types library so Ruby 2.5 and 2.6 work again
+
 ## 1.3.4
 
 - Same as `1.3.3`
