@@ -145,4 +145,3 @@ class MediaTypes::AliasTest < Minitest::Test
            "'#{content_type}' does not contain variant"
   end
 end
-
