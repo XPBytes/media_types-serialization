@@ -1,6 +1,6 @@
 # MediaTypes::Serialization
 
-[![Build Status: master](https://travis-ci.com/XPBytes/media_types-serialization.svg)](https://travis-ci.com/XPBytes/media_types-serialization)
+[![Build Status](https://github.com/XPBytes/media_types-serialization/actions/workflows/ci.yml/badge.svg)](https://github.com/XPBytes/media_types-serialization/actions/workflows/ci.yml)
 [![Gem Version](https://badge.fury.io/rb/media_types-serialization.svg)](https://badge.fury.io/rb/media_types-serialization)
 [![MIT license](http://img.shields.io/badge/license-MIT-brightgreen.svg)](http://opensource.org/licenses/MIT)
 
@@ -704,7 +704,7 @@ You can find more information at: [https://docs.delftsolutions.nl/wiki/Error](ht
 If you want to override this url you can use the `problem_output.url(href)` function.
 
 By default the `message` property of the error is used to fill the `details` field.
-You can override this by using the `problem_output.override_details(description, lang:)` function.
+You can override this by using the `problem_output.override_detail(description, lang:)` function.
 
 Custom attributes can be added using the `problem_output.attribute(name, value)` function.
 
