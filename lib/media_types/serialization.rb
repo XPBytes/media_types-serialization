@@ -321,7 +321,7 @@ module MediaTypes
         end
       end
 
-      def output_error(klazz, additional_serializers: [])
+      def output_error(klazz)
         rescue_from klazz do |error|
           problem = Problem.new(error)
           instance_exec { yield problem, error, self } if block_given?
@@ -331,7 +331,7 @@ module MediaTypes
 
           render_media(
             problem,
-            serializers: additional_serializers.concat([registrations]),
+            serializers: [registrations],
             status: problem.response_status_code
           )
         end
