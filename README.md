@@ -16,11 +16,15 @@ gem 'media_types-serialization'
 
 And then execute:
 
-    $ bundle
+```shell
+bundle
+```
 
 Or install it yourself as:
 
-    $ gem install media_types-serialization
+```shell
+gem install media_types-serialization
+```
 
 ## Usage
 
@@ -221,7 +225,7 @@ BookSerializer.serialize(book, BookValidator.version(3), context: controller)
 
 There are convenience methods for serializing arrays of objects based on a template.
 
-#### Indexes
+#### Indexes (index based collections)
 
 An index is a collection of urls that point to members of the array.
 The index method automatically generates it based on the `self` links defined in the default view (`view: nil`) of the given version.
@@ -266,7 +270,8 @@ BookSerializer.serialize([book], BookValidator.view(:index).version(3), context:
 
 ##### How to validate?
 
-The `index` dsl does _not_ exist in the validation gem. This is how you validate indices:
+The `index` dsl does _not_ exist in the validation gem.
+This is how you validate indices:
 
 ```ruby
 class BookValidator
@@ -283,7 +288,7 @@ class BookValidator
       version 3 do
         attribute :books do
           link :self
-          
+
           collection :_index, allow_empty: true do
             attribute :href, String
           end
@@ -334,7 +339,7 @@ class BookValidator
       version 3 do
         attribute :books do
           link :self
-          
+
           collection :_index, allow_empty: true do
             attribute :href, String
             attribute :isbn, AllowNil(String)
@@ -346,7 +351,7 @@ class BookValidator
 end
 ```
 
-#### Collections
+#### Collections (embedding collections)
 
 A collection inlines the member objects.
 The collection method automatically generates it based on the default view of the same version.
@@ -403,7 +408,8 @@ BookSerializer.serialize([book], BookValidator.view(:collection).version(3), con
 #    }
 ```
 
-The `collection` dsl is _not_ the same as the one in the validation gem. This is how you could validate collections:
+The `collection` dsl is _not_ the same as the one in the validation gem.
+This is how you could validate collections:
 
 ```ruby
 class BookValidator
@@ -420,7 +426,7 @@ class BookValidator
       version 3 do
         attribute :books do
           link :self
-          
+
           collection :_embedded, allow_empty: true do
             link :self
 
@@ -567,7 +573,7 @@ end
 ### Remapping media type identifiers
 
 Sometimes you already have old clients using an `application/json` media type identifier when they do requests.
-While this is not a good practise as this makes it hard to add new fields or remove old ones, this library has support for migrating away:
+While this is not a good practice as this makes it hard to add new fields or remove old ones, this library has support for migrating away:
 
 ```ruby
 class BookSerializer < MediaTypes::Serialization::Base
@@ -584,7 +590,7 @@ class BookSerializer < MediaTypes::Serialization::Base
       attribute :description, obj.description if version >= 2
     end
   end
-  
+
   # applicaton/vnd.acme.book+json
   output version: nil do |obj, version, context|
     attribute :book do
@@ -605,7 +611,7 @@ class BookSerializer < MediaTypes::Serialization::Base
     # Make sure not to save here but only save in the controller
     book
   end
-  
+
   # applicaton/vnd.acme.book.create+json
   input view: :create, version: nil do |json, version, context|
     book = Book.new
@@ -618,7 +624,8 @@ class BookSerializer < MediaTypes::Serialization::Base
   input_alias 'application/json', view: :create # maps application/json to to applicaton/vnd.acme.book.create+json
 ```
 
-Validation will be done using the remapped validator. Aliasses map to version `nil`. It is not possible to configure this version.
+Validation will be done using the remapped validator. Aliasses map to version `nil`.
+It is not possible to configure this version.
 
 ### HTML
 
@@ -699,7 +706,8 @@ class BookController < ActionController::API
 end
 ```
 
-The exception you specified will be rescued by the controller and will be displayed to the user along with a link to the shared wiki page for that error type. Feel free to add instructions there on how clients should solve this problem.
+The exception you specified will be rescued by the controller and will be displayed to the user along with a link to the shared wiki page for that error type.
+Feel free to add instructions there on how clients should solve this problem.
 You can find more information at: [https://docs.delftsolutions.nl/wiki/Error](https://docs.delftsolutions.nl/wiki/Error)
 If you want to override this url you can use the `problem_output.url(href)` function.
 
