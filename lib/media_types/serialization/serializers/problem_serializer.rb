@@ -15,7 +15,9 @@ module MediaTypes
         output do |problem, _, context|
           raise 'No translations defined, add at least one title' unless problem.translations.keys.any?
 
-          accept_language_header = Utils::AcceptLanguageHeader.new(context.request.get_header(HEADER_ACCEPT_LANGUAGE) || '')
+          accept_language_header = Utils::AcceptLanguageHeader.new(
+            context.request.get_header(HEADER_ACCEPT_LANGUAGE) || ''
+          )
           translation_entry = accept_language_header.map do |locale|
             problem.translations.keys.find do |l|
               l.start_with? locale.locale
@@ -40,7 +42,9 @@ module MediaTypes
         output_alias 'application/problem+json'
 
         output_raw view: :html do |problem, _, context|
-          accept_language_header = Utils::AcceptLanguageHeader.new(context.request.get_header(HEADER_ACCEPT_LANGUAGE) || '')
+          accept_language_header = Utils::AcceptLanguageHeader.new(
+            context.request.get_header(HEADER_ACCEPT_LANGUAGE) || ''
+          )
           translation_entry = accept_language_header.map do |locale|
             problem.translations.keys.find do |l|
               l.starts_with? locale.locale
@@ -57,12 +61,13 @@ module MediaTypes
             title: title,
             detail: detail,
             help_url: problem.type,
-            css: CommonCSS.css,
+            css: CommonCSS.css
           )
 
           template = ERB.new <<-TEMPLATE
             <html lang="en">
               <head>
+                <meta content="width=device-width, initial-scale=1" name="viewport">
                 <title>Error - <%= CGI::escapeHTML(title) %></title>
                 <style>
                   <%= css.split("\n").join("\n      ") %>
@@ -93,7 +98,6 @@ module MediaTypes
         enable_wildcards
 
         output_alias_optional 'text/html', view: :html
-
       end
     end
   end

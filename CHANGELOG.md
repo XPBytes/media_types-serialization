@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.9
+
+- ✨ Make serializer look slightly better on mobile by zooming in initially
+
+## 1.3.8
+
 ## 1.3.7
 
 - 🐛 Fix execution context for `output_error`

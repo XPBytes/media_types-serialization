@@ -4,7 +4,6 @@ require 'erb'
 
 module MediaTypes
   class Problem
-
     def initialize(error)
       self.error = error
       self.translations = {}
@@ -17,7 +16,7 @@ module MediaTypes
     def type
       return custom_type unless custom_type.nil?
 
-      "https://docs.delftsolutions.nl/wiki/Error/#{ERB::Util::url_encode(error.class.name)}"
+      "https://docs.delftsolutions.nl/wiki/Error/#{ERB::Util.url_encode(error.class.name)}"
     end
 
     def url(href)
@@ -31,13 +30,17 @@ module MediaTypes
 
     def override_detail(detail, lang:)
       raise 'Unable to override detail message without having a title in the same language.' unless translations[lang]
+
       translations[lang][:detail] = detail
     end
 
     def attribute(name, value)
       str_name = name.to_s
 
-      raise "Unable to add an attribute with name '#{str_name}'. Name should start with a letter, consist of the letters A-Z, a-z, 0-9 or _ and be at least 3 characters long." unless str_name =~ /^[a-zA-Z][a-zA-Z0-9_]{2,}$/
+      unless str_name =~ /^[a-zA-Z][a-zA-Z0-9_]{2,}$/
+        raise "Unable to add an attribute with name '#{str_name}'. Name should start with a letter, consist of the " \
+          'letters A-Z, a-z, 0-9 or _ and be at least 3 characters long.'
+      end
 
       custom_attributes[str_name] = value
     end
@@ -54,7 +57,7 @@ module MediaTypes
       inner = error.cause
       return nil if inner.nil?
 
-      "https://docs.delftsolutions.nl/wiki/Error/#{ERB::Util::url_encode(inner.class.name)}"
+      "https://docs.delftsolutions.nl/wiki/Error/#{ERB::Util.url_encode(inner.class.name)}"
     end
 
     def languages

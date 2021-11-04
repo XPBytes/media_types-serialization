@@ -11,21 +11,24 @@ module MediaTypes
         unvalidated 'text/html'
 
         def self.escape_text(text)
-          text.split("\n").
-            map { |l| CGI::escapeHTML(l).gsub(/ (?= )/, '&nbsp;') }.
-            map { |l| (l.gsub(/\bhttps?:\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;{}]*[-A-Z0-9+@#\/%=}~_|](?![a-z]*;)/i) do |m|
-              converted = m
-              invalid = false
-              begin
-                converted = viewerify(m, context.request.host)
-              rescue URI::InvalidURIError
-                invalid = true
+          text
+            .split("\n")
+            .map { |l| CGI.escapeHTML(l).gsub(/ (?= )/, '&nbsp;') }
+            .map do |l|
+              l.gsub(/\bhttps?:\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;{}]*[-A-Z0-9+@#\/%=}~_|](?![a-z]*;)/i) do |m|
+                converted = m
+                invalid = false
+                begin
+                  converted = viewerify(m, context.request.host)
+                rescue URI::InvalidURIError
+                  invalid = true
+                end
+                style = ''
+                style = ' style="color: red"' if invalid
+                "<a#{style} href=\"#{converted}\">#{m}</a>"
               end
-              style = ''
-              style = ' style="color: red"' if invalid
-              "<a#{style} href=\"#{converted}\">#{m}</a>"
-            end) }.
-            join("<br>\n")
+            end
+            .join("<br>\n")
         end
 
         output_raw do |obj, version, context|
@@ -46,6 +49,7 @@ module MediaTypes
           template = ERB.new <<-TEMPLATE
             <html lang="en">
               <head>
+                <meta content="width=device-width, initial-scale=1" name="viewport">
                 <title>Invalid input detected</title>
                 <style>
                   <%= css.split("\n").join("\n      ") %>

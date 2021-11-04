@@ -16,7 +16,7 @@ module MediaTypes
           return uri unless viewer.host == current_host
 
           query_parts = viewer.query&.split('&') || []
-          query_parts = query_parts.select { |p| !p.starts_with? 'api_viewer=' }
+          query_parts = query_parts.reject { |p| p.starts_with?('api_viewer=') }
           query_parts.append("api_viewer=#{type}")
           viewer.query = query_parts.join('&')
           viewer.to_s
@@ -45,42 +45,45 @@ module MediaTypes
             result = {
               identifier: identifier,
               href: viewerify(context.request.original_url, context.request.host, type: identifier),
-              selected: identifier == original_identifier,
+              selected: identifier == original_identifier
             }
             result[:href] = '#output' if identifier == original_identifier
 
             result
           end
 
-
-          escaped_output = original_output&.split("\n").
-            map { |l| CGI::escapeHTML(l).gsub(/ (?= )/, '&nbsp;') }.
-            map { |l| (l.gsub(/\bhttps?:\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;{}]*[-A-Z0-9+@#\/%=}~_|](?![a-z]*;)/i) do |m|
-              converted = m
-              invalid = false
-              begin
-                converted = viewerify(m, context.request.host)
-              rescue URI::InvalidURIError
-                invalid = true
+          escaped_output = original_output
+            &.split("\n")
+            &.map { |l| CGI.escapeHTML(l).gsub(/ (?= )/, '&nbsp;') }
+            &.map do |l|
+              l.gsub(/\bhttps?:\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;{}]*[-A-Z0-9+@#\/%=}~_|](?![a-z]*;)/i) do |m|
+                converted = m
+                invalid = false
+                begin
+                  converted = viewerify(m, context.request.host)
+                rescue URI::InvalidURIError
+                  invalid = true
+                end
+                style = ''
+                style = ' style="color: red"' if invalid
+                "<a#{style} href=\"#{converted}\">#{m}</a>"
               end
-              style = ''
-              style = ' style="color: red"' if invalid
-              "<a#{style} href=\"#{converted}\">#{m}</a>"
-            end) }.
-            join("<br>\n")
-          
+            end
+            &.join("<br>\n")
 
           input = OpenStruct.new(
             original_identifier: original_identifier,
             escaped_output: escaped_output,
             api_fied_links: api_fied_links,
             media_types: media_types,
-            css: CommonCSS.css,
+            css: CommonCSS.css
           )
 
           template = ERB.new <<-TEMPLATE
             <html lang="en">
               <head>
+                <meta content="width=device-width, initial-scale=1" name="viewport">
+
                 <title>API Viewer [<%= CGI::escapeHTML(original_identifier) %>]</title>
                 <style>
                   <%= css.split("\n").join("\n      ") %>
