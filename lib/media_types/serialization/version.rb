@@ -2,6 +2,6 @@
 
 module MediaTypes
   module Serialization
-    VERSION = '9'
+    VERSION = '1.3.9'
   end
 end
