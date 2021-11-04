@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.6
+
+- 🐛 Fix issue with `override_detail` of `Problem`
+
 ## 1.3.5
 
 - 🐛 Upgrade media-types library so Ruby 2.5 and 2.6 work again
