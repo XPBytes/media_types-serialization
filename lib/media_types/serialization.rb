@@ -100,7 +100,6 @@ module MediaTypes
 
     # rubocop:disable Metrics/BlockLength
     class_methods do
-
       def not_acceptable_serializer(serializer, **filter_opts)
         before_action(**filter_opts) do
           raise SerializersAlreadyFrozenError if defined? @serialization_frozen
@@ -315,22 +314,26 @@ module MediaTypes
       def freeze_io!(**filter_opts)
         before_action :serializer_freeze_io_internal, **filter_opts
 
-        output_error MediaTypes::Serialization::NoInputReceivedError do |p, error|
+        output_error MediaTypes::Serialization::NoInputReceivedError do |p, _error|
           p.title 'Providing input is mandatory. Please set a Content-Type', lang: 'en'
 
           p.status_code :bad_request
         end
       end
 
-      def output_error(klazz, &block)
+      def output_error(klazz, additional_serializers: [])
         rescue_from klazz do |error|
           problem = Problem.new(error)
-          block.call(problem, error) unless block.nil?
+          instance_exec { yield problem, error, self } if block_given?
 
           serializer = MediaTypes::Serialization::Serializers::ProblemSerializer
           registrations = serializer.outputs_for(views: [:html, nil])
 
-          render_media(problem, serializers: [registrations], status: problem.response_status_code)
+          render_media(
+            problem,
+            serializers: additional_serializers.concat([registrations]),
+            status: problem.response_status_code
+          )
         end
       end
     end
@@ -363,7 +366,9 @@ module MediaTypes
 
       raise SerializersNotFrozenError unless defined? @serialization_frozen
 
-      not_acceptable_serializer ||= @serialization_not_acceptable_serializer if defined? @serialization_not_acceptable_serializer
+      if defined? @serialization_not_acceptable_serializer
+        not_acceptable_serializer ||= @serialization_not_acceptable_serializer
+      end
 
       @serialization_output_registrations ||= SerializationRegistration.new(:output)
       registration = @serialization_output_registrations
@@ -469,7 +474,14 @@ module MediaTypes
       obj = { request: request, registrations: registrations }
       new_registrations = serializer.outputs_for(views: [nil])
 
-      serialization_render_resolved(obj: obj, serializer: serializer, identifier: identifier, registrations: new_registrations, options: {})
+      serialization_render_resolved(
+        obj: obj,
+        serializer: serializer,
+        identifier: identifier,
+        registrations: new_registrations,
+        options: {}
+      )
+
       response.status = :not_acceptable
     end
 
@@ -518,7 +530,11 @@ module MediaTypes
       if input_is_allowed && !request.content_type.blank?
         begin
           input_data = request.body.read
-          @serialization_decoded_input = @serialization_input_registrations.decode(input_data, request.content_type, self)
+          @serialization_decoded_input = @serialization_input_registrations.decode(
+            input_data,
+            request.content_type,
+            self
+          )
         rescue InputValidationFailedError => e
           serializers = @serialization_input_validation_failed_serializer || [
             MediaTypes::Serialization::Serializers::ProblemSerializer,
@@ -532,7 +548,7 @@ module MediaTypes
           input = {
             identifier: request.content_type,
             input: input_data,
-            error: e,
+            error: e
           }
 
           render_media nil, serializers: [registrations], status: :unprocessable_entity do
@@ -554,9 +570,17 @@ module MediaTypes
 
       # All endpoints have endpoint description.
       # Placed in front of the list to make sure the api viewer doesn't pick it.
-      @serialization_output_registrations = description_serializer.outputs_for(views: [nil]).merge(@serialization_output_registrations)
+      @serialization_output_registrations =
+        description_serializer
+        .outputs_for(views: [nil])
+        .merge(@serialization_output_registrations)
 
-      endpoint_matched_identifier = resolve_media_type(request, description_serializer.serializer_output_registration, allow_last: false)
+      endpoint_matched_identifier = resolve_media_type(
+        request,
+        description_serializer.serializer_output_registration,
+        allow_last: false
+      )
+
       if endpoint_matched_identifier
         # We picked an endpoint description media type
         #
@@ -566,7 +590,7 @@ module MediaTypes
 
         input = {
           api_viewer: @serialization_api_viewer_enabled,
-          actions: @serialization_available_serializers,
+          actions: @serialization_available_serializers
         }
 
         serialization_render_resolved(
@@ -583,13 +607,19 @@ module MediaTypes
       resolved_identifier = resolve_media_type(request, @serialization_output_registrations)
 
       not_acceptable_serializer = nil
-      not_acceptable_serializer = @serialization_not_acceptable_serializer if defined? @serialization_not_acceptable_serializer
+
+      if defined? @serialization_not_acceptable_serializer
+        not_acceptable_serializer = @serialization_not_acceptable_serializer
+      end
+
       not_acceptable_serializer ||= MediaTypes::Serialization::Serializers::FallbackNotAcceptableSerializer
 
       can_satisfy_allow = !resolved_identifier.nil?
       can_satisfy_allow ||= @serialization_output_allow_all if defined?(@serialization_output_allow_all)
 
-      serialization_render_not_acceptable(@serialization_output_registrations, not_acceptable_serializer) unless can_satisfy_allow
+      unless can_satisfy_allow
+        serialization_render_not_acceptable(@serialization_output_registrations, not_acceptable_serializer)
+      end
     end
 
     def serialization_render_resolved(obj:, identifier:, serializer:, registrations:, options:)
@@ -601,14 +631,19 @@ module MediaTypes
       if links.any?
         items = links.map do |l|
           href_part = "<#{l[:href]}>"
-          tags = l.to_a.select { |k,_| k != :href }.map { |k,v| "#{k}=#{v}" }
+          tags = l.to_a.reject { |k, _| k == :href }.map { |k, v| "#{k}=#{v}" }
           ([href_part] + tags).join('; ')
         end
         response.set_header('Link', items.join(', '))
       end
 
       if vary.any?
-        current_vary = (response.headers['Vary'] || "").split(',').map { |v| v.strip }.reject { |v| v.empty? }.sort
+        current_vary =
+          (response.headers['Vary'] || '')
+          .split(',')
+          .map(&:strip)
+          .reject(&:empty?)
+          .sort
         merged_vary = (vary.sort + current_vary).uniq
 
         response.set_header('Vary', merged_vary.join(', '))
@@ -619,7 +654,7 @@ module MediaTypes
           identifier: identifier,
           registrations: registrations,
           output: result,
-          links: links,
+          links: links
         }
         wrapped = @serialization_wrapping_renderer.serialize input, '*/*', context: self
         render body: wrapped

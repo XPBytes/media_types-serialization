@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.7
+
+- 🐛 Fix execution context for `output_error`
+
 ## 1.3.6
 
 - 🐛 Fix issue with `override_detail` of `Problem`
