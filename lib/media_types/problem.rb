@@ -31,7 +31,7 @@ module MediaTypes
 
     def override_detail(detail, lang:)
       raise 'Unable to override detail message without having a title in the same language.' unless translations[lang]
-      translations[lang][:detail] = title
+      translations[lang][:detail] = detail
     end
 
     def attribute(name, value)
