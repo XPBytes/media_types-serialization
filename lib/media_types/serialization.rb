@@ -321,7 +321,7 @@ module MediaTypes
         end
       end
 
-      def output_error(klazz)
+      def output_error(klazz, serializers: [])
         rescue_from klazz do |error|
           problem = Problem.new(error)
           instance_exec { yield problem, error, self } if block_given?
@@ -331,7 +331,7 @@ module MediaTypes
 
           render_media(
             problem,
-            serializers: [registrations],
+            serializers: [registrations] + serializers.map { |s| s.outputs_for(views: [nil])},
             status: problem.response_status_code
           )
         end
@@ -663,9 +663,13 @@ module MediaTypes
         return
       end
 
-      render body: result, **options
+      if context.serialization_custom_render.nil?
+        render body: result, **options
 
-      response.content_type = registrations.identifier_for(identifier)
+        response.content_type = registrations.identifier_for(identifier)
+      else
+        context.serialization_custom_render.call(result)
+      end
     end
   end
 end

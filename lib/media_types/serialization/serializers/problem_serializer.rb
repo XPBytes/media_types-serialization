@@ -32,6 +32,9 @@ module MediaTypes
             attribute key, value
           end
 
+          hidden do
+            link :type, problem.type
+          end
           attribute :type, problem.type
           attribute :title, title unless title.nil?
           attribute :detail, detail unless detail.nil?
@@ -51,6 +54,10 @@ module MediaTypes
             end
           end.compact.first || problem.translations.keys.first
           translation = problem.translations[translation_entry]
+          
+          hidden do
+            link :type, problem.type
+          end
 
           title = translation[:title]
           detail = translation[:detail] || problem.error.message
