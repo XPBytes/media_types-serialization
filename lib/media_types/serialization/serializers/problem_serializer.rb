@@ -33,7 +33,7 @@ module MediaTypes
           end
 
           hidden do
-            link :type, problem.type
+            link :type, href: problem.type
           end
           attribute :type, problem.type
           attribute :title, title unless title.nil?
@@ -56,7 +56,7 @@ module MediaTypes
           translation = problem.translations[translation_entry]
           
           hidden do
-            link :type, problem.type
+            link :type, href: problem.type
           end
 
           title = translation[:title]
