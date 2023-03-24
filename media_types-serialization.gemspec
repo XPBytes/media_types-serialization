@@ -41,7 +41,7 @@ Gem::Specification.new do |spec|
 
   spec.add_development_dependency 'awesome_print'
   spec.add_development_dependency 'bundler'
-  spec.add_development_dependency 'rails', '~> 5.2'
+  spec.add_development_dependency 'rails', '~> 6.1'
   spec.add_development_dependency 'rake', '~> 13.0'
   spec.add_development_dependency 'minitest', '~> 5.0'
   spec.add_development_dependency 'oj'
