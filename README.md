@@ -887,7 +887,15 @@ Can be used to render a view.
 You can set local variables in the view by assigning a hash to the `assigns:` parameter.
 Returns a `string`
 
-> When possible, prefer `output_raw` with `context.class.render(params)`
+> When possible, prefer `output_raw` with context.render_to_string(params)`
+
+#### `redirect_to(url, context, **options)`
+
+This redirects the user to the specified url when this serializer is rendered. The output of the serializer is still shown in the API viewer.
+
+#### `suppress_render do |result|`
+
+Replaces the render at the end of `render_media` and substitutes it with the contents of the block.
 
 ### Controller definition
 
@@ -915,6 +923,11 @@ You can set the template to use using the `view:` parameter.
 Outputs the specified description as help information.
 
 Accepts the same filters as `before_action`.
+
+#### `output_error(klazz, serializers = []) do`
+
+Wraps the controller method in a `rescue_from` and presents the users with a `text/html` or `application/problem+json` representation of the error.
+The `text/html` response can be overridden by supplying an additional serializer in the `serializers` array. It will use the nil view for the given serializers.
 
 #### `allow_input_serializer( serializer, views: nil, **filters )`
 

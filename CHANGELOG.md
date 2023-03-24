@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.4.0
+
+- ✨ Add support for redirecting in serializers
+
 ## 1.3.9
 
 - ✨ Make serializer look slightly better on mobile by zooming in initially
