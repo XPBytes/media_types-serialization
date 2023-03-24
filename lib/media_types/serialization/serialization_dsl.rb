@@ -11,10 +11,11 @@ module MediaTypes
         @serialization_links = links
         @serialization_context = context
         @serialization_vary = vary
+        @serialization_custom_render = nil
         super(serializer)
       end
 
-      attr_accessor :serialization_dsl_result
+      attr_accessor :serialization_dsl_result, :serialization_custom_render
 
       def attribute(key, value = {}, &block)
         unless block.nil?
@@ -111,6 +112,23 @@ module MediaTypes
         context.instance_exec(&block)
 
         context.serialization_dsl_result
+      end
+
+      def redirect_to(url, context, **options)
+        suppress_render do |result|
+          context.redirect_to(
+            url,
+            **options
+          )
+        end
+
+        "Redirecting to: #{url}"
+      end
+
+      def suppress_render(&block)
+        @serialization_custom_render = block || lambda { |result| }
+
+        serialization_dsl_result
       end
     end
   end
