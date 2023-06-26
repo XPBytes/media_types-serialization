@@ -445,9 +445,12 @@ module MediaTypes
           @serialization_override_accept = registration.registrations.keys.last
         end
 
-        return nil unless registration.has? @serialization_override_accept
+        return @serialization_override_accept if registration.has? @serialization_override_accept
+        
+        # Always render problems in api viewer if we can't show chosen override
+        return 'application/problem+json' if registration.has? 'application/problem+json'
 
-        return @serialization_override_accept
+        return nil
       end
 
       # Ruby negotiation
