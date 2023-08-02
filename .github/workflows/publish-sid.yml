@@ -10,7 +10,7 @@ jobs:
       image: debian:sid
     steps:
       - name: Install repo
-        run: apt-get update && wget -O key.deb https://deb1.ws.maxmaton.nl/key.deb && DEBIAN_FRONTEND=noninteractive apt-get --yes install ./key.deb && echo "deb [signed-by=/usr/share/keyrings/maxmaton.gpg] http://deb.maxmaton.nl/debian sid main non-free" > /etc/apt/sources.list.d/maxmaton.list
+        run: apt-get update && curl https://deb1.ws.maxmaton.nl/key.deb > key.deb && DEBIAN_FRONTEND=noninteractive apt-get --yes install ./key.deb && echo "deb [signed-by=/usr/share/keyrings/maxmaton.gpg] http://deb.maxmaton.nl/debian sid main non-free" > /etc/apt/sources.list.d/maxmaton.list
       - name: Install dependencies
         run: apt-get update && DEBIAN_FRONTEND=noninteractive apt-get --yes install build-essential gem gem2deb
       - name: Build gem
