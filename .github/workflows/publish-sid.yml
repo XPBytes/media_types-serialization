@@ -16,4 +16,4 @@ jobs:
       - name: Build gem
         run: gem build media_types-serialization.gemspec && ls -hal
       - name: Build deb
-        run gem2deb media_types-serialization.gem
+        run: gem2deb media_types-serialization.gem
