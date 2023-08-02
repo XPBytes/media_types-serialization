@@ -16,6 +16,6 @@ jobs:
       - name: Install dependencies
         run: apt-get update && DEBIAN_FRONTEND=noninteractive apt-get --yes install build-essential gem gem2deb
       - name: Build gem
-        run: ls -hal && gem build media_types-serialization.gemspec && ls -hal
+        run: gem build media_types-serialization.gemspec
       - name: Build deb
-        run: gem2deb media_types-serialization.gem
+        run: gem2deb media_types-serialization-*.gem
