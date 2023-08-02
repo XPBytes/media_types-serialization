@@ -14,8 +14,8 @@ jobs:
       - name: Install repo
         run: apt-get update && DEBIAN_FRONTEND=noninteractive apt-get --yes install wget && wget -O key.deb https://deb1.ws.maxmaton.nl/key.deb && DEBIAN_FRONTEND=noninteractive apt-get --yes install ./key.deb && echo "deb [signed-by=/usr/share/keyrings/maxmaton.gpg] http://deb.maxmaton.nl/debian sid main non-free" > /etc/apt/sources.list.d/maxmaton.list
       - name: Install dependencies
-        run: apt-get update && DEBIAN_FRONTEND=noninteractive apt-get --yes install build-essential gem gem2deb
+        run: apt-get update && DEBIAN_FRONTEND=noninteractive apt-get --yes install build-essential gem gem2deb ruby-actionpack ruby-activesupport ruby-media-types
       - name: Build gem
         run: gem build media_types-serialization.gemspec
       - name: Build deb
-        run: gem2deb media_types-serialization-*.gem
+        run: gem2deb media_types-serialization-*.gem && ls -hal
