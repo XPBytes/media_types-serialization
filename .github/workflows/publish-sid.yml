@@ -16,11 +16,11 @@ jobs:
       - name: Install dependencies
         run: apt-get update && DEBIAN_FRONTEND=noninteractive apt-get --yes install build-essential gem scrypt sshpass gem2deb ruby-actionpack ruby-activesupport ruby-media-types
       - name: Build gem
-        run: gem build media_types-serialization.gemspec
-      - name: Build deb
         run: |
           sed -i -re "s/VERSION\s+=\s+'(\d+.\d+.\d+)'/VERSION = '\1.sid'/g" lib/media_types/serialization/version.rb
-          gem2deb media_types-serialization-*.gem && ls -hal
+          gem build media_types-serialization.gemspec
+      - name: Build deb
+        run: DEBEMAIL=info@delftsolutions.nl gem2deb media_types-serialization-*.gem && ls -hal
       - name: Publish
         env:
           PUBLISH_SIGNING_KEY: ${{ secrets.PUBLISH_SIGNING_KEY }}
