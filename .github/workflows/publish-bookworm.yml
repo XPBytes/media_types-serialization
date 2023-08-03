@@ -24,8 +24,8 @@ jobs:
           PUBLISH_SIGNING_KEY: ${{ secrets.PUBLISH_SIGNING_KEY }}
           SSHPASS: ${{ secrets.SSHPASS }}
         run: |
-          echo "deb1.ws.maxmaton.nl ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDgN3TiyKvRTj4xBSyQtYz0OuHZYv2i+x3NL+svh2k0SgPr0Xms4Vu+g3AXntXUQGRM0W9zbcZSHiBIWbliv3Y+20f7lKlj9uXUEMHDuiB7Fu7dXObfHswIvTX3XWiPdDeG1jYQbGM3tENX/wtEoixyL++33O69t2SFR5MkPk+/j+zlGLCFf0ypTAMb7bT5NjRNM3+v0LT2WVSZuawA7Fl8WBVTq7MSSuCZIxHIv1kEq6AWpOjWZHNVZrijs+uRTIPcrZ47wSt6tanjAnWT9sAzu8KqcvQsPw9IQwqV1nfQWz0wMit7ijn9B3MrkNHXP5PaNiZQCezsbrh9glhShz0z" > known_hosts \
-          echo "deb1.ws.maxmaton.nl ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBMr5uAraiRj0pQ9Q9dQO0xMosTzFUAe+VjtMclIUbdJ7r7XMUa3etxh3BfBlW4nq3ZdIFCsV2zwzTaYSmfh95Xs=" >> known_hosts \
-          echo "deb1.ws.maxmaton.nl ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPhQl7Ik6h7hSQbdo9ZfF78WYFCzch8SAOXFBxxAZH06" >> known_hosts \
-          echo "Uploading :" ruby-media-types-serialization_*.deb \
+          echo "deb1.ws.maxmaton.nl ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDgN3TiyKvRTj4xBSyQtYz0OuHZYv2i+x3NL+svh2k0SgPr0Xms4Vu+g3AXntXUQGRM0W9zbcZSHiBIWbliv3Y+20f7lKlj9uXUEMHDuiB7Fu7dXObfHswIvTX3XWiPdDeG1jYQbGM3tENX/wtEoixyL++33O69t2SFR5MkPk+/j+zlGLCFf0ypTAMb7bT5NjRNM3+v0LT2WVSZuawA7Fl8WBVTq7MSSuCZIxHIv1kEq6AWpOjWZHNVZrijs+uRTIPcrZ47wSt6tanjAnWT9sAzu8KqcvQsPw9IQwqV1nfQWz0wMit7ijn9B3MrkNHXP5PaNiZQCezsbrh9glhShz0z" > known_hosts
+          echo "deb1.ws.maxmaton.nl ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBMr5uAraiRj0pQ9Q9dQO0xMosTzFUAe+VjtMclIUbdJ7r7XMUa3etxh3BfBlW4nq3ZdIFCsV2zwzTaYSmfh95Xs=" >> known_hosts
+          echo "deb1.ws.maxmaton.nl ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPhQl7Ik6h7hSQbdo9ZfF78WYFCzch8SAOXFBxxAZH06" >> known_hosts
+          echo "Uploading :" ruby-media-types-serialization_*.deb
           scrypt enc --passphrase "env:PUBLISH_SIGNING_KEY" ruby-media-types-serialization_*.deb | sshpass -e ssh -o "UserKnownHostsFile=known_hosts" publish@deb1.ws.maxmaton.nl "echo 'uploading bookworm' && sudo /opt/max/publish-deb ruby-media-types-serialization bookworm main && echo 'bookworm done'"
