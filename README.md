@@ -471,7 +471,7 @@ class BookController < ActionController::API
     book = Book.new
     book.title = 'Everything, abridged'
 
-    render_media serialize_media(book)
+    render_media book
   end
 
   def create
@@ -517,14 +517,14 @@ class BookController < ActionController::API
     book = Book.new
     book.title = 'Everything, abridged'
 
-    render_media serialize_media(book)
+    render_media book
   end
 
   def create
     book = deserialize(request)
     book.save!
 
-    render_media serialize_media(book)
+    render_media book
   end
 end
 ```
@@ -648,7 +648,7 @@ class BookController < ActionController::API
     book = Book.new
     book.title = 'Everything, abridged'
 
-    render_media serialize_media(book)
+    render_media book
   end
 
   def create
