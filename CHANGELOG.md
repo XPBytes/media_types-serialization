@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.5.0
+
+- ✨ Add support for loose input validation
+
 ## 1.4.0
 
 - ✨ Add support for redirecting in serializers
