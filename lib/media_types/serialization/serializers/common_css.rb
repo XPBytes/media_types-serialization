@@ -169,6 +169,32 @@ module MediaTypes
           #output {
             font-size: .9em;
           }
+
+          #reply .reply-indent {
+            border-left: 0.5em solid lightgray;
+            padding-left: 1em;
+          }
+
+          #reply .form-table {
+            display: table;
+            border-spacing: 1em 0;
+            margin-left: -1em;
+            margin-bottom: 0.2em;
+          }
+
+          #reply .form-row {
+            display: table-row;
+          }
+
+          #reply .cell {
+            display: table-cell;
+          }
+
+          #reply textarea {
+            width: 100%;
+            height: 6em;
+            clear: both;
+          }
           
           TEMPLATE
           template = ERB.new custom_css unless custom_css.nil?
