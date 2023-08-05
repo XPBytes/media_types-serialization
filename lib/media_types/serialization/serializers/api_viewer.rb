@@ -205,27 +205,27 @@ module MediaTypes
                     <section id="reply">
                       <details>
                         <summary>Reply</summary>
-                        <div style="border-left: 0.5em solid lightgray;padding-left: 1em;">
+                        <div class="reply-indent">
                           <noscript>Javascript is required to submit custom responses back to the server</noscript>
                           <form id="reply-form" hidden>
-                            <div style="display: table; border-spacing: 1em 0; margin-left: -1em; margin-bottom: 0.2em;">
-                              <label style="display: table-row">
-                                <div style="display: table-cell">Method:</div>
+                            <div class="form-table">
+                              <label class="form-row">
+                                <div class="cell label">Method:</div>
                                 <% if allowed_replies.keys.count == 1 %>
                                   <input type="hidden" name="method" value="<%= allowed_replies.keys[0] %>">
-                                  <div style="display: table-cell"><%= allowed_replies.keys[0] %></div>
+                                  <div class="cell"><%= allowed_replies.keys[0] %></div>
                                 <% else %>
-                                  <select name="method" style="display: table-cell">
+                                  <select class="cell" name="method">
                                     <% allowed_replies.keys.each do |method| %>
                                       <option value="<%= method %>"><%= method %></option>
                                     <% end %>
                                   </select>
                                 <% end %>
                               </label>
-                              <label style="display: table-row"><div style="display: table-cell">Send:</div> <select name="request-content-type" style="display: table-cell"></select></label>
-                              <label style="display: table-row"><div style="display: table-cell">Receive:</div> <select name="response-content-type" style="display: table-cell"></select></label>
+                              <label class="form-row"><div class="cell label">Send:</div> <select class="cell" name="request-content-type"></select></label>
+                              <label class="form-row"><div class="cell label">Receive:</div> <select class="cell" name="response-content-type"></select></label>
                             </div>
-                            <textarea name="request-content" style="width: 100%; height: 6em;"></textarea><br>
+                            <textarea name="request-content"></textarea>
                             <input type="button" name="submit" value="Reply">
                             <hr>
                             <code id="reply-response" hidden>
@@ -237,7 +237,6 @@ module MediaTypes
                               form.removeAttribute('hidden')
 
                               let action_data = JSON.parse("<%= escape_javascript.call(allowed_replies.to_json) %>")
-                              console.log(action_data)
 
                               let methodElem = form.elements["method"]
                               let requestTypeElem = form.elements["request-content-type"]
@@ -253,11 +252,19 @@ module MediaTypes
                                 else
                                   contentElem.removeAttribute("hidden")
                                 
-                                // TODO: automatically copy in response if sending PUT with same content-type
+                                if (methodElem.value == "PUT" && contentElem.value.trim() == "") {
+                                  let currentRequestType = document.querySelector("#representations .active").textContent.trim()
+                                  let outputElem = document.getElementById("output")
+                                  contentElem.value = outputElem.
+                                    textContent.
+                                    trim().
+                                    replaceAll(String.fromCharCode(160), " ")
+                                }
                               }
 
                               let selectMethod = function() {
                                 let selected = methodElem.value
+                                submitElem.setAttribute("value", selected)
 
                                 let mediatypes = action_data[selected]
 
@@ -286,6 +293,8 @@ module MediaTypes
                                 anyOption.setAttribute("value", "")
                                 anyOption.textContent = "Any"
                                 responseTypeElem.appendChild(anyOption)
+
+                                selectRequestType()
                               }
 
                               let onSubmit = async function() {
@@ -298,6 +307,12 @@ module MediaTypes
 
                                 let headers = {
                                   Accept: responseAccept,
+                                }
+                                if (method == "PUT") {
+                                  let etag = "<%= escape_javascript.call(etag) %>"
+                                  if (etag != "") {
+                                    headers['If-Match'] = etag
+                                  }
                                 }
                                 let body = undefined
                                 if (requestContentType != "") {
@@ -325,7 +340,7 @@ module MediaTypes
                               methodElem.addEventListener("change", (e) => selectMethod())
                               submitElem.addEventListener("click", (e) => onSubmit())
 
-                              selectMethod();
+                              addEventListener("DOMContentLoaded", (event) => selectMethod());
                             }
                           </script>
                         </div>
