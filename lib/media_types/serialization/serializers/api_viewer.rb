@@ -22,6 +22,79 @@ module MediaTypes
           viewer.to_s
         end
 
+        def self.to_input_identifiers(serializers)
+          serializers.flat_map do |s|
+            s[:serializer].inputs_for(views: [s[:view]]).registrations.keys
+          end
+        end
+        def self.to_output_identifiers(serializers)
+          serializers.flat_map do |s|
+            s[:serializer].outputs_for(views: [s[:view]]).registrations.keys
+          end
+        end
+
+        def self.allowed_replies(context, actions)
+          request_path = context.request.original_fullpath.split('?')[0]
+
+          path_prefix = ENV.fetch('RAILS_RELATIVE_URL_ROOT') { '' }
+          request_path = request_path.sub(path_prefix, '')
+
+          my_controller = Rails.application.routes.recognize_path request_path
+          possible_replies = ['POST', 'PUT', 'DELETE']
+          enabled_replies = {}
+          possible_replies.each do |m|
+            begin
+              found_controller = Rails.application.routes.recognize_path request_path, method: m
+              if found_controller[:controller] == my_controller[:controller]
+                enabled_replies[m] = found_controller[:action]
+              end
+            rescue ActionController::RoutingError
+              # not available
+            end
+          end
+
+          input_definitions = actions[:input] || {}
+          output_definitions = actions[:output] || {}
+
+          result = {}
+          global_in = input_definitions['all_actions'] || []
+          global_out = output_definitions['all_actions'] || []
+
+          viewer_uri = URI.parse(context.request.original_url)
+          query_parts = viewer_uri.query&.split('&') || []
+          query_parts = query_parts.select { |q| !q.start_with? 'api_viewer=' }
+          viewer_uri.query = (query_parts + ["api_viewer=last"]).join('&')
+
+          enabled_replies.each do |method, action|
+            input_serializers = global_in + (input_definitions[action] || [])
+            output_serializers = global_out + (output_definitions[action] || [])
+            result[method] = {
+              input: to_input_identifiers(input_serializers),
+              output: to_output_identifiers(output_serializers),
+            }
+          end
+
+          result
+        end
+
+        def self.escape_javascript(value)
+          escape_map = {
+            "\\"    => "\\\\",
+            "</"    => '<\/',
+            "\r\n"  => '\n',
+            "\n"    => '\n',
+            "\r"    => '\n',
+            '"'     => '\\"',
+            "'"     => "\\'",
+            "`"     => "\\`",
+            "$"     => "\\$"
+          }
+          escape_map[(+"\342\200\250").force_encoding(Encoding::UTF_8).encode!] = "&#x2028;"
+          escape_map[(+"\342\200\251").force_encoding(Encoding::UTF_8).encode!] = "&#x2029;"
+
+          return value.gsub(/(\\|<\/|\r\n|\342\200\250|\342\200\251|[\n\r"']|[`]|[$])/u, escape_map).html_safe
+        end
+
         output_raw do |obj, version, context|
           original_identifier = obj[:identifier]
           registrations = obj[:registrations]
@@ -71,15 +144,25 @@ module MediaTypes
             end
             &.join("<br>\n")
 
+          unviewered_uri = URI.parse(context.request.original_url)
+          query_parts = unviewered_uri.query&.split('&') || []
+          query_parts = query_parts.select { |q| !q.start_with? 'api_viewer=' }
+          unviewered_uri.query = query_parts.join('&')
+
           input = OpenStruct.new(
             original_identifier: original_identifier,
             escaped_output: escaped_output,
             api_fied_links: api_fied_links,
             media_types: media_types,
-            css: CommonCSS.css
+            css: CommonCSS.css,
+            etag: obj[:etag],
+            allowed_replies: allowed_replies(context, obj[:actions]),
+            escape_javascript: method(:escape_javascript),
+            unviewered_uri: unviewered_uri
           )
 
           template = ERB.new <<-TEMPLATE
+            <!DOCTYPE html>
             <html lang="en">
               <head>
                 <meta content="width=device-width, initial-scale=1" name="viewport">
@@ -118,6 +201,135 @@ module MediaTypes
                       </ul>
                     </section>
                   </nav>
+                  <% if allowed_replies.any? %>
+                    <section id="reply">
+                      <details>
+                        <summary>Reply</summary>
+                        <div style="border-left: 0.5em solid lightgray;padding-left: 1em;">
+                          <noscript>Javascript is required to submit custom responses back to the server</noscript>
+                          <form id="reply-form" hidden>
+                            <div style="display: table; border-spacing: 1em 0; margin-left: -1em; margin-bottom: 0.2em;">
+                              <label style="display: table-row">
+                                <div style="display: table-cell">Method:</div>
+                                <% if allowed_replies.keys.count == 1 %>
+                                  <input type="hidden" name="method" value="<%= allowed_replies.keys[0] %>">
+                                  <div style="display: table-cell"><%= allowed_replies.keys[0] %></div>
+                                <% else %>
+                                  <select name="method" style="display: table-cell">
+                                    <% allowed_replies.keys.each do |method| %>
+                                      <option value="<%= method %>"><%= method %></option>
+                                    <% end %>
+                                  </select>
+                                <% end %>
+                              </label>
+                              <label style="display: table-row"><div style="display: table-cell">Send:</div> <select name="request-content-type" style="display: table-cell"></select></label>
+                              <label style="display: table-row"><div style="display: table-cell">Receive:</div> <select name="response-content-type" style="display: table-cell"></select></label>
+                            </div>
+                            <textarea name="request-content" style="width: 100%; height: 6em;"></textarea><br>
+                            <input type="button" name="submit" value="Reply">
+                            <hr>
+                            <code id="reply-response" hidden>
+                            </code>
+                          </form>
+                          <script>
+                            {
+                              let form = document.getElementById("reply-form")
+                              form.removeAttribute('hidden')
+
+                              let action_data = JSON.parse("<%= escape_javascript.call(allowed_replies.to_json) %>")
+                              console.log(action_data)
+
+                              let methodElem = form.elements["method"]
+                              let requestTypeElem = form.elements["request-content-type"]
+                              let responseTypeElem = form.elements["response-content-type"]
+                              let contentElem = form.elements["request-content"]
+                              let submitElem = form.elements["submit"]
+                              let replyResponseElem = document.getElementById("reply-response")
+                              let selectRequestType = function() {
+                                let selected = requestTypeElem.value
+
+                                if (selected == "")
+                                  contentElem.setAttribute("hidden", "")
+                                else
+                                  contentElem.removeAttribute("hidden")
+                                
+                                // TODO: automatically copy in response if sending PUT with same content-type
+                              }
+
+                              let selectMethod = function() {
+                                let selected = methodElem.value
+
+                                let mediatypes = action_data[selected]
+
+                                while(requestTypeElem.firstChild)
+                                  requestTypeElem.removeChild(requestTypeElem.lastChild)
+                                mediatypes["input"].forEach(mediatype => {
+                                  let option = document.createElement("option")
+                                  option.setAttribute("value", mediatype)
+                                  option.textContent = mediatype
+                                  requestTypeElem.appendChild(option)
+                                })
+                                let noneOption = document.createElement("option")
+                                noneOption.setAttribute("value", "")
+                                noneOption.textContent = "None"
+                                requestTypeElem.appendChild(noneOption)
+
+                                while(responseTypeElem.firstChild)
+                                  responseTypeElem.removeChild(responseTypeElem.lastChild)
+                                mediatypes["output"].forEach(mediatype => {
+                                  let option = document.createElement("option")
+                                  option.setAttribute("value", mediatype)
+                                  option.textContent = mediatype
+                                  responseTypeElem.appendChild(option)
+                                })
+                                let anyOption = document.createElement("option")
+                                anyOption.setAttribute("value", "*/*")
+                                anyOption.textContent = "Any"
+                                responseTypeElem.appendChild(anyOption)
+                              }
+
+                              let onSubmit = async function() {
+                                let method = methodElem.value
+                                let requestContentType = requestTypeElem.value
+                                let requestContent = contentElem.value
+                                let responseAccept = responseTypeElem.value + ", application/problem+json; q=0.2, */*; q=0.1"
+
+                                let headers = {
+                                  Accept: responseAccept,
+                                }
+                                let body = undefined
+                                if (requestContentType != "") {
+                                  headers["Content-Type"] = requestContentType
+                                  body = requestContent
+                                }
+                                let response = await fetch("<%= escape_javascript.call(unviewered_uri.to_s) %>", {
+                                  method: method,
+                                  mode: "same-origin",
+                                  credentials: "same-origin",
+                                  redirect: "follow",
+                                  headers: headers,
+                                  body: body
+                                })
+
+                                replyResponseElem.removeAttribute("hidden")
+                                replyResponseElem.textContent = await response.text()
+                                replyResponseElem.innerHTML = replyResponseElem.
+                                  innerHTML.
+                                  replaceAll("\\n", "<br>\\n").
+                                  replaceAll("  ", "&nbsp; ")
+                              }
+
+                              requestTypeElem.addEventListener("change", (e) => selectRequestType())
+                              methodElem.addEventListener("change", (e) => selectMethod())
+                              submitElem.addEventListener("click", (e) => onSubmit())
+
+                              selectMethod();
+                            }
+                          </script>
+                        </div>
+                      </details>
+                    </section>
+                  <% end %>
                   <main>
                     <code id="output">
                       <%= escaped_output %>
