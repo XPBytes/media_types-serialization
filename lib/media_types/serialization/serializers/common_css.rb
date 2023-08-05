@@ -49,65 +49,76 @@ module MediaTypes
             min-height: 100%;
             background: <%= background %>;
           }
-
+          
           body {
             color: #fff;
-            margin-left: 10em;
-            margin-right: 10em;
+            margin-left: 2em;
+            margin-right: 2em;
             margin-top: 1em;
-
+            max-width: 1200px;
+          
             font-family: -apple-system, ".SFNSText-Regular", "San Francisco", "Roboto", "Segoe UI", "Helvetica Neue", "Lucida Grande", sans-serif;
-						font-size: 16px;
-						line-height: 1.6;
-						-webkit-font-feature-settings: "kern","liga","clig","calt";
-						font-feature-settings: "kern","liga","clig","calt";
-						-webkit-font-smoothing: antialiased;
-						-moz-osx-font-smoothing: grayscale
+            font-size: 16px;
+            line-height: 1.6;
+            -webkit-font-feature-settings: "kern","liga","clig","calt";
+            font-feature-settings: "kern","liga","clig","calt";
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale
+            overflow-x: hidden;
           }
-
+          
+          main {
+            max-width: 100%;
+          }
+          
           header {
             display: inline-block;
+            max-width: 100%;
           }
-
+          
           a:link {
-            color: #293590;
+            color: #007bff;
           }
           a:visited {
-            color: #080F43;
+            color: #9c27b0;
           }
           a:hover {
-            color: #5E7EFF;
+            color: #00bcd4;
           }
-
+          
           #logo {
             width: <%= logo_width %>em;
-            height: 6em;
-						background-repeat: no-repeat;
-						background-position-x: right;
-						background-position-y: center;
+            height: 5em;
+            background-repeat: no-repeat;
+            background-position-x: right;
+            background-position-y: center;
             background-image: url(<%= logo_url %>);
             float: left;
-            margin-right: 0.75em;
+            margin-right: 2em;
           }
-
+          
           header h1 {
             clear: right;
             text-overflow: ellipsis;
             white-space: nowrap;
             overflow: hidden;
+          
+            font-size: 1.5em;
+            line-height: 2em;
           }
-
+          
           #content {
             margin-top: 1em;
-            padding-left: 3em;
-            padding-right: 3em;
-            padding-bottom: 3em;
+            padding-left: 1em;
+            padding-right: 1em;
+            padding-bottom: 1em;
             color: #060B34;
             background-color: #fff;
             border-radius: 1em;
             border: 1px solid #E0E1E4;
+            overflow: auto;
           }
-
+          
           nav h2 {
             font-size: 1em;
             line-height: 1.25em;
@@ -116,7 +127,7 @@ module MediaTypes
           nav .label {
             float: left;
           }
-
+          
           nav ul {
             clear: right;
             display: inline-block;
@@ -138,17 +149,15 @@ module MediaTypes
             content: "|";
             margin-right: 0.3em;
           }
-
+          
           nav #representations {
-            margin-left: -2em;
-            margin-right: -2em;
-            margin-bottom: 2em;
+            margin-bottom: 1em;
           }
           nav hr {
             border: none;
             border-top: solid 1px #E0E1E4;
           }
-
+          
           nav #links {
             display: inline-block;
             margin-bottom: 1em;
@@ -156,7 +165,11 @@ module MediaTypes
           nav #links ul {
             float: left;
           }
-
+          
+          #output {
+            font-size: .9em;
+          }
+          
           TEMPLATE
           template = ERB.new custom_css unless custom_css.nil?
 
