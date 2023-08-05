@@ -657,7 +657,9 @@ module MediaTypes
           identifier: identifier,
           registrations: registrations,
           output: result,
-          links: links
+          links: links,
+          etag: response.get_header('ETag'),
+          actions: @serialization_available_serializers
         }
         wrapped = @serialization_wrapping_renderer.serialize input, '*/*', context: self
         render body: wrapped
