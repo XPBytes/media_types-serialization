@@ -283,7 +283,7 @@ module MediaTypes
                                   responseTypeElem.appendChild(option)
                                 })
                                 let anyOption = document.createElement("option")
-                                anyOption.setAttribute("value", "*/*")
+                                anyOption.setAttribute("value", "")
                                 anyOption.textContent = "Any"
                                 responseTypeElem.appendChild(anyOption)
                               }
@@ -292,7 +292,9 @@ module MediaTypes
                                 let method = methodElem.value
                                 let requestContentType = requestTypeElem.value
                                 let requestContent = contentElem.value
-                                let responseAccept = responseTypeElem.value + ", application/problem+json; q=0.2, */*; q=0.1"
+                                var responseAccept = responseTypeElem.value + ", application/problem+json; q=0.2, */*; q=0.1"
+                                if (responseTypeElem.value == "")
+                                  responseAccept = "application/problem+json, */*; q=0.1"
 
                                 let headers = {
                                   Accept: responseAccept,
