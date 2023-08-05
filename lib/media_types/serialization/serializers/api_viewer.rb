@@ -254,11 +254,13 @@ module MediaTypes
                                 
                                 if (methodElem.value == "PUT" && contentElem.value.trim() == "") {
                                   let currentRequestType = document.querySelector("#representations .active").textContent.trim()
-                                  let outputElem = document.getElementById("output")
-                                  contentElem.value = outputElem.
-                                    textContent.
-                                    trim().
-                                    replaceAll(String.fromCharCode(160), " ")
+                                  if (currentRequestType == requestTypeElem.value) {
+                                    let outputElem = document.getElementById("output")
+                                    contentElem.value = outputElem.
+                                      textContent.
+                                      trim().
+                                      replaceAll(String.fromCharCode(160), " ")
+                                  }
                                 }
                               }
 
