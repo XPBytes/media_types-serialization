@@ -92,6 +92,8 @@ module MediaTypes
           escape_map[(+"\342\200\250").force_encoding(Encoding::UTF_8).encode!] = "&#x2028;"
           escape_map[(+"\342\200\251").force_encoding(Encoding::UTF_8).encode!] = "&#x2029;"
 
+          value ||= ""
+
           return value.gsub(/(\\|<\/|\r\n|\342\200\250|\342\200\251|[\n\r"']|[`]|[$])/u, escape_map).html_safe
         end
 
