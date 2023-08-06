@@ -11,4 +11,12 @@
 .idea/usage.statistics.xml
 .idea/tasks.xml
 
-/media_types-serialization*.gem
+/media_types-serialization-*.gem
+/ruby-media-types-serialization-*
+/media-types-serialization-*.tar.gz
+/ruby-media-types-serialization_*.deb
+/ruby-media-types-serialization_*.buildinfo
+/ruby-media-types-serialization_*.changes
+/ruby-media-types-serialization_*.debian.tar.xz
+/ruby-media-types-serialization_*.dsc
+/ruby-media-types-serialization_*.orig.tar.gz
