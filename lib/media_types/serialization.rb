@@ -580,7 +580,7 @@ module MediaTypes
 
       endpoint_matched_identifier = resolve_media_type(
         request,
-        description_serializer.serializer_output_registration,
+        description_serializer.serializer_output_registrations[nil],
         allow_last: false
       )
 

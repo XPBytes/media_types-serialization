@@ -12,8 +12,8 @@ module MediaTypes
         def unvalidated(prefix)
           self.serializer_validated = false
           self.serializer_validator = FakeValidator.new(prefix)
-          self.serializer_input_registration = SerializationRegistration.new(:input)
-          self.serializer_output_registration = SerializationRegistration.new(:output)
+          self.serializer_input_registrations = {}
+          self.serializer_output_registrations = {}
         end
 
         def validator(validator = nil)
@@ -22,8 +22,8 @@ module MediaTypes
 
           self.serializer_validated = true
           self.serializer_validator = validator
-          self.serializer_input_registration = SerializationRegistration.new(:input)
-          self.serializer_output_registration = SerializationRegistration.new(:output)
+          self.serializer_input_registrations = {}
+          self.serializer_output_registrations = {}
         end
 
         def disable_wildcards
@@ -40,11 +40,15 @@ module MediaTypes
 
           raise ValidatorNotSpecifiedError, :output if serializer_validator.nil?
 
+          unless serializer_output_registrations.has_key? view
+            serializer_output_registrations[view] = SerializationRegistration.new(:output)
+          end
+
           versions.each do |v|
             validator = serializer_validator.view(view).version(v)
             validator.override_suffix(:json) unless serializer_validated
 
-            serializer_output_registration.register_block(
+            serializer_output_registrations[view].register_block(
               self,
               validator,
               v,
@@ -62,12 +66,16 @@ module MediaTypes
 
           raise ValidatorNotSpecifiedError, :output if serializer_validator.nil?
 
+          unless serializer_output_registrations.has_key? view
+            serializer_output_registrations[view] = SerializationRegistration.new(:output)
+          end
+
           versions.each do |v|
             validator = serializer_validator.view(view)
                                             .version(v)
                                             .override_suffix(suffix)
 
-            serializer_output_registration.register_block(
+            serializer_output_registrations[view].register_block(
               self,
               validator,
               v,
@@ -87,7 +95,11 @@ module MediaTypes
           validator = serializer_validator.view(view).override_suffix(suffix)
           victim_identifier = validator.identifier
 
-          serializer_output_registration.register_alias(
+          unless serializer_output_registrations.has_key? view
+            serializer_output_registrations[view] = SerializationRegistration.new(:output)
+          end
+
+          serializer_output_registrations[view].register_alias(
             self,
             media_type_identifier,
             victim_identifier,
@@ -106,7 +118,11 @@ module MediaTypes
           validator = serializer_validator.view(view).override_suffix(suffix)
           victim_identifier = validator.identifier
 
-          serializer_output_registration.register_alias(
+          unless serializer_output_registrations.has_key? view
+            serializer_output_registrations[view] = SerializationRegistration.new(:output)
+          end
+
+          serializer_output_registrations[view].register_alias(
             self,
             media_type_identifier,
             victim_identifier,
@@ -122,11 +138,15 @@ module MediaTypes
 
           raise ValidatorNotSpecifiedError, :input if serializer_validator.nil?
 
+          unless serializer_input_registrations.has_key? view
+            serializer_input_registrations[view] = SerializationRegistration.new(:input)
+          end
+
           versions.each do |v|
             validator = serializer_validator.view(view).version(v)
             validator.override_suffix(:json) unless serializer_validated
 
-            serializer_input_registration.register_block(self, validator, v, block, false)
+            serializer_input_registrations[view].register_block(self, validator, v, block, false)
           end
         end
 
@@ -136,10 +156,14 @@ module MediaTypes
 
           raise ValidatorNotSpecifiedError, :input if serializer_validator.nil?
 
+          unless serializer_input_registrations.has_key? view
+            serializer_input_registrations[view] = SerializationRegistration.new(:input)
+          end
+
           versions.each do |v|
             validator = serializer_validator.view(view).version(v).override_suffix(suffix)
 
-            serializer_input_registration.register_block(self, validator, v, block, true)
+            serializer_input_registrations[view].register_block(self, validator, v, block, true)
           end
         end
 
@@ -151,7 +175,11 @@ module MediaTypes
           validator = serializer_validator.view(view).override_suffix(suffix)
           victim_identifier = validator.identifier
 
-          serializer_input_registration.register_alias(
+          unless serializer_input_registrations.has_key? view
+            serializer_input_registrations[view] = SerializationRegistration.new(:input)
+          end
+
+          serializer_input_registrations[view].register_alias(
             self,
             media_type_identifier,
             victim_identifier,
@@ -169,7 +197,11 @@ module MediaTypes
           validator = serializer_validator.view(view).override_suffix(suffix)
           victim_identifier = validator.identifier
 
-          serializer_input_registration.register_alias(
+          unless serializer_input_registrations.has_key? view
+            serializer_input_registrations[view] = SerializationRegistration.new(:input)
+          end
+
+          serializer_input_registrations[view].register_alias(
             self,
             media_type_identifier,
             victim_identifier,
@@ -181,19 +213,40 @@ module MediaTypes
 
         def serialize(victim, media_type_identifier, context:, dsl: nil, raw: nil)
           dsl ||= SerializationDSL.new(self, context: context)
-          serializer_output_registration.call(victim, media_type_identifier.to_s, context, dsl: dsl, raw: raw)
+          
+          merged_output_registrations = SerializationRegistration.new(:output)
+          serializer_output_registrations.keys.each do |k|
+            merged_output_registrations = merged_output_registrations.merge(serializer_output_registrations[k])
+          end
+
+          merged_output_registrations.call(victim, media_type_identifier.to_s, context, dsl: dsl, raw: raw)
         end
 
         def deserialize(victim, media_type_identifier, context:)
-          serializer_input_registration.call(victim, media_type_identifier, context)
+          merged_input_registrations = SerializationRegistration.new(:input)
+          serializer_input_registrations.keys.each do |k|
+            merged_input_registrations = merged_input_registrations.merge(serializer_input_registrations[k])
+          end
+
+          merged_input_registrations.call(victim, media_type_identifier, context)
         end
 
         def outputs_for(views:)
-          serializer_output_registration.filter(views: views)
+          merged_output_registrations = SerializationRegistration.new(:output)
+          views.each do |k|
+            merged_output_registrations = merged_output_registrations.merge(serializer_output_registrations[k]) if serializer_output_registrations.has_key?(k)
+          end
+          
+          merged_output_registrations
         end
 
         def inputs_for(views:)
-          serializer_input_registration.filter(views: views)
+          merged_input_registrations = SerializationRegistration.new(:input)
+          views.each do |k|
+            merged_input_registrations = merged_input_registrations.merge(serializer_input_registrations[k]) if serializer_input_registrations.has_key?(k)
+          end
+
+          merged_input_registrations
         end
       end
 
@@ -205,8 +258,8 @@ module MediaTypes
           class << self
             attr_accessor :serializer_validated
             attr_accessor :serializer_validator
-            attr_accessor :serializer_input_registration
-            attr_accessor :serializer_output_registration
+            attr_accessor :serializer_input_registrations
+            attr_accessor :serializer_output_registrations
             attr_accessor :serializer_disable_wildcards
           end
         end
