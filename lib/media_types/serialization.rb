@@ -554,7 +554,7 @@ module MediaTypes
             error: e
           }
 
-          render_media nil, serializers: [registrations], status: :unprocessable_entity do
+          render_media nil, serializers: [registrations], status: :bad_request do
             serializer MediaTypes::Serialization::Serializers::InputValidationErrorSerializer, input
             serializer MediaTypes::Serialization::Serializers::ProblemSerializer do
               problem = Problem.new(e)

@@ -5,6 +5,7 @@
 - ✨ Add support for loose input validation
 - ✨ Add inline api call functionality to api_viewer
 - 🐛 Fix wildcards not showing up for non-nil views
+- 🐛 Sending invalid content returned a 422 status code, changed to 400
 
 ## 1.4.0
 
