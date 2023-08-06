@@ -1,8 +1,10 @@
 # Changelog
 
-## 1.5.0
+## 2.0.0
 
 - ✨ Add support for loose input validation
+- ✨ Add inline api call functionality to api_viewer
+- 🐛 Fix wildcards not showing up for non-nil views
 
 ## 1.4.0
 
