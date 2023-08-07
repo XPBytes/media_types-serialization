@@ -228,7 +228,7 @@ module MediaTypes
                               <label class="form-row"><div class="cell label">Receive:</div> <select class="cell" name="response-content-type"></select></label>
                             </div>
                             <textarea name="request-content"></textarea>
-                            <input type="button" name="submit" value="Reply">
+                            <input type="button" name="submit" value="Reply"><span id="reply-status-code" hidden> - sending...</span> 
                             <hr>
                             <code id="reply-response" hidden>
                             </code>
@@ -246,6 +246,7 @@ module MediaTypes
                               let contentElem = form.elements["request-content"]
                               let submitElem = form.elements["submit"]
                               let replyResponseElem = document.getElementById("reply-response")
+                              let replyStatusCodeElem = document.getElementById("reply-status-code")
                               let selectRequestType = function() {
                                 let selected = requestTypeElem.value
 
@@ -302,6 +303,7 @@ module MediaTypes
                               }
 
                               let onSubmit = async function() {
+                                submitElem.setAttribute("disabled", "")
                                 let method = methodElem.value
                                 let requestContentType = requestTypeElem.value
                                 let requestContent = contentElem.value
@@ -323,21 +325,33 @@ module MediaTypes
                                   headers["Content-Type"] = requestContentType
                                   body = requestContent
                                 }
-                                let response = await fetch("<%= escape_javascript.call(unviewered_uri.to_s) %>", {
-                                  method: method,
-                                  mode: "same-origin",
-                                  credentials: "same-origin",
-                                  redirect: "follow",
-                                  headers: headers,
-                                  body: body
-                                })
 
-                                replyResponseElem.removeAttribute("hidden")
-                                replyResponseElem.textContent = await response.text()
-                                replyResponseElem.innerHTML = replyResponseElem.
-                                  innerHTML.
-                                  replaceAll("\\n", "<br>\\n").
-                                  replaceAll("  ", "&nbsp; ")
+                                replyResponseElem.textContent = ""
+                                replyStatusCodeElem.textContent = " - sending..."
+                                replyStatusCodeElem.removeAttribute("hidden")
+
+                                try {
+                                  let response = await fetch("<%= escape_javascript.call(unviewered_uri.to_s) %>", {
+                                    method: method,
+                                    mode: "same-origin",
+                                    credentials: "same-origin",
+                                    redirect: "follow",
+                                    headers: headers,
+                                    body: body
+                                  })
+
+                                  replyStatusCodeElem.textContent = " - Status " + response.status + " " + response.statusText
+                                  replyResponseElem.removeAttribute("hidden")
+                                  replyResponseElem.textContent = await response.text()
+                                  replyResponseElem.innerHTML = replyResponseElem.
+                                    innerHTML.
+                                    replaceAll("\\n", "<br>\\n").
+                                    replaceAll("  ", "&nbsp; ")
+                                } catch (error) {
+                                  replyStatusCodeElem.textContent = " - Failed: " + error.message
+                                } finally {
+                                  submitElem.removeAttribute("disabled")
+                                }
                               }
 
                               requestTypeElem.addEventListener("change", (e) => selectRequestType())

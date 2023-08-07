@@ -195,6 +195,11 @@ module MediaTypes
             height: 6em;
             clear: both;
           }
+
+          #reply #reply-status-code {
+            font-style: italic;
+            font-size: 80%;
+          }
           
           TEMPLATE
           template = ERB.new custom_css unless custom_css.nil?
