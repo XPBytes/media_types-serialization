@@ -12,3 +12,4 @@
 .idea/tasks.xml
 
 /media_types-serialization*.gem
+/Gemfile.lock
