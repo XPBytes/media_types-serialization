@@ -195,12 +195,14 @@ module MediaTypes
 
           validator = FakeValidator.new(as.nil? ? 'text/html' : as)
 
-          block = lambda { |_, _, controller|
+          block = lambda { |victim, _, controller|
             options = {}
             options[:layout] = layout unless layout.nil?
             options[:template] = view unless view.nil?
             options[:formats] = formats unless formats.nil?
             options[:variants] = variants unless variants.nil?
+            options[:locals] = victim if victim.is_a?(Hash)
+            options[:assigns] = { media: victim }
 
             controller.render_to_string(**options)
           }
