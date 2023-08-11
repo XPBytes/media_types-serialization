@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.0.1
+
+- 🐛 Fix debian packages not containing files
+
 ## 2.0.0
 
 - ✨ Add support for loose input validation
