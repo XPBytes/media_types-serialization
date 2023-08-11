@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.0.2
+## 2.0.3
 
 - 🐛 Fix debian packages not containing files
 

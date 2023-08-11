@@ -17,6 +17,7 @@ jobs:
         name: Check out repository
       - name: Build gem
         run: |
+          git config --global --add safe.directory "$(pwd)"
           sed -i -re "s/VERSION\s+=\s+'([0-9]+.[0-9]+.[0-9]+)'/VERSION = '\1.sid'/g" lib/media_types/serialization/version.rb
           gem build media_types-serialization.gemspec
       - name: Build deb
