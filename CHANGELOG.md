@@ -4,6 +4,7 @@
 
 - ✨ Add support for loose input validation
 - ✨ Add inline api call functionality to api_viewer
+- ✨ `allow_html_output` will now get the object in the `media` variable and if it is a hash, elements will be assigned as locals
 - 🐛 Fix wildcards not showing up for non-nil views
 - 🐛 Sending invalid content returned a 422 status code, changed to 400
 
