@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.0.4
+
+- 🐛 Fix `locals` passing for HTML serialization
+
 ## 2.0.3
 
 - 🐛 Fix debian packages not containing files
