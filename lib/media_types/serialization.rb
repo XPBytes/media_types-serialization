@@ -201,7 +201,7 @@ module MediaTypes
             options[:template] = view unless view.nil?
             options[:formats] = formats unless formats.nil?
             options[:variants] = variants unless variants.nil?
-            options[:locals] = victim if victim.is_a?(Hash)
+            options[:locals] = victim if victim.is_a?(::Hash)
             options[:assigns] = { media: victim }
 
             controller.render_to_string(**options)
