@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.4
+
+- ✨ Add more loose tests
+- 🐛 Fix `locals` passing for HTML serialization
+- 🐛 Fix for status passing in rack-like environments
+
 ## 2.0.3
 
 - 🐛 Fix debian packages not containing files

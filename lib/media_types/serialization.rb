@@ -201,7 +201,7 @@ module MediaTypes
             options[:template] = view unless view.nil?
             options[:formats] = formats unless formats.nil?
             options[:variants] = variants unless variants.nil?
-            options[:locals] = victim if victim.is_a?(Hash)
+            options[:locals] = victim if victim.is_a?(::Hash)
             options[:assigns] = { media: victim }
 
             controller.render_to_string(**options)
@@ -448,7 +448,7 @@ module MediaTypes
         end
 
         return @serialization_override_accept if registration.has? @serialization_override_accept
-        
+
         # Always render problems in api viewer if we can't show chosen override
         return 'application/problem+json' if registration.has? 'application/problem+json'
 
@@ -541,10 +541,14 @@ module MediaTypes
             self
           )
         rescue InputValidationFailedError => e
-          serializers = @serialization_input_validation_failed_serializer || [
-            MediaTypes::Serialization::Serializers::ProblemSerializer,
-            MediaTypes::Serialization::Serializers::InputValidationErrorSerializer
-          ]
+          serializers = if defined?(@serialization_input_validation_failed_serializer)
+            @serialization_input_validation_failed_serializer
+          else
+            [
+              MediaTypes::Serialization::Serializers::ProblemSerializer,
+              MediaTypes::Serialization::Serializers::InputValidationErrorSerializer
+            ]
+          end
           registrations = SerializationRegistration.new(:output)
           serializers.each do |s|
             registrations = registrations.merge(s.outputs_for(views: [nil, :html]))
@@ -671,6 +675,9 @@ module MediaTypes
       end
 
       if context.serialization_custom_render.nil?
+        status = options.delete(:status)
+        response.status = status if status
+
         render body: result, **options
 
         response.content_type = registrations.identifier_for(identifier)

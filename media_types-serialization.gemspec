@@ -37,7 +37,7 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency 'actionpack', '>= 6.0.0'
   spec.add_dependency 'activesupport', '>= 6.0.0'
-  spec.add_dependency 'media_types', '>= 2.2.0', '< 3.0.0'
+  spec.add_dependency 'media_types', '>= 2.2.3', '< 3.0.0'
 
   spec.add_development_dependency 'awesome_print'
   spec.add_development_dependency 'bundler'
