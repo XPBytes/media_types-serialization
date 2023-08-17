@@ -31,7 +31,9 @@ class MediaTypes::SerializationTest < Minitest::Test
       version 1 do
         attribute :name
         attribute :number, Numeric
-        link :google
+        link :google do
+          attribute :foo
+        end
         collection :items, allow_empty: true do
           attribute :label
           attribute :data, Object
@@ -129,4 +131,3 @@ class MediaTypes::SerializationTest < Minitest::Test
     assert_equal "<https://google.com>; rel=google; foo=bar", @response['Link']
   end
 end
-
