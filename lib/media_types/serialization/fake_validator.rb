@@ -39,7 +39,7 @@ class FakeValidator
     true
   end
 
-  def validate!(_)
+  def validate!(*)
     true
   end
 
