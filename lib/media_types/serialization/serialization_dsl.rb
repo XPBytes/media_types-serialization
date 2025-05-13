@@ -114,6 +114,10 @@ module MediaTypes
         context.serialization_dsl_result
       end
 
+      def varies_on_header(header)
+        @serialization_vary.push(header) unless @serialization_vary.include? header
+      end
+
       def redirect_to(url, context, **options)
         suppress_render do |result|
           context.redirect_to(

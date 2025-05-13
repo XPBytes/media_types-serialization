@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    media_types-serialization (2.0.4)
+    media_types-serialization (2.1.0)
       actionpack (>= 6.0.0)
       activesupport (>= 6.0.0)
       media_types (>= 2.2.3, < 3.0.0)
@@ -88,7 +88,7 @@ GEM
       net-pop
       net-smtp
     marcel (1.0.4)
-    media_types (2.3.2)
+    media_types (2.3.3.bookworm)
     method_source (1.1.0)
     mini_mime (1.1.5)
     minitest (5.25.1)
@@ -161,6 +161,7 @@ GEM
 
 PLATFORMS
   x64-mingw32
+  x86_64-linux
 
 DEPENDENCIES
   awesome_print
@@ -172,4 +173,4 @@ DEPENDENCIES
   rake (~> 13.0)
 
 BUNDLED WITH
-   2.1.4
+   2.3.15

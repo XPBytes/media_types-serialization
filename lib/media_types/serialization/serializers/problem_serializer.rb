@@ -8,13 +8,13 @@ module MediaTypes
   module Serialization
     module Serializers
       class ProblemSerializer < MediaTypes::Serialization::Base
-
         unvalidated 'application/vnd.delftsolutions.problem'
         disable_wildcards
 
         output do |problem, _, context|
           raise 'No translations defined, add at least one title' unless problem.translations.keys.any?
 
+          varies_on_header 'Accept-Language'
           accept_language_header = Utils::AcceptLanguageHeader.new(
             context.request.get_header(HEADER_ACCEPT_LANGUAGE) || ''
           )

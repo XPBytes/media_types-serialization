@@ -897,6 +897,16 @@ This redirects the user to the specified url when this serializer is rendered. T
 
 Replaces the render at the end of `render_media` and substitutes it with the contents of the block.
 
+#### `varies_on_header(header)`
+
+Indicates to clients that they can receive a different response if the indicated header has a different value. This is done using the [Vary header](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Vary). When your responses are internationalized you can use the following example:
+
+```ruby
+varies_on_header 'Accept-Language'
+```
+
+The Vary header is set at two moments during execution. The first moment the header is modified is during the `freeze_io!` handler. The second moment is when `render_media` is called. If you want to modify the Vary header that is returned when the content negotiation fails you need to make sure to run your callback before the `freeze_io!` callback has been run.
+
 ### Controller definition
 
 These functions are available during the controller definition if you add `include MediaTypes::Serialization`.

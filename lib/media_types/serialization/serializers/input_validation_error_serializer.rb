@@ -10,8 +10,8 @@ module MediaTypes
       class InputValidationErrorSerializer < MediaTypes::Serialization::Base
         unvalidated 'text/html'
 
-        def self.escape_text(text)
-          text
+        def self.escape_text(text, context)
+          result = text
             .split("\n")
             .map { |l| CGI.escapeHTML(l).gsub(/ (?= )/, '&nbsp;') }
             .map do |l|
@@ -19,7 +19,7 @@ module MediaTypes
                 converted = m
                 invalid = false
                 begin
-                  converted = viewerify(m, context.request.host)
+                  converted = ApiViewer.viewerify(m, context.request.host)
                 rescue URI::InvalidURIError
                   invalid = true
                 end
@@ -29,6 +29,8 @@ module MediaTypes
               end
             end
             .join("<br>\n")
+          result.html_safe
+          result
         end
 
         output_raw do |obj, version, context|
@@ -36,8 +38,8 @@ module MediaTypes
           original_input = obj[:input]
           error = obj[:error]
 
-          escaped_error = escape_text(error.message)
-          escaped_input = escape_text(original_input)
+          escaped_error = escape_text(error.message, context)
+          escaped_input = escape_text(original_input, context)
 
           input = OpenStruct.new(
             original_identifier: input_identifier,

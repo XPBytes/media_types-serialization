@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.1.0
+
+- ✨ Add `varies_on_header` serializer dsl function.
+- 🐛 Fix [crash in input validation error serializer](https://github.com/XPBytes/media_types-serialization/issues/260)
+- 🐛 Fix [endpoint description having media types multiple times](https://github.com/XPBytes/media_types-serialization/issues/184)
+- 🐛 Fix problem serializer not Varying on Accept-Language
+
 ## 2.0.4
 
 - ✨ Add more loose tests
