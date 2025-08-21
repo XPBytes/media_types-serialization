@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    media_types-serialization (2.1.0)
+    media_types-serialization (2.2.0)
       actionpack (>= 6.1.7.10)
       activesupport (>= 6.1.7.10)
       media_types (>= 2.2.3, < 3.0.0)
@@ -110,6 +110,8 @@ GEM
       racc (~> 1.4)
     nokogiri (1.18.9-x64-mingw-ucrt)
       racc (~> 1.4)
+    nokogiri (1.18.9-x86_64-linux-gnu)
+      racc (~> 1.4)
     oj (3.16.11)
       bigdecimal (>= 3.0)
       ostruct (>= 0.2)
@@ -146,7 +148,7 @@ GEM
       method_source
       rake (>= 12.2)
       thor (~> 1.0)
-    rake (13.0.6)
+    rake (13.3.0)
     sprockets (4.2.2)
       concurrent-ruby (~> 1.0)
       logger
