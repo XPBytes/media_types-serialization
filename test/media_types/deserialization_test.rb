@@ -1,5 +1,6 @@
 require 'test_helper'
 
+require 'logger'
 require 'active_support/callbacks'
 require 'abstract_controller/callbacks'
 require 'abstract_controller/rendering'
@@ -121,4 +122,3 @@ class MediaTypes::DeserializationTest < Minitest::Test
     @filtered_controller.dispatch(:action, request, @response)
   end
 end
-
