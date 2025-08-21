@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.2.1
+
+- 🐛 Fix [output error failures on missing input](https://github.com/XPBytes/media_types-serialization/issues/267)
+
 ## 2.2.0
 
 - ✨ Add `form_authenticity_token` support

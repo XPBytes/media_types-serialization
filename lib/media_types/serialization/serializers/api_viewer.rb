@@ -34,6 +34,8 @@ module MediaTypes
         end
 
         def self.allowed_replies(context, actions = {})
+          actions = {} if actions.nil?
+
           request_path = context.request.original_fullpath.split('?')[0]
 
           path_prefix = ENV.fetch('RAILS_RELATIVE_URL_ROOT') { '' }
