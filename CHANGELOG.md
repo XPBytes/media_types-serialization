@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.2.0
+
+- ✨ Add `form_authenticity_token` support
+- 🐛 Fix [output error failures on missing input](https://github.com/XPBytes/media_types-serialization/issues/267)
+
 ## 2.1.0
 
 - ✨ Add `varies_on_header` serializer dsl function.
