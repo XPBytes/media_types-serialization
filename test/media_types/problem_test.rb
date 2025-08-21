@@ -90,4 +90,3 @@ class MediaTypes::ProblemTest < Minitest::Test
     assert_equal( 'dummy resource', @response.body )
   end
 end
-

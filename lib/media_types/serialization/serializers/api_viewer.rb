@@ -33,7 +33,7 @@ module MediaTypes
           end
         end
 
-        def self.allowed_replies(context, actions)
+        def self.allowed_replies(context, actions = {})
           request_path = context.request.original_fullpath.split('?')[0]
 
           path_prefix = ENV.fetch('RAILS_RELATIVE_URL_ROOT') { '' }
@@ -160,10 +160,11 @@ module MediaTypes
             etag: obj[:etag],
             allowed_replies: allowed_replies(context, obj[:actions]),
             escape_javascript: method(:escape_javascript),
-            unviewered_uri: unviewered_uri
+            unviewered_uri: unviewered_uri,
+            token: context.try(:form_authenticity_token)
           )
 
-          template = ERB.new <<-TEMPLATE
+          template = ERB.new <<-HTML
             <!DOCTYPE html>
             <html lang="en">
               <head>
@@ -228,98 +229,127 @@ module MediaTypes
                               <label class="form-row"><div class="cell label">Receive:</div> <select class="cell" name="response-content-type"></select></label>
                             </div>
                             <textarea name="request-content"></textarea>
-                            <input type="button" name="submit" value="Reply"><span id="reply-status-code" hidden> - sending...</span> 
+                            <% if token %>
+                            <input type="hidden" name="authenticity_token" value="<%= token %>">
+                            <% end %>
+                            <input type="submit" name="submit" value="Reply"><span id="reply-status-code" hidden> - sending...</span>
                             <hr>
                             <code id="reply-response" hidden>
                             </code>
                           </form>
                           <script>
                             {
-                              let form = document.getElementById("reply-form")
-                              form.removeAttribute('hidden')
+                              const form = document.getElementById("reply-form");
+                              form.removeAttribute('hidden');
 
-                              let action_data = JSON.parse("<%= escape_javascript.call(allowed_replies.to_json) %>")
+                              const actionData = JSON.parse("<%= escape_javascript.call(allowed_replies.to_json) %>");
 
-                              let methodElem = form.elements["method"]
-                              let requestTypeElem = form.elements["request-content-type"]
-                              let responseTypeElem = form.elements["response-content-type"]
-                              let contentElem = form.elements["request-content"]
-                              let submitElem = form.elements["submit"]
-                              let replyResponseElem = document.getElementById("reply-response")
-                              let replyStatusCodeElem = document.getElementById("reply-status-code")
-                              let selectRequestType = function() {
-                                let selected = requestTypeElem.value
+                              const methodElem = form.elements["method"];
+                              const requestTypeElem = form.elements["request-content-type"];
+                              const responseTypeElem = form.elements["response-content-type"];
+                              const contentElem = form.elements["request-content"];
+                              const submitElem = form.elements["submit"];
+                              const tokenElem = form.elements["authenticity_token"];
+                              const replyResponseElem = document.getElementById("reply-response");
+                              const replyStatusCodeElem = document.getElementById("reply-status-code");
 
-                                if (selected == "")
-                                  contentElem.setAttribute("hidden", "")
-                                else
-                                  contentElem.removeAttribute("hidden")
-                                
+                              const selectRequestType = function selectRequestType() {
+                                const selected = requestTypeElem.value;
+
+                                if (selected == "") {
+                                  contentElem.setAttribute("hidden", "");
+                                } else {
+                                  contentElem.removeAttribute("hidden");
+                                }
+
                                 if (methodElem.value == "PUT" && contentElem.value.trim() == "") {
-                                  let currentRequestType = document.querySelector("#representations .active").textContent.trim()
+                                  const currentRequestType = document.querySelector("#representations .active").textContent.trim()
+
                                   if (currentRequestType == requestTypeElem.value) {
-                                    let outputElem = document.getElementById("output")
+                                    const outputElem = document.getElementById("output")
                                     contentElem.value = outputElem.
                                       textContent.
                                       trim().
-                                      replaceAll(String.fromCharCode(160), " ")
+                                      replaceAll(String.fromCharCode(160), " ");
                                   }
                                 }
                               }
 
-                              let selectMethod = function() {
-                                let selected = methodElem.value
+                              const selectMethod = function selectMethod() {
+                                const selected = methodElem.value
                                 submitElem.setAttribute("value", selected)
 
-                                let mediatypes = action_data[selected]
+                                const mediatypes = actionData[selected]
 
-                                while(requestTypeElem.firstChild)
+                                while(requestTypeElem.firstChild) {
                                   requestTypeElem.removeChild(requestTypeElem.lastChild)
-                                mediatypes["input"].forEach(mediatype => {
-                                  let option = document.createElement("option")
-                                  option.setAttribute("value", mediatype)
-                                  option.textContent = mediatype
-                                  requestTypeElem.appendChild(option)
-                                })
-                                let noneOption = document.createElement("option")
-                                noneOption.setAttribute("value", "")
-                                noneOption.textContent = "None"
-                                requestTypeElem.appendChild(noneOption)
+                                }
 
-                                while(responseTypeElem.firstChild)
-                                  responseTypeElem.removeChild(responseTypeElem.lastChild)
-                                mediatypes["output"].forEach(mediatype => {
-                                  let option = document.createElement("option")
-                                  option.setAttribute("value", mediatype)
-                                  option.textContent = mediatype
-                                  responseTypeElem.appendChild(option)
-                                })
-                                let anyOption = document.createElement("option")
-                                anyOption.setAttribute("value", "")
-                                anyOption.textContent = "Any"
-                                responseTypeElem.appendChild(anyOption)
+                                mediatypes["input"].forEach((mediatype) => {
+                                  const option = document.createElement("option");
+                                  option.setAttribute("value", mediatype);
+                                  option.textContent = mediatype;
 
-                                selectRequestType()
+                                  requestTypeElem.appendChild(option);
+                                })
+
+                                const noneOption = document.createElement("option");
+                                noneOption.setAttribute("value", "");
+                                noneOption.textContent = "None";
+                                requestTypeElem.appendChild(noneOption);
+
+                                while(responseTypeElem.firstChild) {
+                                  responseTypeElem.removeChild(responseTypeElem.lastChild);
+                                }
+
+                                mediatypes["output"].forEach((mediatype) => {
+                                  const option = document.createElement("option");
+                                  option.setAttribute("value", mediatype);
+                                  option.textContent = mediatype;
+
+                                  responseTypeElem.appendChild(option);
+                                })
+
+                                const anyOption = document.createElement("option");
+                                anyOption.setAttribute("value", "");
+                                anyOption.textContent = "Any";
+                                responseTypeElem.appendChild(anyOption);
+
+                                selectRequestType();
                               }
 
-                              let onSubmit = async function() {
-                                submitElem.setAttribute("disabled", "")
-                                let method = methodElem.value
-                                let requestContentType = requestTypeElem.value
-                                let requestContent = contentElem.value
-                                var responseAccept = responseTypeElem.value + ", application/problem+json; q=0.2, */*; q=0.1"
-                                if (responseTypeElem.value == "")
-                                  responseAccept = "application/problem+json, */*; q=0.1"
+                              const onSubmit = async function onSubmit(event) {
+                                event.preventDefault();
 
-                                let headers = {
-                                  Accept: responseAccept,
+                                submitElem.setAttribute("disabled", "");
+
+                                const method = methodElem.value
+                                const requestContentType = requestTypeElem.value
+                                const requestContent = contentElem.value
+                                const token = tokenElem.value
+
+                                let responseAccept = responseTypeElem.value + ", application/problem+json; q=0.2, */*; q=0.1"
+                                if (responseTypeElem.value == "") {
+                                  responseAccept = "application/problem+json, */*; q=0.1"
                                 }
+
+                                const headers = {
+                                  Accept: responseAccept,
+                                  "X-Requested-With": "XMLHttpRequest"
+                                }
+
+
+                                if (method !== "GET" && token) {
+                                  headers["X-CSRF-Token"] = token
+                                }
+
                                 if (method == "PUT") {
-                                  let etag = "<%= escape_javascript.call(etag) %>"
+                                  const etag = "<%= escape_javascript.call(etag) %>"
                                   if (etag != "") {
                                     headers['If-Match'] = etag
                                   }
                                 }
+
                                 let body = undefined
                                 if (requestContentType != "") {
                                   headers["Content-Type"] = requestContentType
@@ -331,32 +361,32 @@ module MediaTypes
                                 replyStatusCodeElem.removeAttribute("hidden")
 
                                 try {
-                                  let response = await fetch("<%= escape_javascript.call(unviewered_uri.to_s) %>", {
+                                  const response = await fetch("<%= escape_javascript.call(unviewered_uri.to_s) %>", {
                                     method: method,
                                     mode: "same-origin",
                                     credentials: "same-origin",
                                     redirect: "follow",
                                     headers: headers,
                                     body: body
-                                  })
+                                  });
 
-                                  replyStatusCodeElem.textContent = " - Status " + response.status + " " + response.statusText
-                                  replyResponseElem.removeAttribute("hidden")
-                                  replyResponseElem.textContent = await response.text()
+                                  replyStatusCodeElem.textContent = " - Status " + response.status + " " + response.statusText;
+                                  replyResponseElem.removeAttribute("hidden");
+                                  replyResponseElem.textContent = await response.text();
                                   replyResponseElem.innerHTML = replyResponseElem.
                                     innerHTML.
                                     replaceAll("\\n", "<br>\\n").
-                                    replaceAll("  ", "&nbsp; ")
+                                    replaceAll("  ", "&nbsp; ");
                                 } catch (error) {
                                   replyStatusCodeElem.textContent = " - Failed: " + error.message
                                 } finally {
-                                  submitElem.removeAttribute("disabled")
+                                  submitElem.removeAttribute("disabled");
                                 }
                               }
 
-                              requestTypeElem.addEventListener("change", (e) => selectRequestType())
-                              methodElem.addEventListener("change", (e) => selectMethod())
-                              submitElem.addEventListener("click", (e) => onSubmit())
+                              requestTypeElem.addEventListener("change", () => selectRequestType());
+                              methodElem.addEventListener("change", () => selectMethod());
+                              form.addEventListener("submit", (e) => onSubmit(e));
 
                               addEventListener("DOMContentLoaded", (event) => selectMethod());
                             }
@@ -374,7 +404,7 @@ module MediaTypes
                 <!-- API viewer made with ❤ by: https://delftsolutions.com -->
               </body>
             </html>
-          TEMPLATE
+          HTML
           template.result(input.instance_eval { binding })
         end
       end
