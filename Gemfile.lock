@@ -148,7 +148,7 @@ GEM
       method_source
       rake (>= 12.2)
       thor (~> 1.0)
-    rake (13.0.6)
+    rake (13.3.0)
     sprockets (4.2.2)
       concurrent-ruby (~> 1.0)
       logger
